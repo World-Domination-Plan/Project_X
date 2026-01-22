@@ -1,18 +1,11 @@
 {
-    "name": "EditMode",
+    "name": "Logging",
     "rootNamespace": "",
     "references": [
-        "UnityEngine.TestRunner",
-        "UnityEditor.TestRunner",
-        "UI",
-        "Core",
-        "Authentication",
-        "Scripts",
-        "Logging"
+        "GUID:fe25561d224ed4743af4c60938a59d0b",
+        "GUID:f220a277eefae4d3aa9e31c2b43bb307"
     ],
-    "includePlatforms": [
-        "Editor"
-    ],
+    "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": false,
