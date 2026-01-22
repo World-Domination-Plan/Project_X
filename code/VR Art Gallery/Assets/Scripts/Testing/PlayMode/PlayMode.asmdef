@@ -4,9 +4,6 @@
     "references": [
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner",
-        "Core",
-        "UI",
-        "Authentication",
         "Scripts"
     ],
     "includePlatforms": [],

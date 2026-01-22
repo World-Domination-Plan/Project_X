@@ -4,10 +4,9 @@
     "references": [
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner",
-        "UI",
-        "Core",
-        "Authentication",
-        "Scripts"
+        "Scripts",
+        "Unity.TextMeshPro.Editor",
+        "Unity.TextMeshPro"
     ],
     "includePlatforms": [
         "Editor"
