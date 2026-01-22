@@ -6,7 +6,8 @@
         "UnityEditor.TestRunner",
         "UI",
         "Core",
-        "Authentication"
+        "Authentication",
+        "Scripts"
     ],
     "includePlatforms": [
         "Editor"
