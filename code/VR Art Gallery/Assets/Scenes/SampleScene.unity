@@ -1443,10 +1443,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6298cb68c496e7b42b31868b4e2d1b78, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::VRGallery.UI.AuthenticationUI
-  loginPanel: {fileID: 0}
+  loginPanel: {fileID: 209971354}
   registerPanel: {fileID: 0}
   authenticatedPanel: {fileID: 0}
   loadingPanel: {fileID: 0}
+  doorObject: {fileID: 8374908807138913193}
   loginEmailField: {fileID: 850744852}
   loginPasswordField: {fileID: 850744853}
   loginButton: {fileID: 850744855}
@@ -2258,6 +2259,14 @@ PrefabInstance:
       propertyPath: m_Name
       value: Password
       objectReference: {fileID: 0}
+    - target: {fileID: 2624626820690839229, guid: 6d66f0e6bfdc7b0419e63c09e70aaaa5, type: 3}
+      propertyPath: m_InputType
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 2624626820690839229, guid: 6d66f0e6bfdc7b0419e63c09e70aaaa5, type: 3}
+      propertyPath: m_ContentType
+      value: 7
+      objectReference: {fileID: 0}
     - target: {fileID: 2756369651144172940, guid: 6d66f0e6bfdc7b0419e63c09e70aaaa5, type: 3}
       propertyPath: m_Name
       value: EmailInput
@@ -2269,6 +2278,10 @@ PrefabInstance:
     - target: {fileID: 3009486139092683200, guid: 6d66f0e6bfdc7b0419e63c09e70aaaa5, type: 3}
       propertyPath: m_Name
       value: Login_UI
+      objectReference: {fileID: 0}
+    - target: {fileID: 3009486139092683200, guid: 6d66f0e6bfdc7b0419e63c09e70aaaa5, type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5569496266467777761, guid: 6d66f0e6bfdc7b0419e63c09e70aaaa5, type: 3}
       propertyPath: m_Pivot.x
@@ -2360,6 +2373,18 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5569496266467777761, guid: 6d66f0e6bfdc7b0419e63c09e70aaaa5, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6227068118609100832, guid: 6d66f0e6bfdc7b0419e63c09e70aaaa5, type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+    - target: {fileID: 6227068118609100832, guid: 6d66f0e6bfdc7b0419e63c09e70aaaa5, type: 3}
+      propertyPath: m_overflowMode
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 6227068118609100832, guid: 6d66f0e6bfdc7b0419e63c09e70aaaa5, type: 3}
+      propertyPath: m_hasFontAssetChanged
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8265791650605808494, guid: 6d66f0e6bfdc7b0419e63c09e70aaaa5, type: 3}
@@ -3405,7 +3430,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1896063744}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ec5d18cbaa23fff44822e100b116c283, type: 3}
   m_Name: 
@@ -4024,6 +4049,7 @@ MonoBehaviour:
   registerPanel: {fileID: 0}
   authenticatedPanel: {fileID: 0}
   loadingPanel: {fileID: 0}
+  doorObject: {fileID: 0}
   loginEmailField: {fileID: 0}
   loginPasswordField: {fileID: 0}
   loginButton: {fileID: 0}
@@ -9056,6 +9082,10 @@ PrefabInstance:
     - target: {fileID: 1070427249890639133, guid: 95bd29654e15ad844be6210374a75967, type: 3}
       propertyPath: m_StartShowing
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1641682437618806733, guid: 95bd29654e15ad844be6210374a75967, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1713736141589046007, guid: 95bd29654e15ad844be6210374a75967, type: 3}
       propertyPath: m_AnchorMax.y

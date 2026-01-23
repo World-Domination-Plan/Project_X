@@ -28,6 +28,7 @@ namespace XRMultiplayer
         [SerializeField] GameObject m_CustomizationPanel;
         [SerializeField] GameObject m_ConnectionPanel;
         [SerializeField] GameObject m_LoginPanel;
+        [SerializeField] GameObject m_Door;
 
         VoiceChatManager m_VoiceChatManager;
 
@@ -111,6 +112,7 @@ namespace XRMultiplayer
             if (connected)
             {
                 m_CustomizationPanel.SetActive(false);
+                m_LoginPanel.SetActive(false);
             }
             else
             {
