@@ -5,6 +5,9 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using VRGallery.UI;
+using UnityEngine.TestTools;
+using System.Text.RegularExpressions;
+
 
 public class AuthenticationUI_EditModeTests
 {
@@ -89,33 +92,38 @@ public class AuthenticationUI_EditModeTests
     }
 
     [Test]
-    public void ValidateRegisterInput_InvalidEmail_ShowsErrorAndReturnsFalse()
-    {
-        var root = new GameObject("AuthUIRoot");
-        var ui = root.AddComponent<AuthenticationUI>();
+public void ValidateRegisterInput_InvalidEmail_ShowsErrorAndReturnsFalse()
+{
+    var root = new GameObject("AuthUIRoot");
+    var ui = root.AddComponent<AuthenticationUI>();
 
-        var errorPanel = new GameObject("ErrorPanel");
-        var errorText = MakeTMPText("ErrorText");
+    var errorPanel = new GameObject("ErrorPanel");
+    var errorText = MakeTMPText("ErrorText");
 
-        var regEmail = MakeTMPInputField("RegEmail");
-        var regPass = MakeTMPInputField("RegPass");
-        var confirm = MakeTMPInputField("Confirm");
+    var regEmail = MakeTMPInputField("RegEmail");
+    var regPass = MakeTMPInputField("RegPass");
+    var confirm = MakeTMPInputField("Confirm");
 
-        SetPrivateField(ui, "errorPanel", errorPanel);
-        SetPrivateField(ui, "errorText", errorText);
+    SetPrivateField(ui, "errorPanel", errorPanel);
+    SetPrivateField(ui, "errorText", errorText);
 
-        SetPrivateField(ui, "registerEmailField", regEmail);
-        SetPrivateField(ui, "registerPasswordField", regPass);
-        SetPrivateField(ui, "confirmPasswordField", confirm);
+    SetPrivateField(ui, "registerEmailField", regEmail);
+    SetPrivateField(ui, "registerPasswordField", regPass);
+    SetPrivateField(ui, "confirmPasswordField", confirm);
 
-        regEmail.text = "not-an-email";
-        regPass.text = "123456";
-        confirm.text = "123456";
+    regEmail.text = "not-an-email";
+    regPass.text = "123456";
+    confirm.text = "123456";
 
-        var ok = (bool)CallPrivate(ui, "ValidateRegisterInput");
+    // Expect the log emitted by ShowError
+    LogAssert.Expect(LogType.Error, new Regex(@"\[AuthUI\] Please enter a valid email address"));
 
-        Assert.IsFalse(ok);
-        Assert.IsTrue(errorPanel.activeSelf);
-        Assert.AreEqual("Please enter a valid email address", errorText.text);
-    }
+    var ok = (bool)CallPrivate(ui, "ValidateRegisterInput");
+
+    Assert.IsFalse(ok);
+    Assert.IsTrue(errorPanel.activeSelf);
+    Assert.AreEqual("Please enter a valid email address", errorText.text);
+}
+
+    
 }
