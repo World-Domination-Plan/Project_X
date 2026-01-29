@@ -3428,7 +3428,17 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: '::'
   canvasPrefab: {fileID: 6675986418902653827, guid: 370bdc0574e664c8185d5c500fd90f64, type: 3}
-  spawnPoint: {fileID: 0}
+  playerHead: {fileID: 4607428429233221385}
+  spawnDistance: 1.5
+  heightOffset: -0.15
+  faceUser: 1
+  checkRadius: 0.25
+  pushStep: 0.3
+  maxPushTries: 8
+  overlapMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  testTexture: {fileID: 0}
 --- !u!4 &1212051091
 Transform:
   m_ObjectHideFlags: 0
