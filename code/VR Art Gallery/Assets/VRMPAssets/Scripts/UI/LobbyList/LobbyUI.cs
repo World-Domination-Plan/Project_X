@@ -10,6 +10,9 @@ namespace XRMultiplayer
 {
     public class LobbyUI : MonoBehaviour
     {
+        [Header("Testing")]
+        [SerializeField] bool m_TestMode = false;
+
         [Header("Lobby List")]
         [SerializeField] Transform m_LobbyListParent;
         [SerializeField] GameObject m_LobbyListPrefab;
@@ -46,7 +49,7 @@ namespace XRMultiplayer
 
         private void Start()
         {
-            m_PrivacyToggle.onValueChanged.AddListener(TogglePrivacy);
+            //m_PrivacyToggle.onValueChanged.AddListener(TogglePrivacy);
 
             m_PlayerCount = XRINetworkGameManager.maxPlayers / 2;
 
@@ -57,6 +60,75 @@ namespace XRMultiplayer
             {
                 Destroy(t.gameObject);
             }
+
+            // Create test lobby UI components
+            CreateTestLobbies();
+        }
+
+        // Testing method to create fake lobbies
+        void CreateTestLobbies()
+        {
+            if (!m_TestMode) return;
+
+            // Create multiple fake lobbies for testing
+            var fakeLobby1 = CreateFakeLobby("Testing Room 1", 2, 4);
+            var fakeLobby2 = CreateFakeLobby("VR Art Gallery", 4, 8);
+            var fakeLobby3 = CreateFakeLobby("Full Room", 6, 6);
+            var fakeLobby4 = CreateFakeLobby("Empty Room", 0, 4);
+
+            // Instantiate UI for each fake lobby
+            LobbyListSlotUI newLobbyUI1 = Instantiate(m_LobbyListPrefab, m_LobbyListParent).GetComponent<LobbyListSlotUI>();
+            newLobbyUI1.CreateLobbyUI(fakeLobby1, this);
+
+            LobbyListSlotUI newLobbyUI2 = Instantiate(m_LobbyListPrefab, m_LobbyListParent).GetComponent<LobbyListSlotUI>();
+            newLobbyUI2.CreateLobbyUI(fakeLobby2, this);
+
+            LobbyListSlotUI newLobbyUI3 = Instantiate(m_LobbyListPrefab, m_LobbyListParent).GetComponent<LobbyListSlotUI>();
+            newLobbyUI3.CreateLobbyUI(fakeLobby3, this);
+
+            LobbyListSlotUI newLobbyUI4 = Instantiate(m_LobbyListPrefab, m_LobbyListParent).GetComponent<LobbyListSlotUI>();
+            newLobbyUI4.CreateLobbyUI(fakeLobby4, this);
+
+            // Example of a non-joinable lobby
+            var fakeIncompatibleLobby = CreateFakeLobby("Old Version Room", 3, 6);
+            LobbyListSlotUI incompatibleLobbyUI = Instantiate(m_LobbyListPrefab, m_LobbyListParent).GetComponent<LobbyListSlotUI>();
+            incompatibleLobbyUI.CreateNonJoinableLobbyUI(fakeIncompatibleLobby, this, "Version Conflict");
+        }
+
+        // Helper method to create a fake lobby
+        Lobby CreateFakeLobby(string name, int currentPlayers, int maxPlayers)
+        {
+            var lobby = new Lobby(
+                id: System.Guid.NewGuid().ToString(),
+                lobbyCode: "TEST" + UnityEngine.Random.Range(1000, 9999),
+                name: name,
+                maxPlayers: maxPlayers,
+                availableSlots: maxPlayers - currentPlayers,
+                isPrivate: false,
+                isLocked: false,
+                hasPassword: false,
+                created: System.DateTime.UtcNow,
+                lastUpdated: System.DateTime.UtcNow,
+                hostId: "fake-host-id",
+                players: CreateFakePlayers(currentPlayers),
+                data: new System.Collections.Generic.Dictionary<string, DataObject>()
+            );
+
+            return lobby;
+        }
+
+        // Helper method to create fake player list
+        System.Collections.Generic.List<Player> CreateFakePlayers(int count)
+        {
+            var players = new System.Collections.Generic.List<Player>();
+            for (int i = 0; i < count; i++)
+            {
+                players.Add(new Player(
+                    id: $"player-{i}",
+                    data: new System.Collections.Generic.Dictionary<string, PlayerDataObject>()
+                ));
+            }
+            return players;
         }
 
         private void OnEnable()
@@ -78,6 +150,8 @@ namespace XRMultiplayer
         }
         public async void CheckInternetAsync()
         {
+            if (m_TestMode) return;
+
             if (!XRINetworkGameManager.Instance.IsAuthenticated())
             {
                 ToggleConnectionSubPanel(5);
@@ -235,6 +309,8 @@ namespace XRMultiplayer
 
         public void ShowLobbies()
         {
+            if (m_TestMode) return;
+
             GetAllLobbies();
             if (m_UpdateLobbiesRoutine != null) StopCoroutine(m_UpdateLobbiesRoutine);
             m_UpdateLobbiesRoutine = StartCoroutine(UpdateAvailableLobbies());
@@ -270,6 +346,7 @@ namespace XRMultiplayer
 
         async void GetAllLobbies()
         {
+            if (m_TestMode) return;
             if (m_CooldownImage.enabled || (int)XRINetworkGameManager.CurrentConnectionState.Value < 2) return;
             if (m_CooldownFillRoutine != null) StopCoroutine(m_CooldownFillRoutine);
             m_CooldownFillRoutine = StartCoroutine(UpdateButtonCooldown());
