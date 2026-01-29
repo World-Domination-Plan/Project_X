@@ -8,8 +8,8 @@ public class CanvasSpawner : MonoBehaviour
     [Header("Spawn transform")]
     public Transform spawnPoint;
 
-    [Header("Test image (optional override)")]
-    public Texture2D testTexture;
+    //[Header("Test image (optional override)")]
+    //public Texture2D testTexture;
 
     public void Create()
     {
@@ -25,7 +25,7 @@ public class CanvasSpawner : MonoBehaviour
         var go = Instantiate(canvasPrefab, pos, rot);
 
         // Find the Painting Display script inside the prefab instance
-        var display = go.GetComponentInChildren<PaintingDisplay>(true);
+        var display = go.GetComponentInChildren<Canvas>(true);
         if (!display)
         {
             Debug.LogError("[CanvasSpawner] No PaintingDisplay script found in prefab children.");
@@ -33,6 +33,6 @@ public class CanvasSpawner : MonoBehaviour
         }
 
         // If you want to override whatever is on the prefab:
-        if (testTexture) display.SetTexture(testTexture);
+        //if (testTexture) display.SetTexture(testTexture);
     }
 }

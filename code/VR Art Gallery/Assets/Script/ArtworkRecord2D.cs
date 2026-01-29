@@ -1,3 +1,4 @@
+/*
 [Serializable]
 public class ArtworkRecord2D
 {
@@ -8,3 +9,4 @@ public class ArtworkRecord2D
     public int storage_path;
     public string updated_at;
 }
+*/

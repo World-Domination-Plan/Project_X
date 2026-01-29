@@ -273,7 +273,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6609757802065446040, guid: 4e69ce8f2ac4f412da22845cadbe303e, type: 3}
       propertyPath: m_Name
-      value: Painting Display
+      value: PaintingDisplay
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

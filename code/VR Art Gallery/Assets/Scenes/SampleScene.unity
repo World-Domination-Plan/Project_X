@@ -3427,6 +3427,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5a2625bcd2fc54b879940c5eeb8d9550, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
+  canvasPrefab: {fileID: 6675986418902653827, guid: 370bdc0574e664c8185d5c500fd90f64, type: 3}
+  spawnPoint: {fileID: 0}
 --- !u!4 &1212051091
 Transform:
   m_ObjectHideFlags: 0
@@ -3849,7 +3851,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 1212051090}
         m_TargetAssemblyTypeName: CanvasSpawner, Assembly-CSharp
-        m_MethodName: 
+        m_MethodName: Create
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}

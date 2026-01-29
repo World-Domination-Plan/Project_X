@@ -1,5 +1,5 @@
 using UnityEngine;
-
+/*
 public class GalleryTester : MonoBehaviour
 {
     // Drag your Canvas Prefab (from the scene) here
@@ -22,3 +22,4 @@ public class GalleryTester : MonoBehaviour
         }
     }
 }
+*/
