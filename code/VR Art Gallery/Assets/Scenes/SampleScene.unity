@@ -3439,7 +3439,7 @@ MonoBehaviour:
   canvasPrefab: {fileID: 6675986418902653827, guid: 370bdc0574e664c8185d5c500fd90f64, type: 3}
   playerHead: {fileID: 4607428429233221385}
   spawnDistance: 1.5
-  heightOffset: -0.15
+  heightOffset: -1
   faceUser: 1
   checkRadius: 0.25
   pushStep: 0.3
