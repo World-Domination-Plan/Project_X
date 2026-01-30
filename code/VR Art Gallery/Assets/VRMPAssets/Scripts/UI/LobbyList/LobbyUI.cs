@@ -21,6 +21,14 @@ namespace XRMultiplayer
         [SerializeField] float m_AutoRefreshTime = 5.0f;
         [SerializeField] float m_RefreshCooldownTime = .5f;
 
+        [Header("Navigation Toggles & Panels")]
+        [SerializeField] private Toggle m_HomeToggle;
+        [SerializeField] private Toggle m_PrivateGalleriesToggle;
+        [SerializeField] private Toggle m_WorkspacesToggle;
+        [SerializeField] private GameObject m_HomePanel;
+        [SerializeField] private GameObject m_PrivateGalleriesPanel;
+        [SerializeField] private GameObject m_WorkspacesPanel;
+
         [Header("Connection Texts")]
         [SerializeField] TMP_Text m_ConnectionUpdatedText;
         [SerializeField] TMP_Text m_ConnectionSuccessText;
@@ -63,6 +71,27 @@ namespace XRMultiplayer
 
             // Create test lobby UI components
             CreateTestLobbies();
+
+            // Set up navigation toggles
+            m_HomeToggle.onValueChanged.AddListener((isOn) => { if (isOn) ShowPanel(PanelType.Home); });
+            m_PrivateGalleriesToggle.onValueChanged.AddListener((isOn) => { if (isOn) ShowPanel(PanelType.PrivateGalleries); });
+            m_WorkspacesToggle.onValueChanged.AddListener((isOn) => { if (isOn) ShowPanel(PanelType.Workspaces); });
+
+            // Show only the Home panel at start and set Home toggle on
+            m_HomeToggle.isOn = true;
+            m_PrivateGalleriesToggle.isOn = false;
+            m_WorkspacesToggle.isOn = false;
+            ShowPanel(PanelType.Home);
+
+        }
+
+        private enum PanelType { Home, PrivateGalleries, Workspaces }
+
+        private void ShowPanel(PanelType panel)
+        {
+            m_HomePanel.SetActive(panel == PanelType.Home);
+            m_PrivateGalleriesPanel.SetActive(panel == PanelType.PrivateGalleries);
+            m_WorkspacesPanel.SetActive(panel == PanelType.Workspaces);
         }
 
         // Testing method to create fake lobbies
