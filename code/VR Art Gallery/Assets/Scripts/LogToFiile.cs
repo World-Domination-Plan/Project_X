@@ -1,23 +1,17 @@
 using UnityEngine;
+using Unity.Services.CloudCode;
 using Unity.Services.Core;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
 public class CloudLogger : MonoBehaviour
 {
-    // Inject in tests
-    public ICloudCodeClient CloudCodeClient { get; set; }
-
-    // Let tests avoid UnityServices.InitializeAsync + global log hook
-    public bool AutoInitializeOnStart = true;
-
     async void Start()
     {
-        if (!AutoInitializeOnStart) return;
-
-        CloudCodeClient ??= new UnityCloudCodeClient();
-
+        // Initialize Unity Services
         await UnityServices.InitializeAsync();
+        
+        // Hook into Unity's log system
         Application.logMessageReceived += HandleLog;
     }
 
@@ -28,6 +22,7 @@ public class CloudLogger : MonoBehaviour
 
     private async void HandleLog(string logString, string stackTrace, LogType type)
     {
+        // Send log to Cloud Code
         await SendLogToCloudCode(logString, type.ToString());
     }
 
@@ -41,8 +36,10 @@ public class CloudLogger : MonoBehaviour
                 { "type", logType }
             };
 
-            CloudCodeClient ??= new UnityCloudCodeClient();
-            await CloudCodeClient.CallEndpointAsync("gamelogging", args);
+            await CloudCodeService.Instance.CallEndpointAsync(
+                "gamelogging",
+                args
+            );
         }
         catch (System.Exception e)
         {
@@ -50,4 +47,3 @@ public class CloudLogger : MonoBehaviour
         }
     }
 }
-

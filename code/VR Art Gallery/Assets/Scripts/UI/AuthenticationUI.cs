@@ -16,7 +16,6 @@ namespace VRGallery.UI
         [SerializeField] private GameObject registerPanel;
         [SerializeField] private GameObject authenticatedPanel;
         [SerializeField] private GameObject loadingPanel;
-        [SerializeField] private GameObject doorObject;
 
         [Header("Login UI")]
         [SerializeField] private TMP_InputField loginEmailField;
@@ -76,7 +75,6 @@ namespace VRGallery.UI
             else
             {
                 ShowLoginPanel();
-                doorObject.SetActive(true);
             }
         }
 
@@ -116,7 +114,6 @@ namespace VRGallery.UI
         private void HideAllPanels()
         {
             if (loginPanel) loginPanel.SetActive(false);
-            if (doorObject) doorObject.SetActive(false);
             if (registerPanel) registerPanel.SetActive(false);
             if (authenticatedPanel) authenticatedPanel.SetActive(false);
             if (loadingPanel) loadingPanel.SetActive(false);
