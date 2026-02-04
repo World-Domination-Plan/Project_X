@@ -1,15 +1,15 @@
 name: Unity CI - Run Tests on Push
 
 on:
-    push:
-        branches: [main, development, fix-pipeline]
-    pull_request:
-        branches: [main]
-    workflow_dispatch:
-        inputs:
-            environment_name:
-                description: dev or prod
-                required: false
+  push:
+    branches: [main, development]
+  pull_request:
+    branches: [main, development]
+  workflow_dispatch:
+    inputs:
+      environment_name:
+        description: dev or prod
+        required: false
 
 permissions:
   contents: read
@@ -67,7 +67,7 @@ jobs:
           artifactsPath: ${{ matrix.testMode }}-artifacts
           githubToken: ${{ secrets.GITHUB_TOKEN }}
           checkName: ${{ matrix.testMode }} Test Results
-          coverageOptions: 'generateAdditionalMetrics;generateHtmlReport;generateBadgeReport;assemblyFilters:+my.assembly.*'
+          coverageOptions: "generateAdditionalMetrics;generateHtmlReport;generateBadgeReport;assemblyFilters:+my.assembly.*"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -78,3 +78,4 @@ jobs:
         with:
           name: Coverage results for ${{ matrix.testMode }}
           path: ${{ steps.tests.outputs.coveragePath }}
+
