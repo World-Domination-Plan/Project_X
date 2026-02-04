@@ -1,18 +1,21 @@
 using UnityEngine;
 
 [DisallowMultipleComponent]
+[DefaultExecutionOrder(100)] // ensure RT exists before we seed it
 public class PaintingDisplayLocal : MonoBehaviour
 {
     [Header("Local image source")]
-    public Texture2D image;              // Assign in Inspector (recommended)
-    public string resourcesPath = "";    // Optional: "trailPhoto" if in Assets/Resources/trailPhoto.png
+    public Texture2D image;
+    public string resourcesPath = "";
 
     [Header("Target")]
-    public Renderer targetRenderer;      // Assign Painting Display's Renderer (or leave empty to auto-find)
+    public Renderer targetRenderer;
+
+    [Header("Integration")]
+    public bool useDrawableSurfaceIfPresent = true;
 
     private MaterialPropertyBlock _mpb;
 
-    // Works for Built-in (_MainTex) and URP (_BaseMap)
     private static readonly int MainTex = Shader.PropertyToID("_MainTex");
     private static readonly int BaseMap = Shader.PropertyToID("_BaseMap");
     private static readonly int ColorId = Shader.PropertyToID("_Color");
@@ -26,7 +29,6 @@ public class PaintingDisplayLocal : MonoBehaviour
 
     private void Start()
     {
-        // If not assigned in inspector, try Resources
         if (!image && !string.IsNullOrWhiteSpace(resourcesPath))
         {
             image = Resources.Load<Texture2D>(resourcesPath);
@@ -52,17 +54,19 @@ public class PaintingDisplayLocal : MonoBehaviour
             return;
         }
 
-        targetRenderer.GetPropertyBlock(_mpb);
+        // NEW: If we have a drawable RT surface, seed it (display stays correct + drawing will work)
+        if (useDrawableSurfaceIfPresent && TryGetComponent<PaintableSurfaceRT>(out var surface) && surface != null)
+        {
+            surface.SetBackground(tex);
+            return;
+        }
 
-        // Set both; the shader will use whichever exists
+        // Fallback: old behavior
+        targetRenderer.GetPropertyBlock(_mpb);
         _mpb.SetTexture(MainTex, tex);
         _mpb.SetTexture(BaseMap, tex);
-
-        // Make sure tint is white
         _mpb.SetColor(ColorId, Color.white);
         _mpb.SetColor(BaseColorId, Color.white);
-
         targetRenderer.SetPropertyBlock(_mpb);
     }
 }
-

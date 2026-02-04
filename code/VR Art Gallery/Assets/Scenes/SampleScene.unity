@@ -1487,6 +1487,7 @@ RectTransform:
   - {fileID: 3572130606852948574}
   - {fileID: 196684002}
   - {fileID: 1199207608}
+  - {fileID: 1271945688}
   m_Father: {fileID: 1976756591}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
@@ -2884,7 +2885,7 @@ RectTransform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 1006571512}
+  m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
@@ -3001,8 +3002,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1271945688}
-  - component: {fileID: 1271945690}
-  - component: {fileID: 1271945689}
   m_Layer: 5
   m_Name: Text
   m_TagString: Untagged
@@ -4059,15 +4058,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4964279142484738452, guid: 09dc757e762684c09903fcada323ce30, type: 3}
       propertyPath: m_AnchorMax.x
-      value: 0
+      value: 0.4949495
       objectReference: {fileID: 0}
     - target: {fileID: 4964279142484738452, guid: 09dc757e762684c09903fcada323ce30, type: 3}
       propertyPath: m_AnchorMax.y
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4964279142484738452, guid: 09dc757e762684c09903fcada323ce30, type: 3}
       propertyPath: m_AnchorMin.x
-      value: 0
+      value: 0.4949495
       objectReference: {fileID: 0}
     - target: {fileID: 4964279143189340573, guid: 09dc757e762684c09903fcada323ce30, type: 3}
       propertyPath: m_AnchorMax.x
@@ -10012,3 +10011,4 @@ SceneRoots:
   - {fileID: 428524700}
   - {fileID: 2139361620}
   - {fileID: 1212051091}
+  - {fileID: 1254417761}

@@ -647,6 +647,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: PaintingDisplay
       objectReference: {fileID: 0}
+    - target: {fileID: 6609757802065446040, guid: 4e69ce8f2ac4f412da22845cadbe303e, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     m_RemovedComponents:
     - {fileID: 7908843807992563919, guid: 4e69ce8f2ac4f412da22845cadbe303e, type: 3}
     m_RemovedGameObjects: []
@@ -655,6 +659,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 6609757802065446040, guid: 4e69ce8f2ac4f412da22845cadbe303e, type: 3}
       insertIndex: -1
       addedObject: {fileID: 7962246265358895109}
+    - targetCorrespondingSourceObject: {fileID: 6609757802065446040, guid: 4e69ce8f2ac4f412da22845cadbe303e, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 183615563853609627}
   m_SourcePrefab: {fileID: 100100000, guid: 4e69ce8f2ac4f412da22845cadbe303e, type: 3}
 --- !u!1 &2090609831786189303 stripped
 GameObject:
@@ -675,6 +682,28 @@ MonoBehaviour:
   m_EditorClassIdentifier: '::'
   image: {fileID: 2800000, guid: 6d30a121ea57d4a1b804fc5068a54cde, type: 3}
   resourcesPath: 
+  targetRenderer: {fileID: 7703906676689195422}
+  useDrawableSurfaceIfPresent: 1
+--- !u!114 &183615563853609627
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2090609831786189303}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6cedda5c430de4d7ba43a1ff6c868adc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PaintableSurfaceRT
+  mode: 0
+  resolution: 1024
+  clearColor: {r: 1, g: 1, b: 1, a: 1}
+  brushBlitMaterial: {fileID: 2100000, guid: 52fc0c9fe60fd43628067f4b46afee94, type: 2}
+  brushMask: {fileID: 0}
+  radius: 0.03
+  hardness: 0.7
+  brushColor: {r: 0, g: 0, b: 0, a: 1}
   targetRenderer: {fileID: 7703906676689195422}
 --- !u!23 &7703906676689195422 stripped
 MeshRenderer:
