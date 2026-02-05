@@ -9,9 +9,9 @@ using UnityEngine.Networking;
 public class SupabaseAuthManager : MonoBehaviour
 {
     // Replace these with your Supabase credentials
-    private string supabaseUrl = "https://YOUR_PROJECT_ID.supabase.co";
-    private string supabaseKey = "YOUR_SUPABASE_ANON_KEY";
-    private string tableName = "your_table_name"; // Replace with your table name
+    private string supabaseUrl = "https://jdorkglqkatydqxcgshu.supabase.co";
+    private string supabaseKey = "sb_publishable__CS5YpEcdfuUKljKCVjfQw_dPKw-gW1";
+    private string tableName = "artists"; // Replace with your table name
 
     async void Start()
     {
@@ -62,7 +62,7 @@ public class SupabaseAuthManager : MonoBehaviour
         string playerId = AuthenticationService.Instance.PlayerId;
         
         // Create your JSON data - modify these fields based on your Supabase table structure
-        string jsonData = $"{{\"unity_player_id\":\"{playerId}\",\"created_at\":\"{DateTime.UtcNow:yyyy-MM-ddTHH:mm:ssZ}\"}}";
+        string jsonData = $"{{\"user_id\":\"{playerId}\",\"created_at\":\"{DateTime.UtcNow:yyyy-MM-ddTHH:mm:ssZ}\", \"managed_gallary\": \"[]\"}}";
         
         // Convert JSON to bytes
         byte[] bodyRaw = Encoding.UTF8.GetBytes(jsonData);
