@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using Unity.Services.Lobbies.Models;
 using UnityEngine;
 using UnityEngine.UI;
@@ -14,7 +15,7 @@ namespace XRMultiplayer
         [SerializeField] bool m_TestMode = false;
 
         [Header("Lobby List")]
-        [SerializeField] Transform m_LobbyListParent;
+        [SerializeField] List<Transform> m_LobbyListParents = new List<Transform>();
         [SerializeField] GameObject m_LobbyListPrefab;
         [SerializeField] Button m_RefreshButton;
         [SerializeField] Image m_CooldownImage;
@@ -64,10 +65,7 @@ namespace XRMultiplayer
             XRINetworkGameManager.Instance.connectionFailedAction += FailedToConnect;
             XRINetworkGameManager.Instance.connectionUpdated += ConnectedUpdated;
 
-            foreach (Transform t in m_LobbyListParent)
-            {
-                Destroy(t.gameObject);
-            }
+            ClearLobbyParents();
 
             // Create test lobby UI components
             CreateTestLobbies();
@@ -106,22 +104,14 @@ namespace XRMultiplayer
             var fakeLobby4 = CreateFakeLobby("Empty Room", 0, 4);
 
             // Instantiate UI for each fake lobby
-            LobbyListSlotUI newLobbyUI1 = Instantiate(m_LobbyListPrefab, m_LobbyListParent).GetComponent<LobbyListSlotUI>();
-            newLobbyUI1.CreateLobbyUI(fakeLobby1, this);
-
-            LobbyListSlotUI newLobbyUI2 = Instantiate(m_LobbyListPrefab, m_LobbyListParent).GetComponent<LobbyListSlotUI>();
-            newLobbyUI2.CreateLobbyUI(fakeLobby2, this);
-
-            LobbyListSlotUI newLobbyUI3 = Instantiate(m_LobbyListPrefab, m_LobbyListParent).GetComponent<LobbyListSlotUI>();
-            newLobbyUI3.CreateLobbyUI(fakeLobby3, this);
-
-            LobbyListSlotUI newLobbyUI4 = Instantiate(m_LobbyListPrefab, m_LobbyListParent).GetComponent<LobbyListSlotUI>();
-            newLobbyUI4.CreateLobbyUI(fakeLobby4, this);
+            CreateLobbyUIForAllParents(fakeLobby1);
+            CreateLobbyUIForAllParents(fakeLobby2);
+            CreateLobbyUIForAllParents(fakeLobby3);
+            CreateLobbyUIForAllParents(fakeLobby4);
 
             // Example of a non-joinable lobby
             var fakeIncompatibleLobby = CreateFakeLobby("Old Version Room", 3, 6);
-            LobbyListSlotUI incompatibleLobbyUI = Instantiate(m_LobbyListPrefab, m_LobbyListParent).GetComponent<LobbyListSlotUI>();
-            incompatibleLobbyUI.CreateNonJoinableLobbyUI(fakeIncompatibleLobby, this, "Version Conflict");
+            CreateNonJoinableLobbyUIForAllParents(fakeIncompatibleLobby, "Version Conflict");
         }
 
         // Helper method to create a fake lobby
@@ -382,10 +372,7 @@ namespace XRMultiplayer
 
             QueryResponse lobbies = await LobbyManager.GetLobbiesAsync();
 
-            foreach (Transform t in m_LobbyListParent)
-            {
-                Destroy(t.gameObject);
-            }
+            ClearLobbyParents();
 
             if (lobbies.Results != null || lobbies.Results.Count > 0)
             {
@@ -398,17 +385,60 @@ namespace XRMultiplayer
 
                     if (LobbyManager.CheckForIncompatibilityFilter(lobby))
                     {
-                        LobbyListSlotUI newLobbyUI = Instantiate(m_LobbyListPrefab, m_LobbyListParent).GetComponent<LobbyListSlotUI>();
-                        newLobbyUI.CreateNonJoinableLobbyUI(lobby, this, "Version Conflict");
+                        CreateNonJoinableLobbyUIForAllParents(lobby, "Version Conflict");
                         continue;
                     }
 
                     if (LobbyManager.CanJoinLobby(lobby))
                     {
-                        LobbyListSlotUI newLobbyUI = Instantiate(m_LobbyListPrefab, m_LobbyListParent).GetComponent<LobbyListSlotUI>();
-                        newLobbyUI.CreateLobbyUI(lobby, this);
+                        CreateLobbyUIForAllParents(lobby);
                     }
                 }
+            }
+        }
+
+        IEnumerable<Transform> GetLobbyParents()
+        {
+            if (m_LobbyListParents == null || m_LobbyListParents.Count == 0)
+            {
+                yield break;
+            }
+
+            foreach (var parent in m_LobbyListParents)
+            {
+                if (parent != null)
+                {
+                    yield return parent;
+                }
+            }
+        }
+
+        void ClearLobbyParents()
+        {
+            foreach (var parent in GetLobbyParents())
+            {
+                foreach (Transform t in parent)
+                {
+                    Destroy(t.gameObject);
+                }
+            }
+        }
+
+        void CreateLobbyUIForAllParents(Lobby lobby)
+        {
+            foreach (var parent in GetLobbyParents())
+            {
+                LobbyListSlotUI newLobbyUI = Instantiate(m_LobbyListPrefab, parent).GetComponent<LobbyListSlotUI>();
+                newLobbyUI.CreateLobbyUI(lobby, this);
+            }
+        }
+
+        void CreateNonJoinableLobbyUIForAllParents(Lobby lobby, string reason)
+        {
+            foreach (var parent in GetLobbyParents())
+            {
+                LobbyListSlotUI newLobbyUI = Instantiate(m_LobbyListPrefab, parent).GetComponent<LobbyListSlotUI>();
+                newLobbyUI.CreateNonJoinableLobbyUI(lobby, this, reason);
             }
         }
     }
