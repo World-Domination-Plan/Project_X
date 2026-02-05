@@ -1,4 +1,5 @@
 using UnityEngine;
+
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
 #endif
@@ -6,13 +7,13 @@ using UnityEngine.InputSystem;
 public class XRPainterRayInput : MonoBehaviour
 {
     [Header("Ray")]
-    public Transform rayOrigin;              // assign controller ray origin (or leave empty = this transform)
+    public Transform rayOrigin;     // set to Right Hand/Aim Pose (recommended)
     public float maxDistance = 5f;
     public LayerMask paintMask;
 
 #if ENABLE_INPUT_SYSTEM
-    [Header("Input (XR)")]
-    public InputActionProperty drawAction;   // bind to XRI RightHand Interaction/Activate (or Select)
+    [Header("Input System")]
+    public InputActionProperty drawAction;   // bind to RightHand Activate/Select
 #endif
 
     Vector2 _lastUV;
@@ -37,18 +38,12 @@ public class XRPainterRayInput : MonoBehaviour
 #if ENABLE_INPUT_SYSTEM
         if (drawAction.action != null)
         {
-            // supports float trigger or button
-            if (drawAction.action.valueType == typeof(float))
-                return drawAction.action.ReadValue<float>() > 0.1f;
-            return drawAction.action.ReadValueAsButton();
+            // Works for trigger axis (0..1) and button (0/1)
+            return drawAction.action.ReadValue<float>() > 0.1f;
         }
 #endif
-#if UNITY_EDITOR
-        // fallback: hold left mouse to draw (useful for quick sanity checks)
+        // Fallback: hold left mouse for quick test
         return Input.GetMouseButton(0);
-#else
-        return false;
-#endif
     }
 
     void Update()
@@ -57,7 +52,8 @@ public class XRPainterRayInput : MonoBehaviour
 
         if (!IsDrawing()) { _hasLast = false; return; }
 
-        if (!Physics.Raycast(rayOrigin.position, rayOrigin.forward, out var hit, maxDistance, paintMask, QueryTriggerInteraction.Ignore))
+        if (!Physics.Raycast(rayOrigin.position, rayOrigin.forward, out var hit,
+                maxDistance, paintMask, QueryTriggerInteraction.Ignore))
         {
             _hasLast = false;
             return;
@@ -66,14 +62,14 @@ public class XRPainterRayInput : MonoBehaviour
         var surface = hit.collider.GetComponentInParent<PaintableSurfaceRT>();
         if (!surface) { _hasLast = false; return; }
 
-        // Mode must not be DisplayOnly
-        Vector2 uv = hit.textureCoord;
+        var uv = hit.textureCoord;
 
         if (_hasLast)
         {
             float dist = Vector2.Distance(_lastUV, uv);
             float step = Mathf.Max(0.0005f, surface.radius * 0.5f);
             int steps = Mathf.Clamp(Mathf.CeilToInt(dist / step), 1, 64);
+
             for (int s = 1; s <= steps; s++)
                 surface.TryPaintAt(Vector2.Lerp(_lastUV, uv, s / (float)steps));
         }
