@@ -46,6 +46,9 @@ public class XRPainterRayInput : MonoBehaviour
         return Input.GetMouseButton(0);
     }
 
+    //bool IsDrawing() => Input.GetMouseButton(0);
+
+/*
     void Update()
     {
         if (!rayOrigin) rayOrigin = transform;
@@ -78,7 +81,38 @@ public class XRPainterRayInput : MonoBehaviour
             surface.TryPaintAt(uv);
         }
 
+        if (hit.collider == null || !hit.collider.TryGetComponent<PaintableSurfaceRT>(out surface))
+        {
+            _hasLast = false;
+            return;
+        }
+
         _lastUV = uv;
         _hasLast = true;
     }
+*/
+    void Update()
+    {
+        if (!rayOrigin) rayOrigin = transform;
+
+        if (!IsDrawing()) return;
+
+        Debug.Log("DRAWING ON");
+        Debug.DrawRay(rayOrigin.position, rayOrigin.forward * maxDistance, Color.green);
+
+        if (!Physics.Raycast(rayOrigin.position, rayOrigin.forward, out var hit,
+                maxDistance, paintMask, QueryTriggerInteraction.Ignore))
+        {
+            Debug.Log("RAY MISS");
+            return;
+        }
+
+        Debug.Log($"HIT: {hit.collider.name}  layer={hit.collider.gameObject.layer}  uv={hit.textureCoord}");
+
+        var surface = hit.collider.GetComponentInParent<PaintableSurfaceRT>();
+        Debug.Log(surface ? $"FOUND PaintableSurfaceRT, mode={surface.mode}" : "NO PaintableSurfaceRT on hit object");
+
+        if (surface) surface.TryPaintAt(hit.textureCoord);
+    }
+
 }

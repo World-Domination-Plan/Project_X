@@ -1,58 +1,79 @@
-Shader "Custom/BrushBlit"
+Shader "Hidden/BrushBlit"
 {
-    Properties
-    {
-        [MainColor] _BaseColor("Base Color", Color) = (1, 1, 1, 1)
-        [MainTexture] _BaseMap("Base Map", 2D) = "white"
-    }
-
     SubShader
     {
-        Tags { "RenderType" = "Opaque" "RenderPipeline" = "UniversalPipeline" }
+        Tags { "RenderPipeline"="UniversalPipeline" "RenderType"="Opaque" }
 
         Pass
         {
-            HLSLPROGRAM
+            Name "BrushBlit"
+            ZTest Always
+            ZWrite Off
+            Cull Off
 
-            #pragma vertex vert
-            #pragma fragment frag
+            HLSLPROGRAM
+            #pragma vertex Vert
+            #pragma fragment Frag
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
             struct Attributes
             {
                 float4 positionOS : POSITION;
-                float2 uv : TEXCOORD0;
+                float2 uv         : TEXCOORD0;
             };
 
             struct Varyings
             {
                 float4 positionHCS : SV_POSITION;
-                float2 uv : TEXCOORD0;
+                float2 uv          : TEXCOORD0;
             };
 
-            TEXTURE2D(_BaseMap);
-            SAMPLER(sampler_BaseMap);
+            TEXTURE2D(_MainTex);
+            SAMPLER(sampler_MainTex);
 
-            CBUFFER_START(UnityPerMaterial)
-                half4 _BaseColor;
-                float4 _BaseMap_ST;
-            CBUFFER_END
+            TEXTURE2D(_BrushTex);
+            SAMPLER(sampler_BrushTex);
 
-            Varyings vert(Attributes IN)
+            float4 _BrushColor;
+            float4 _BrushParams; // (u, v, radiusUV, hardness)
+
+            Varyings Vert(Attributes IN)
             {
                 Varyings OUT;
-                OUT.positionHCS = TransformObjectToHClip(IN.positionOS.xyz);
-                OUT.uv = TRANSFORM_TEX(IN.uv, _BaseMap);
+                // For Graphics.Blit fullscreen quad: treat input XY as clip-space
+                OUT.positionHCS = float4(IN.positionOS.xy, 0.0, 1.0);
+                OUT.uv = IN.uv;
                 return OUT;
             }
 
-            half4 frag(Varyings IN) : SV_Target
+            float SoftCircle(float2 p, float2 c, float r, float h)
             {
-                half4 color = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, IN.uv) * _BaseColor;
-                return color;
+                float d = distance(p, c);
+                float inner = r * (1.0 - saturate(h));
+                return 1.0 - smoothstep(inner, r, d);
+            }
+
+            half4 Frag(Varyings IN) : SV_Target
+            {
+                float2 uv = IN.uv;
+                half4 baseCol = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, uv);
+
+                float2 c = _BrushParams.xy;
+                float  r = _BrushParams.z;
+                float  h = _BrushParams.w;
+
+                float a = SoftCircle(uv, c, r, h);
+
+                float2 local = (uv - c) / max(r, 1e-5) * 0.5 + 0.5;
+                half mask = SAMPLE_TEXTURE2D(_BrushTex, sampler_BrushTex, local).r;
+
+                half strength = (half)a * mask;
+                return lerp(baseCol, _BrushColor, strength);
             }
             ENDHLSL
         }
     }
+
+    Fallback Off
 }

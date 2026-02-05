@@ -11,12 +11,18 @@ public class PaintableSurfaceRT : MonoBehaviour
         DrawOverImage    // show background image and allow drawing over it
     }
 
+    [SerializeField] bool forceUniqueMaterialInstance = true;
+    [SerializeField] bool reapplyInLateUpdate = true;
+
+    Material _displayMat;
+
+
     [Header("Mode")]
     public SurfaceMode mode = SurfaceMode.DisplayOnly;
 
     [Header("Canvas")]
     public int resolution = 1024;
-    public Color clearColor = Color.white;
+    public Color clearColor = Color.magenta;
 
     [Header("Brush")]
     public Material brushBlitMaterial;   // Material using shader "Hidden/BrushBlit"
@@ -45,6 +51,17 @@ public class PaintableSurfaceRT : MonoBehaviour
         if (!targetRenderer) targetRenderer = GetComponent<Renderer>();
         _mpb = new MaterialPropertyBlock();
 
+        if (forceUniqueMaterialInstance)
+        {
+            _displayMat = new Material(targetRenderer.sharedMaterial);
+            targetRenderer.material = _displayMat;   // instance, not shared
+        }
+        else
+        {
+            _displayMat = targetRenderer.material;
+        }
+
+
         _a = CreateRT(resolution);
         _b = CreateRT(resolution);
 
@@ -71,6 +88,7 @@ public class PaintableSurfaceRT : MonoBehaviour
         RenderTexture.active = prev;
     }
 
+    /*
     void ApplyToRenderer(Texture tex)
     {
         targetRenderer.GetPropertyBlock(_mpb);
@@ -83,6 +101,20 @@ public class PaintableSurfaceRT : MonoBehaviour
 
         targetRenderer.SetPropertyBlock(_mpb);
     }
+    */
+    void ApplyToRenderer(Texture tex)
+    {   
+        if (!targetRenderer) return;
+        if (!_displayMat) _displayMat = targetRenderer.material;
+
+        // Bind texture directly on the material instance
+        if (_displayMat.HasProperty("_BaseMap")) _displayMat.SetTexture("_BaseMap", tex);
+        if (_displayMat.HasProperty("_MainTex")) _displayMat.SetTexture("_MainTex", tex);
+
+        if (_displayMat.HasProperty("_BaseColor")) _displayMat.SetColor("_BaseColor", Color.white);
+        if (_displayMat.HasProperty("_Color")) _displayMat.SetColor("_Color", Color.white);
+    }
+
 
     // --- Public API for your existing "display image" flow ---
 
@@ -125,12 +157,16 @@ public class PaintableSurfaceRT : MonoBehaviour
 
     // --- Painting entry point (call from your VR ray/brush script) ---
 
+    /*
     public bool TryPaintAt(Vector2 uv)
     {
         if (mode == SurfaceMode.DisplayOnly) return false;
         if (!brushBlitMaterial) return false;
 
-        brushBlitMaterial.SetTexture(BrushTex, brushMask);
+        var mask = brushMask ? brushMask : Texture2D.whiteTexture;
+        brushBlitMaterial.SetTexture(BrushTex, mask);
+
+        brushBlitMaterial.SetTexture(BrushTex, brushMask ? brushMask : Texture2D.whiteTexture);
         brushBlitMaterial.SetColor(BrushColorID, brushColor);
         brushBlitMaterial.SetVector(BrushParams, new Vector4(uv.x, uv.y, radius, hardness));
 
@@ -140,4 +176,22 @@ public class PaintableSurfaceRT : MonoBehaviour
         ApplyToRenderer(_a);
         return true;
     }
+    */
+    public bool TryPaintAt(Vector2 uv)
+    {
+        if (mode == SurfaceMode.DisplayOnly) return false;
+
+        // Hard test: fill the RT to black on every paint call
+        ClearRT(_a, Color.black);
+        ApplyToRenderer(_a);
+        return true;
+    }
+
+    void LateUpdate()
+    {
+        if (reapplyInLateUpdate && _a != null)
+            ApplyToRenderer(_a);
+    }
+
+
 }

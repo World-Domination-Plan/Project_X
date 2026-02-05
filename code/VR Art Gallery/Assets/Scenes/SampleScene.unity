@@ -998,6 +998,53 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!1 &377971805 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 950453447835223659, guid: 77ac6b10722bcca4a8baf70e44d89e78, type: 3}
+  m_PrefabInstance: {fileID: 4607428429233221380}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &377971808 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 9796533832151993, guid: 77ac6b10722bcca4a8baf70e44d89e78, type: 3}
+  m_PrefabInstance: {fileID: 4607428429233221380}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &377971812
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 377971805}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9d10493033b4347289831e2319f8891c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Scripts::XRPainterRayInput
+  rayOrigin: {fileID: 377971808}
+  maxDistance: 100
+  paintMask:
+    serializedVersion: 2
+    m_Bits: 256
+  drawAction:
+    m_UseReference: 0
+    m_Action:
+      m_Name: Draw
+      m_Type: 0
+      m_ExpectedControlType: 
+      m_Id: c0b0948f-1ca1-49bf-98eb-65015b94c79e
+      m_Processors: 
+      m_Interactions: 
+      m_SingletonActionBindings:
+      - m_Name: 
+        m_Id: 706fb2d2-5b72-45a7-a75e-048cfee25b13
+        m_Path: <Mouse>/leftButton
+        m_Interactions: Press
+        m_Processors: 
+        m_Groups: 
+        m_Action: Draw
+        m_Flags: 0
+      m_Flags: 0
+    m_Reference: {fileID: 0}
 --- !u!1 &385314721
 GameObject:
   m_ObjectHideFlags: 0
@@ -3040,13 +3087,13 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1295938974}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d10493033b4347289831e2319f8891c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Scripts::XRPainterRayInput
   rayOrigin: {fileID: 1522213039}
-  maxDistance: 5
+  maxDistance: 100
   paintMask:
     serializedVersion: 2
     m_Bits: 4294967295
@@ -3059,7 +3106,15 @@ MonoBehaviour:
       m_Id: 729efce7-2a18-45ba-b6a5-6f1cb9603bb7
       m_Processors: 
       m_Interactions: 
-      m_SingletonActionBindings: []
+      m_SingletonActionBindings:
+      - m_Name: 
+        m_Id: cd510716-481f-4c6f-ad56-2348ccc7e1e7
+        m_Path: <Mouse>/leftButton
+        m_Interactions: Press
+        m_Processors: 
+        m_Groups: 
+        m_Action: Draw
+        m_Flags: 0
       m_Flags: 0
     m_Reference: {fileID: 0}
 --- !u!114 &1300902887 stripped
@@ -8756,6 +8811,10 @@ PrefabInstance:
       propertyPath: m_Value
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 3738113659662771981, guid: 77ac6b10722bcca4a8baf70e44d89e78, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 4155537854260005700, guid: 77ac6b10722bcca4a8baf70e44d89e78, type: 3}
       propertyPath: m_AnchorMax.y
       value: 0
@@ -9096,6 +9155,9 @@ PrefabInstance:
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 950453447835223659, guid: 77ac6b10722bcca4a8baf70e44d89e78, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 377971812}
     - targetCorrespondingSourceObject: {fileID: 3951989357683216894, guid: 77ac6b10722bcca4a8baf70e44d89e78, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1295938980}
