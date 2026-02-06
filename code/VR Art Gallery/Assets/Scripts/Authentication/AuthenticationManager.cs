@@ -4,9 +4,9 @@ using Supabase.Gotrue;
 using System.Threading.Tasks;
 using System;
 using System.Collections.Generic;
-
 using Unity.Services.Authentication;
 using Unity.Services.Core;
+using VRGallery.Cloud;
 
 namespace VRGallery.Authentication
 {
@@ -16,21 +16,15 @@ namespace VRGallery.Authentication
     /// </summary>
     public class AuthenticationManager : MonoBehaviour
     {
-        [Header("Supabase Configuration")]
-        [SerializeField] private string supabaseUrl = "https://jdorkglqkatydqxcgshu.supabase.co";
-        [SerializeField] private string supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Impkb3JrZ2xxa2F0eWRxeGNnc2h1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM5ODk4NzcsImV4cCI6MjA3OTU2NTg3N30.cOeuchYm2_Ix3Kp61rUmWb5MBt7_nqE69fAX3pkeoK8";
-
         [Header("Debug")]
         [SerializeField] private bool enableDebugLogs = true;
 
         // Singleton pattern
         public static AuthenticationManager Instance { get; private set; }
 
-        // Supabase client
-        private Supabase.Client _supabaseClient;
-
         // Current user session
         public Session CurrentSession { get; private set; }
+        public Supabase.Client SupabaseClientInstance { get; private set; }
         public User CurrentUser => CurrentSession?.User;
         public bool IsAuthenticated => CurrentUser != null;
 
@@ -46,6 +40,9 @@ namespace VRGallery.Authentication
             {
                 Instance = this;
                 DontDestroyOnLoad(gameObject);
+                if (SupabaseClientManager.Instance == null) {
+                    await SupabaseClientManager.InitializeAsync();
+                }
                 InitializeSupabase();
             }
             else
@@ -58,22 +55,16 @@ namespace VRGallery.Authentication
         {
             try
             {
-                var options = new SupabaseOptions
-                {
-                    AutoConnectRealtime = false
-                };
-
-                _supabaseClient = new Supabase.Client(supabaseUrl, supabaseKey, options);
-                await _supabaseClient.InitializeAsync();
-
+                SupabaseClientInstance = SupabaseClientManager.Instance;
                 // Check for existing session
-                var session = _supabaseClient.Auth.CurrentSession;
+                var session = SupabaseClientInstance.Auth.CurrentSession;
                 if (session?.User != null)
                 {
                     CurrentSession = session;
                     OnUserLoggedIn?.Invoke(session.User);
                     LogDebug($"Restored session for user: {session.User.Email}");
                 }
+
 
                 LogDebug("Supabase authentication initialized successfully");
             }
@@ -95,7 +86,8 @@ namespace VRGallery.Authentication
             {
                 LogDebug($"Attempting to register user: {email}");
 
-                var response = await _supabaseClient.Auth.SignUp(email, password);
+                
+                var response = await SupabaseClientInstance.Auth.SignUp(email, password);
 
                 if (response?.User != null)
                 {
@@ -129,8 +121,8 @@ namespace VRGallery.Authentication
             try
             {
                 LogDebug($"Attempting to login user: {email}");
-
-                var response = await _supabaseClient.Auth.SignIn(email, password);
+                
+                var response = await SupabaseClientInstance.Auth.SignIn(email, password);
 
                 if (response?.User != null)
                 {
@@ -164,9 +156,9 @@ namespace VRGallery.Authentication
         /// </summary>
         public async Task<bool> LogoutUser()
         {
-            try
-            {
-                await _supabaseClient.Auth.SignOut();
+            try {
+                
+                await SupabaseClientInstance.Auth.SignOut();
                 CurrentSession = null;
                 OnUserLoggedOut?.Invoke();
                 LogDebug("User logged out successfully");
@@ -190,10 +182,11 @@ namespace VRGallery.Authentication
         public async Task<UserRole> GetUserRole(string userId)
         {
             try
-            {
-                LogDebug($"Getting role for user: {userId}");
+            {ebug($"Getting role for user: {userId}");
 
-                var response = await _supabaseClient
+                var client = SupabaseClientManager.Instance;
+                // var response = await c
+                var response = await SupabaseClientInstance
                     .From<UserProfile>()
                     .Where(x => x.Id == userId)
                     .Single();
@@ -236,7 +229,7 @@ namespace VRGallery.Authentication
                     Role = role.ToString()
                 };
 
-                await _supabaseClient
+                await SupabaseClientInstance
                     .From<UserProfile>()
                     .Upsert(profile);
 

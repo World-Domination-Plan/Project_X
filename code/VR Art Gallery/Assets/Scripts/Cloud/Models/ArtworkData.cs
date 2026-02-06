@@ -1,38 +1,38 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using Postgrest.Attributes;
+using Postgrest.Models;
 
 
+[Table("artwork")]
 [Serializable]
-public class ArtworkData
+public class ArtworkData : BaseModel
 {
-    public string id;
-    public string title;
-    public string ownerUserId;
-    public string galleryId;
+    [PrimaryKey("id")]
+    public string id { get; set; }
     
+    public string title { get; set; }
+    public string ownerUserId { get; set; }
+  
     // Image storage
-    public string imageUrl;        // Full resolution artwork
-    public string thumbnailUrl;    // Small preview (512x512)
+    public string imageUrl { get; set; }        // Full resolution artwork
+    public string thumbnailUrl { get; set; }    // Small preview (512x512)
     
     // Metadata
-    public int width;
-    public int height;
-    public long fileSizeBytes;
+    public long fileSizeBytes { get; set; }
     
     // Contributors (people who worked on this during session)
-    public List<string> contributorUserIds;
+    public List<string> contributorUserIds { get; set; }
     
     // Timestamps
-    public DateTime createdAt;
-    public DateTime updatedAt;
+    public DateTime createdAt { get; set; }
+    public DateTime updatedAt { get; set; }
     
     public ArtworkData()
     {
         id = Guid.NewGuid().ToString();
         contributorUserIds = new List<string>();
-        width = 2048;
-        height = 2048;
         createdAt = DateTime.UtcNow;
         updatedAt = DateTime.UtcNow;
     }
