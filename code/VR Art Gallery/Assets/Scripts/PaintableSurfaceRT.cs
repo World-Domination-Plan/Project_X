@@ -44,10 +44,15 @@ public class PaintableSurfaceRT : MonoBehaviour
 
     static readonly int BrushTex = Shader.PropertyToID("_BrushTex");
     static readonly int BrushColorID = Shader.PropertyToID("_BrushColor");
-    static readonly int BrushParams = Shader.PropertyToID("_BrushParams"); // u,v,r,h
+    static readonly int BrushParams = Shader.PropertyToID("_BrushParams");
+    static readonly int BaseMapST = Shader.PropertyToID("_BaseMap_ST"); // xy=tiling, zw=offset
+    static readonly int MainTexST = Shader.PropertyToID("_MainTex_ST");
+
 
     void Awake()
     {
+        //Debug.LogError($"[PaintableSurfaceRT] AWAKE on {name}, active={gameObject.activeInHierarchy}", this);
+
         if (!targetRenderer) targetRenderer = GetComponent<Renderer>();
         _mpb = new MaterialPropertyBlock();
 
@@ -70,6 +75,26 @@ public class PaintableSurfaceRT : MonoBehaviour
 
         ApplyToRenderer(_a);
     }
+    
+    void Start()
+    {
+        Debug.Log($"[PaintableSurfaceRT] {name} lossyScale={transform.lossyScale} localScale={transform.localScale}", this);
+        if (targetRenderer)
+            Debug.Log($"[PaintableSurfaceRT] renderer bounds(world)={targetRenderer.bounds.size}", this);
+
+        var mf = GetComponent<MeshFilter>();
+        if (mf && mf.sharedMesh)
+            Debug.Log($"[PaintableSurfaceRT] mesh bounds(local)={mf.sharedMesh.bounds.size}", this);
+
+        Debug.Log($"[PaintableSurfaceRT] path={GetPath(transform)}", this);
+    }
+
+    static string GetPath(Transform t)
+    {
+        var p = t.name;
+        while (t.parent != null) { t = t.parent; p = t.name + "/" + p; }
+        return p;
+    }
 
     RenderTexture CreateRT(int size)
     {
@@ -88,31 +113,23 @@ public class PaintableSurfaceRT : MonoBehaviour
         RenderTexture.active = prev;
     }
 
-    /*
     void ApplyToRenderer(Texture tex)
     {
+        if (!targetRenderer) return;
+
         targetRenderer.GetPropertyBlock(_mpb);
 
         _mpb.SetTexture(MainTex, tex);
         _mpb.SetTexture(BaseMap, tex);
 
+        // CRITICAL: remove any tiling/offset so RT covers whole plane
+        _mpb.SetVector(BaseMapST, new Vector4(1, 1, 0, 0));
+        _mpb.SetVector(MainTexST, new Vector4(1, 1, 0, 0));
+
         _mpb.SetColor(ColorId, Color.white);
         _mpb.SetColor(BaseColorId, Color.white);
 
         targetRenderer.SetPropertyBlock(_mpb);
-    }
-    */
-    void ApplyToRenderer(Texture tex)
-    {   
-        if (!targetRenderer) return;
-        if (!_displayMat) _displayMat = targetRenderer.material;
-
-        // Bind texture directly on the material instance
-        if (_displayMat.HasProperty("_BaseMap")) _displayMat.SetTexture("_BaseMap", tex);
-        if (_displayMat.HasProperty("_MainTex")) _displayMat.SetTexture("_MainTex", tex);
-
-        if (_displayMat.HasProperty("_BaseColor")) _displayMat.SetColor("_BaseColor", Color.white);
-        if (_displayMat.HasProperty("_Color")) _displayMat.SetColor("_Color", Color.white);
     }
 
 
@@ -157,14 +174,10 @@ public class PaintableSurfaceRT : MonoBehaviour
 
     // --- Painting entry point (call from your VR ray/brush script) ---
 
-    /*
     public bool TryPaintAt(Vector2 uv)
     {
         if (mode == SurfaceMode.DisplayOnly) return false;
         if (!brushBlitMaterial) return false;
-
-        var mask = brushMask ? brushMask : Texture2D.whiteTexture;
-        brushBlitMaterial.SetTexture(BrushTex, mask);
 
         brushBlitMaterial.SetTexture(BrushTex, brushMask ? brushMask : Texture2D.whiteTexture);
         brushBlitMaterial.SetColor(BrushColorID, brushColor);
@@ -176,7 +189,9 @@ public class PaintableSurfaceRT : MonoBehaviour
         ApplyToRenderer(_a);
         return true;
     }
-    */
+
+    
+    /*
     public bool TryPaintAt(Vector2 uv)
     {
         if (mode == SurfaceMode.DisplayOnly) return false;
@@ -186,6 +201,7 @@ public class PaintableSurfaceRT : MonoBehaviour
         ApplyToRenderer(_a);
         return true;
     }
+    */
 
     void LateUpdate()
     {

@@ -2,18 +2,20 @@ using UnityEngine;
 
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.Controls;
 #endif
 
 public class XRPainterRayInput : MonoBehaviour
 {
     [Header("Ray")]
-    public Transform rayOrigin;     // set to Right Hand/Aim Pose (recommended)
+    public Transform rayOrigin;     // assign Aim Pose if you have one
     public float maxDistance = 5f;
-    public LayerMask paintMask;
+    public LayerMask paintMask = ~0; // default: Everything
 
 #if ENABLE_INPUT_SYSTEM
     [Header("Input System")]
     public InputActionProperty drawAction;   // bind to RightHand Activate/Select
+    public bool mouseFallback = true;        // for editor testing
 #endif
 
     Vector2 _lastUV;
@@ -36,24 +38,37 @@ public class XRPainterRayInput : MonoBehaviour
     bool IsDrawing()
     {
 #if ENABLE_INPUT_SYSTEM
+        // Primary: XR action
         if (drawAction.action != null)
         {
-            // Works for trigger axis (0..1) and button (0/1)
+            // Robust for both button + axis
+            var ctrl = drawAction.action.activeControl;
+            if (ctrl is ButtonControl bc) return bc.isPressed;
             return drawAction.action.ReadValue<float>() > 0.1f;
         }
+
+        // Optional editor fallback (Input System mouse, not UnityEngine.Input)
+        if (mouseFallback && Mouse.current != null)
+            return Mouse.current.leftButton.isPressed;
+
+        return false;
+#else
+        return false;
 #endif
-        // Fallback: hold left mouse for quick test
-        return Input.GetMouseButton(0);
     }
 
-    //bool IsDrawing() => Input.GetMouseButton(0);
-
-/*
     void Update()
     {
         if (!rayOrigin) rayOrigin = transform;
 
-        if (!IsDrawing()) { _hasLast = false; return; }
+        // If you forgot to set a mask, don’t silently fail
+        if (paintMask.value == 0) paintMask = ~0;
+
+        if (!IsDrawing())
+        {
+            _hasLast = false;
+            return;
+        }
 
         if (!Physics.Raycast(rayOrigin.position, rayOrigin.forward, out var hit,
                 maxDistance, paintMask, QueryTriggerInteraction.Ignore))
@@ -63,13 +78,20 @@ public class XRPainterRayInput : MonoBehaviour
         }
 
         var surface = hit.collider.GetComponentInParent<PaintableSurfaceRT>();
-        if (!surface) { _hasLast = false; return; }
+        if (!surface)
+        {
+            _hasLast = false;
+            return;
+        }
 
-        var uv = hit.textureCoord;
+        Vector2 uv = hit.textureCoord;
 
+        // Interpolate between last UV and current UV to avoid gaps
         if (_hasLast)
         {
             float dist = Vector2.Distance(_lastUV, uv);
+
+            // surface.radius is UV-space (0..1). Step at half radius.
             float step = Mathf.Max(0.0005f, surface.radius * 0.5f);
             int steps = Mathf.Clamp(Mathf.CeilToInt(dist / step), 1, 64);
 
@@ -81,38 +103,7 @@ public class XRPainterRayInput : MonoBehaviour
             surface.TryPaintAt(uv);
         }
 
-        if (hit.collider == null || !hit.collider.TryGetComponent<PaintableSurfaceRT>(out surface))
-        {
-            _hasLast = false;
-            return;
-        }
-
         _lastUV = uv;
         _hasLast = true;
     }
-*/
-    void Update()
-    {
-        if (!rayOrigin) rayOrigin = transform;
-
-        if (!IsDrawing()) return;
-
-        Debug.Log("DRAWING ON");
-        Debug.DrawRay(rayOrigin.position, rayOrigin.forward * maxDistance, Color.green);
-
-        if (!Physics.Raycast(rayOrigin.position, rayOrigin.forward, out var hit,
-                maxDistance, paintMask, QueryTriggerInteraction.Ignore))
-        {
-            Debug.Log("RAY MISS");
-            return;
-        }
-
-        Debug.Log($"HIT: {hit.collider.name}  layer={hit.collider.gameObject.layer}  uv={hit.textureCoord}");
-
-        var surface = hit.collider.GetComponentInParent<PaintableSurfaceRT>();
-        Debug.Log(surface ? $"FOUND PaintableSurfaceRT, mode={surface.mode}" : "NO PaintableSurfaceRT on hit object");
-
-        if (surface) surface.TryPaintAt(hit.textureCoord);
-    }
-
 }
