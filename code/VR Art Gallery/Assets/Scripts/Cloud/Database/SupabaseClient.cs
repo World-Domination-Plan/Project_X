@@ -58,7 +58,7 @@ namespace VRGallery.Cloud
             try
             {
                 // Load environment variables from .env file
-                DotEnv.Load(options: new DotEnvOptions(envFilePath: "Assets/Scripts/.env"));
+                DotEnv.Load(options: new DotEnvOptions(envFilePaths: new[] { "Assets/Scripts/.env" }));
 
                 var supabaseUrl = System.Environment.GetEnvironmentVariable("SUPABASE_URL");
                 var supabaseKey = System.Environment.GetEnvironmentVariable("SUPABASE_KEY");

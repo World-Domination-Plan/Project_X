@@ -14,6 +14,9 @@ public class ArtworkData : BaseModel
     
     public string title { get; set; }
     public string ownerUserId { get; set; }
+    
+    // Optional gallery association
+    public string galleryId { get; set; }
   
     // Image storage
     public string imageUrl { get; set; }        // Full resolution artwork

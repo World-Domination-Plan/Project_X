@@ -9,18 +9,18 @@ public class SupabaseArtworkRepository : IArtworkRepository
     private const string TableName = "artwork";
     public Supabase.Client SupabaseClientInstance { get; private set; }
 
-    public SupabaseArtworkRepository()
+    private SupabaseArtworkRepository(Supabase.Client client)
     {
-        TableName = TableName.ToLower();
-        SupabaseClientInstance = SupabaseClientManager.Instance;
+        SupabaseClientInstance = client;
     }
 
-    private void Awake()
+    public static async Task<SupabaseArtworkRepository> CreateAsync()
     {
-        if (SupabaseClientManager.Instance == null) {
+        if (SupabaseClientManager.Instance == null)
+        {
             await SupabaseClientManager.InitializeAsync();
         }
-        SupabaseClientInstance = SupabaseClientManager.Instance;
+        return new SupabaseArtworkRepository(SupabaseClientManager.Instance);
     }
     
     public async Task<ArtworkData> CreateArtworkAsync(ArtworkData artwork)

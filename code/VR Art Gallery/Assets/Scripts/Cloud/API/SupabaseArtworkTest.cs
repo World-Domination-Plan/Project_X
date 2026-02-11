@@ -23,15 +23,8 @@ public class SupabaseArtworkTest : MonoBehaviour
 
         try
         {
-            // Initialize the Supabase client if not already done
-            if (!SupabaseClientManager.IsInitialized)
-            {
-                Debug.Log("[SupabaseArtworkTest] Initializing Supabase client...");
-                await SupabaseClientManager.InitializeAsync();
-            }
-
-            // Create repository instance
-            _repository = new SupabaseArtworkRepository();
+            // Create repository instance (handles initialization internally)
+            _repository = await SupabaseArtworkRepository.CreateAsync();
             Debug.Log("[SupabaseArtworkTest] Repository created successfully");
 
             // Create test artwork
@@ -74,12 +67,7 @@ public class SupabaseArtworkTest : MonoBehaviour
 
         try
         {
-            if (!SupabaseClientManager.IsInitialized)
-            {
-                await SupabaseClientManager.InitializeAsync();
-            }
-
-            _repository = new SupabaseArtworkRepository();
+            _repository = await SupabaseArtworkRepository.CreateAsync();
 
             var testArtwork = new ArtworkData
             {

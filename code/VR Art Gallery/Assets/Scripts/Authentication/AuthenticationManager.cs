@@ -40,9 +40,6 @@ namespace VRGallery.Authentication
             {
                 Instance = this;
                 DontDestroyOnLoad(gameObject);
-                if (SupabaseClientManager.Instance == null) {
-                    await SupabaseClientManager.InitializeAsync();
-                }
                 InitializeSupabase();
             }
             else
@@ -55,6 +52,9 @@ namespace VRGallery.Authentication
         {
             try
             {
+                if (SupabaseClientManager.Instance == null) {
+                    await SupabaseClientManager.InitializeAsync();
+                }
                 SupabaseClientInstance = SupabaseClientManager.Instance;
                 // Check for existing session
                 var session = SupabaseClientInstance.Auth.CurrentSession;
@@ -182,7 +182,7 @@ namespace VRGallery.Authentication
         public async Task<UserRole> GetUserRole(string userId)
         {
             try
-            {ebug($"Getting role for user: {userId}");
+            {LogDebug($"Getting role for user: {userId}");
 
                 var client = SupabaseClientManager.Instance;
                 // var response = await c
