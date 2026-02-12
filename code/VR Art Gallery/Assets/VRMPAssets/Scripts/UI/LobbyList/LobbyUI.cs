@@ -194,13 +194,17 @@ namespace XRMultiplayer
         public void CreateLobby()
         {
             XRINetworkGameManager.Connected.Subscribe(OnConnected);
+
             if (m_RoomNameText.text.IsNullOrEmpty() || m_RoomNameText.text == "<Room Name>")
             {
                 m_RoomNameText.text = $"{XRINetworkGameManager.LocalPlayerName.Value}'s Room";
             }
+
             XRINetworkGameManager.Instance.CreateNewLobby(m_RoomNameText.text, m_Private, m_PlayerCount);
+
             m_ConnectionSuccessText.text = $"Joining {m_RoomNameText.text}";
         }
+
 
         public void UpdatePlayerCount(int count)
         {
