@@ -78,16 +78,25 @@ public class PaintableSurfaceRT : MonoBehaviour
     
     void Start()
     {
-        Debug.Log($"[PaintableSurfaceRT] {name} lossyScale={transform.lossyScale} localScale={transform.localScale}", this);
-        if (targetRenderer)
-            Debug.Log($"[PaintableSurfaceRT] renderer bounds(world)={targetRenderer.bounds.size}", this);
-
         var mf = GetComponent<MeshFilter>();
         if (mf && mf.sharedMesh)
-            Debug.Log($"[PaintableSurfaceRT] mesh bounds(local)={mf.sharedMesh.bounds.size}", this);
-
-        Debug.Log($"[PaintableSurfaceRT] path={GetPath(transform)}", this);
+        {
+            var uvs = mf.sharedMesh.uv;
+            Vector2 min = new Vector2(float.MaxValue, float.MaxValue);
+            Vector2 max = new Vector2(float.MinValue, float.MinValue);
+            
+            foreach (var uv in uvs)
+            {
+                min.x = Mathf.Min(min.x, uv.x);
+                min.y = Mathf.Min(min.y, uv.y);
+                max.x = Mathf.Max(max.x, uv.x);
+                max.y = Mathf.Max(max.y, uv.y);
+            }
+            
+            Debug.Log($"[PaintableSurfaceRT] UV range: min={min}, max={max}", this);
+        }
     }
+
 
     static string GetPath(Transform t)
     {
@@ -115,22 +124,18 @@ public class PaintableSurfaceRT : MonoBehaviour
 
     void ApplyToRenderer(Texture tex)
     {
-        if (!targetRenderer) return;
+        if (!targetRenderer || !_displayMat) return;
 
-        targetRenderer.GetPropertyBlock(_mpb);
-
-        _mpb.SetTexture(MainTex, tex);
-        _mpb.SetTexture(BaseMap, tex);
-
-        // CRITICAL: remove any tiling/offset so RT covers whole plane
-        _mpb.SetVector(BaseMapST, new Vector4(1, 1, 0, 0));
-        _mpb.SetVector(MainTexST, new Vector4(1, 1, 0, 0));
-
-        _mpb.SetColor(ColorId, Color.white);
-        _mpb.SetColor(BaseColorId, Color.white);
-
-        targetRenderer.SetPropertyBlock(_mpb);
+        _displayMat.SetTexture(MainTex, tex);
+        _displayMat.SetTexture(BaseMap, tex);
+        _displayMat.SetTextureScale("_BaseMap", Vector2.one);
+        _displayMat.SetTextureOffset("_BaseMap", Vector2.zero);
+        _displayMat.SetColor(ColorId, Color.white);
+        _displayMat.SetColor(BaseColorId, Color.white);
+        
+        // No property block needed since we're using instanced material
     }
+
 
 
     // --- Public API for your existing "display image" flow ---

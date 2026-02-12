@@ -1,79 +1,78 @@
 Shader "Hidden/BrushBlit"
 {
+    Properties
+    {
+        _MainTex ("Texture", 2D) = "white" {}
+        _BrushTex ("Brush", 2D) = "white" {}
+        _BrushColor ("Brush Color", Color) = (1,0,0,1)
+        _BrushParams ("Brush Params", Vector) = (0.5, 0.5, 0.05, 0.8)
+    }
+    
     SubShader
     {
-        Tags { "RenderPipeline"="UniversalPipeline" "RenderType"="Opaque" }
-
+        Tags { "RenderType"="Opaque" }
+        ZTest Always ZWrite Off Cull Off
+        
         Pass
         {
-            Name "BrushBlit"
-            ZTest Always
-            ZWrite Off
-            Cull Off
+            CGPROGRAM
+            #pragma vertex vert
+            #pragma fragment frag
+            #include "UnityCG.cginc"
 
-            HLSLPROGRAM
-            #pragma vertex Vert
-            #pragma fragment Frag
-
-            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
-
-            struct Attributes
+            struct appdata
             {
-                float4 positionOS : POSITION;
-                float2 uv         : TEXCOORD0;
+                float4 vertex : POSITION;
+                float2 uv : TEXCOORD0;
             };
 
-            struct Varyings
+            struct v2f
             {
-                float4 positionHCS : SV_POSITION;
-                float2 uv          : TEXCOORD0;
+                float2 uv : TEXCOORD0;
+                float4 vertex : SV_POSITION;
             };
 
-            TEXTURE2D(_MainTex);
-            SAMPLER(sampler_MainTex);
-
-            TEXTURE2D(_BrushTex);
-            SAMPLER(sampler_BrushTex);
-
+            sampler2D _MainTex;
+            sampler2D _BrushTex;
             float4 _BrushColor;
-            float4 _BrushParams; // (u, v, radiusUV, hardness)
+            float4 _BrushParams; // xy=center UV, z=radius, w=hardness
 
-            Varyings Vert(Attributes IN)
+            v2f vert (appdata v)
             {
-                Varyings OUT;
-                // For Graphics.Blit fullscreen quad: treat input XY as clip-space
-                OUT.positionHCS = float4(IN.positionOS.xy, 0.0, 1.0);
-                OUT.uv = IN.uv;
-                return OUT;
+                v2f o;
+                o.vertex = UnityObjectToClipPos(v.vertex);
+                o.uv = v.uv;
+                return o;
             }
 
-            float SoftCircle(float2 p, float2 c, float r, float h)
+            fixed4 frag (v2f i) : SV_Target
             {
-                float d = distance(p, c);
-                float inner = r * (1.0 - saturate(h));
-                return 1.0 - smoothstep(inner, r, d);
+                float2 brushCenter = _BrushParams.xy;
+                float brushRadius = _BrushParams.z;
+                float hardness = _BrushParams.w;
+                
+                float2 diff = i.uv - brushCenter;
+                float dist = length(diff);
+                
+                fixed4 canvas = tex2D(_MainTex, i.uv);
+                
+                if (dist < brushRadius)
+                {
+                    // Sample brush texture (if provided)
+                    float2 brushUV = (diff / brushRadius) * 0.5 + 0.5;
+                    float brushMask = tex2D(_BrushTex, brushUV).a;
+                    
+                    // Apply hardness falloff
+                    float falloff = 1.0 - smoothstep(brushRadius * hardness, brushRadius, dist);
+                    float influence = brushMask * falloff;
+                    
+                    // Blend with brush color
+                    return lerp(canvas, _BrushColor, influence);
+                }
+                
+                return canvas;
             }
-
-            half4 Frag(Varyings IN) : SV_Target
-            {
-                float2 uv = IN.uv;
-                half4 baseCol = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, uv);
-
-                float2 c = _BrushParams.xy;
-                float  r = _BrushParams.z;
-                float  h = _BrushParams.w;
-
-                float a = SoftCircle(uv, c, r, h);
-
-                float2 local = (uv - c) / max(r, 1e-5) * 0.5 + 0.5;
-                half mask = SAMPLE_TEXTURE2D(_BrushTex, sampler_BrushTex, local).r;
-
-                half strength = (half)a * mask;
-                return lerp(baseCol, _BrushColor, strength);
-            }
-            ENDHLSL
+            ENDCG
         }
     }
-
-    Fallback Off
 }
