@@ -3011,13 +3011,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cfb9eb35fb5a643c0b3ab28149f6b460, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SupabaseAuthManager
-  supabaseUrl: https://jdorkglqkatydqxcgshu.supabase.co
-  supabaseAnonKey: sb_publishable__CS5YpEcdfuUKljKCVjfQw_dPKw-gW1
+  configFileName: supabase.json
   artistsTable: artists
   runDevTestOnStart: 1
-  testEmail: test2@example.com
+  testEmail: test3@example.com
   testPassword: password123
-  testUsername: user123456
+  testUsername: user1234567
   restoreSessionOnStart: 1
 --- !u!4 &1407007390
 Transform:
