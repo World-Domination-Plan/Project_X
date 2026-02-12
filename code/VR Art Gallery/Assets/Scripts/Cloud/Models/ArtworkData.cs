@@ -13,30 +13,22 @@ public class ArtworkData : BaseModel
     public string id { get; set; }
     
     public string title { get; set; }
-    public string ownerUserId { get; set; }
-    
-    // Optional gallery association
-    public string galleryId { get; set; }
+    public int owner_id { get; set; }
   
     // Image storage
-    public string imageUrl { get; set; }        // Full resolution artwork
-    public string thumbnailUrl { get; set; }    // Small preview (512x512)
+    public string image_url { get; set; }        // Full resolution artwork
+    public string thumbnail_url { get; set; }    // Small preview (512x512)
     
     // Metadata
-    public long fileSizeBytes { get; set; }
-    
-    // Contributors (people who worked on this during session)
-    public List<string> contributorUserIds { get; set; }
+    public long filesize_bytes { get; set; }
     
     // Timestamps
-    public DateTime createdAt { get; set; }
-    public DateTime updatedAt { get; set; }
+    public DateTime created_at { get; set; }
+    public DateTime updated_at { get; set; }
     
     public ArtworkData()
     {
-        id = Guid.NewGuid().ToString();
-        contributorUserIds = new List<string>();
-        createdAt = DateTime.UtcNow;
-        updatedAt = DateTime.UtcNow;
+        created_at = DateTime.UtcNow;
+        updated_at = DateTime.UtcNow;
     }
 }

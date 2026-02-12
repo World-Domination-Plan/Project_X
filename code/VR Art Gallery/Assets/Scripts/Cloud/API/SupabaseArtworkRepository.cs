@@ -27,15 +27,9 @@ public class SupabaseArtworkRepository : IArtworkRepository
     {
         try
         {
-            // Generate a unique ID if not provided
-            if (string.IsNullOrEmpty(artwork.id))
-            {
-                artwork.id = Guid.NewGuid().ToString();
-            }
-            
             // Set timestamps
-            artwork.createdAt = DateTime.UtcNow;
-            artwork.updatedAt = DateTime.UtcNow;
+            artwork.created_at = DateTime.UtcNow;
+            artwork.updated_at = DateTime.UtcNow;
             
             // Insert into Supabase
            

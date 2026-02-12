@@ -21,10 +21,9 @@ public class ArtworkRepositoryTests
         var artwork = new ArtworkData
         {
             title = "Test Artwork",
-            ownerUserId = "user123",
-            imageUrl = "testurl",
-            thumbnailUrl = "thumbnailurl",
-            galleryId = "galleryId"
+            owner_id = 1,
+            image_url = "testurl",
+            thumbnail_url = "thumbnailurl"
         };
         
         // Act
@@ -42,10 +41,9 @@ public class ArtworkRepositoryTests
         var artwork = new ArtworkData
         {
             title = "Test Artwork",
-            ownerUserId = "user123",
-            imageUrl = "testurl",
-            thumbnailUrl = "thumbnailurl",
-            galleryId = "galleryId"
+            owner_id = 1,
+            image_url = "testurl",
+            thumbnail_url = "thumbnailurl"
         };
         var created = await repository.CreateArtworkAsync(artwork);
         
@@ -56,10 +54,9 @@ public class ArtworkRepositoryTests
         Assert.IsNotNull(retrieved);
         Assert.AreEqual(created.id, retrieved.id);
         Assert.AreEqual(created.title, retrieved.title);
-        Assert.AreEqual(created.ownerUserId, retrieved.ownerUserId);
-        Assert.AreEqual(created.imageUrl, retrieved.imageUrl);
-        Assert.AreEqual(created.thumbnailUrl, retrieved.thumbnailUrl);
-        Assert.AreEqual(created.galleryId, retrieved.galleryId);
+        Assert.AreEqual(created.owner_id, retrieved.owner_id);
+        Assert.AreEqual(created.image_url, retrieved.image_url);
+        Assert.AreEqual(created.thumbnail_url, retrieved.thumbnail_url);
     }
     
     [Test]
