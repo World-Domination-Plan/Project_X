@@ -10,7 +10,7 @@ using Postgrest.Models;
 public class ArtworkData : BaseModel
 {
     [PrimaryKey("id")]
-    public string id { get; set; }
+    public int id { get; set; }
     
     public string title { get; set; }
     public int owner_id { get; set; }

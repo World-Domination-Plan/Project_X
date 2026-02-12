@@ -46,7 +46,7 @@ public class SupabaseArtworkRepository : IArtworkRepository
         }
     }
     
-    public async Task<ArtworkData> GetArtworkAsync(string id)
+    public async Task<ArtworkData> GetArtworkAsync(int id)
     {
         try
         {

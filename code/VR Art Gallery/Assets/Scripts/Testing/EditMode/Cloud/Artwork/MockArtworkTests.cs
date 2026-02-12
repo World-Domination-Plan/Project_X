@@ -3,15 +3,16 @@ using System.Threading.Tasks;
 
 public class MockArtworkRepository : IArtworkRepository
 {
-    private Dictionary<string, ArtworkData> artworks = new Dictionary<string, ArtworkData>();
+    private Dictionary<int, ArtworkData> artworks = new Dictionary<int, ArtworkData>();
     
     public Task<ArtworkData> CreateArtworkAsync(ArtworkData artwork)
     {
+        artwork.id = artworks.Count;
         artworks[artwork.id] = artwork;
         return Task.FromResult(artwork);
     }
     
-    public Task<ArtworkData> GetArtworkAsync(string id)
+    public Task<ArtworkData> GetArtworkAsync(int id)
     {
         if (artworks.TryGetValue(id, out var artwork))
         {

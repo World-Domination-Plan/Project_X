@@ -30,7 +30,6 @@ public class SupabaseArtworkTest : MonoBehaviour
             // Create test artwork
             var testArtwork = new ArtworkData
             {
-                id = System.Guid.NewGuid().ToString(),
                 title = testArtworkTitle,
                 owner_id = testOwnerUserId,
                 image_url = "https://example.com/test-image.png",

@@ -15,26 +15,6 @@ public class ArtworkRepositoryTests
     }
     
     [Test]
-    public async Task CreateArtwork_ShouldGenerateUniqueId()
-    {
-        // Arrange
-        var artwork = new ArtworkData
-        {
-            title = "Test Artwork",
-            owner_id = 1,
-            image_url = "testurl",
-            thumbnail_url = "thumbnailurl"
-        };
-        
-        // Act
-        var created = await repository.CreateArtworkAsync(artwork);
-        
-        // Assert
-        Assert.IsNotNull(created.id);
-        Assert.IsNotEmpty(created.id);
-    }
-    
-    [Test]
     public async Task GetArtwork_ShouldReturnCreatedArtwork()
     {
         // Arrange
@@ -63,7 +43,7 @@ public class ArtworkRepositoryTests
     public async Task GetArtwork_WithInvalidId_ShouldReturnNull()
     {
         // Act
-        var result = await repository.GetArtworkAsync("invalid-id-123");
+        var result = await repository.GetArtworkAsync(100);
         
         // Assert
         Assert.IsNull(result);
