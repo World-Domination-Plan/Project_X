@@ -31,6 +31,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 3940266337607213609}
+  - {fileID: 885072182913120897}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!65 &5996327552157538832
@@ -54,6 +55,95 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!1 &7944279168436153233
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 885072182913120897}
+  - component: {fileID: 1499492574710830374}
+  - component: {fileID: 2142953488154244179}
+  m_Layer: 0
+  m_Name: CanvasHolder
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &885072182913120897
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7944279168436153233}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0.47, z: 0}
+  m_LocalScale: {x: 0.44, y: 0.5, z: 0.5}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 98501652969008110}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!33 &1499492574710830374
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7944279168436153233}
+  m_Mesh: {fileID: -2432090755550338912, guid: b38144c8362312d45b48a1e346292a5a, type: 3}
+--- !u!23 &2142953488154244179
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7944279168436153233}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: -3033667219593020291, guid: b38144c8362312d45b48a1e346292a5a, type: 3}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_AdditionalVertexStreams: {fileID: 0}
 --- !u!1001 &3540983961611961794
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -367,7 +457,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2993463577419566531, guid: 4e69ce8f2ac4f412da22845cadbe303e, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 3.8499997
+      value: 5.6
       objectReference: {fileID: 0}
     - target: {fileID: 2993463577419566531, guid: 4e69ce8f2ac4f412da22845cadbe303e, type: 3}
       propertyPath: m_LocalPosition.z
@@ -419,7 +509,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8088024801783580461, guid: 4e69ce8f2ac4f412da22845cadbe303e, type: 3}
       propertyPath: radius
-      value: 0.0194
+      value: 0.0589
       objectReference: {fileID: 0}
     - target: {fileID: 8088024801783580461, guid: 4e69ce8f2ac4f412da22845cadbe303e, type: 3}
       propertyPath: hardness
@@ -431,15 +521,15 @@ PrefabInstance:
       objectReference: {fileID: 10300, guid: 0000000000000000f000000000000000, type: 0}
     - target: {fileID: 8088024801783580461, guid: 4e69ce8f2ac4f412da22845cadbe303e, type: 3}
       propertyPath: brushColor.b
-      value: 0.047169805
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8088024801783580461, guid: 4e69ce8f2ac4f412da22845cadbe303e, type: 3}
       propertyPath: brushColor.g
-      value: 0.043491155
+      value: 0.5028572
       objectReference: {fileID: 0}
     - target: {fileID: 8088024801783580461, guid: 4e69ce8f2ac4f412da22845cadbe303e, type: 3}
       propertyPath: brushColor.r
-      value: 0.040272333
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8088024801783580461, guid: 4e69ce8f2ac4f412da22845cadbe303e, type: 3}
       propertyPath: clearColor.b
