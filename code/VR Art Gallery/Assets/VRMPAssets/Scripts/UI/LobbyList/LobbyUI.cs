@@ -26,6 +26,7 @@ namespace XRMultiplayer
         [SerializeField] private Toggle m_HomeToggle;
         [SerializeField] private Toggle m_PrivateGalleriesToggle;
         [SerializeField] private Toggle m_WorkspacesToggle;
+        [SerializeField] private GameObject m_LoginUI;
         [SerializeField] private GameObject m_HomePanel;
         [SerializeField] private GameObject m_PrivateGalleriesPanel;
         [SerializeField] private GameObject m_WorkspacesPanel;
@@ -299,6 +300,14 @@ namespace XRMultiplayer
                 HideLobbies();
             }
         }
+
+
+        public void OpenLogin(bool isOn)
+        {
+            if (isOn)
+                m_LoginUI.SetActive(true);
+        }
+
 
         void OnConnected(bool connected)
         {
