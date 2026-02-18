@@ -1,5 +1,6 @@
 using UnityEngine;
-
+using System.IO;
+using System.Collections;
 [DisallowMultipleComponent]
 [RequireComponent(typeof(Renderer))]
 public class PaintableSurfaceRT : MonoBehaviour
@@ -49,7 +50,26 @@ public class PaintableSurfaceRT : MonoBehaviour
     static readonly int MainTexST = Shader.PropertyToID("_MainTex_ST");
 
 
-    void Awake()
+    [Header("Autosave")]
+    public bool enableAutoSave = true;
+    public float autoSaveInterval = 10f;   // seconds, tunable in Inspector
+
+    float _autoSaveTimer;
+
+    void Update()
+    {
+        if (!enableAutoSave || _a == null) return;
+
+        _autoSaveTimer += Time.deltaTime;
+        if (_autoSaveTimer >= autoSaveInterval)
+        {
+            _autoSaveTimer = 0.0f;
+            string fileName = $"painting_{System.DateTime.Now:yyyyMMdd_HHmmss}.png";
+            SaveCanvasToPNG(fileName);
+        }
+    }
+
+    public void Awake()
     {
         //Debug.LogError($"[PaintableSurfaceRT] AWAKE on {name}, active={gameObject.activeInHierarchy}", this);
 
@@ -97,6 +117,35 @@ public class PaintableSurfaceRT : MonoBehaviour
         }
     }
 
+    public string SaveCanvasToPNG(string fileName, string directoryOverride = null)
+    {
+        if (_a == null)
+            throw new System.InvalidOperationException("No RenderTexture to save.");
+
+        RenderTexture currentRT = _a;
+
+        RenderTexture previous = RenderTexture.active;
+        RenderTexture.active = currentRT;
+
+        Texture2D tex = new Texture2D(currentRT.width, currentRT.height, TextureFormat.RGBA32, false);
+        tex.ReadPixels(new Rect(0, 0, currentRT.width, currentRT.height), 0, 0);
+        tex.Apply();
+
+        RenderTexture.active = previous;
+
+        byte[] pngBytes = tex.EncodeToPNG();
+        DestroyImmediate(tex);
+
+        string dir = directoryOverride ?? Path.Combine(Application.persistentDataPath, "Paintings");
+        if (!Directory.Exists(dir))
+            Directory.CreateDirectory(dir);
+
+        string path = Path.Combine(dir, fileName);
+        File.WriteAllBytes(path, pngBytes);
+
+        Debug.Log($"[PaintableSurfaceRT] Saved painting to {path}", this);
+        return path;
+    }
 
     static string GetPath(Transform t)
     {
@@ -195,24 +244,9 @@ public class PaintableSurfaceRT : MonoBehaviour
         return true;
     }
 
-    
-    /*
-    public bool TryPaintAt(Vector2 uv)
-    {
-        if (mode == SurfaceMode.DisplayOnly) return false;
-
-        // Hard test: fill the RT to black on every paint call
-        ClearRT(_a, Color.black);
-        ApplyToRenderer(_a);
-        return true;
-    }
-    */
-
     void LateUpdate()
     {
         if (reapplyInLateUpdate && _a != null)
             ApplyToRenderer(_a);
     }
-
-
 }
