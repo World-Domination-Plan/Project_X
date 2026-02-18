@@ -147,6 +147,35 @@ public class PaintableSurfaceRT : MonoBehaviour
         return path;
     }
 
+    public bool LoadCanvasFromPNG(string filePath)
+    {
+        if (!File.Exists(filePath))
+        {
+            Debug.Log($"[PaintableSurfaceRT] File not found: {filePath}", this);
+            return false;
+        }
+
+        byte[] bytes = File.ReadAllBytes(filePath);
+
+        Texture2D tex = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+        if (!tex.LoadImage(bytes))
+        {
+            Debug.Log($"[PaintableSurfaceRT] Failed to decode PNG: {filePath}", this);
+            DestroyImmediate(tex);
+            return false;
+        }
+
+        // Seed both ping-pong buffers with the loaded image
+        Graphics.Blit(tex, _a);
+        Graphics.Blit(tex, _b);
+
+        ApplyToRenderer(_a);
+        DestroyImmediate(tex);
+
+        Debug.Log($"[PaintableSurfaceRT] Loaded painting from {filePath}", this);
+        return true;
+    }
+
     static string GetPath(Transform t)
     {
         var p = t.name;
