@@ -9,8 +9,11 @@ using Postgrest.Models;
 [Serializable]
 public class ArtistProfile : BaseModel
 {
-    [PrimaryKey("user_id")]
-    public string user_id { get; set; }
+    [PrimaryKey("id", false)] // false = not manually set, auto-generated
+    public long id { get; set; }
+
+    [Column("auth_user_id")]
+    public string auth_user_id { get; set; }
     public DateTime created_at { get; set; }
     public string[] managed_gallery { get; set; }
     public string[] gallery_access { get; set; }

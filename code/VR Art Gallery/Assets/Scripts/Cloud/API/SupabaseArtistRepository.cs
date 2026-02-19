@@ -23,7 +23,7 @@ namespace VRGallery.Cloud
             {
                 var profile = new ArtistProfile
                 {
-                    user_id = userId,
+                    auth_user_id = userId,
                     username = username,
                     created_at = DateTime.UtcNow
                 };
@@ -45,7 +45,7 @@ namespace VRGallery.Cloud
             {
                 var client = supabaseClient.GetClient();
                 var response = await client.From<ArtistProfile>()
-                    .Where(x => x.user_id == userId)
+                    .Where(x => x.auth_user_id == userId)
                     .Single();
                 return response;
             }
