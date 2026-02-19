@@ -60,3 +60,4 @@ Thumbs.db
 # ============ #
 **/Packages/packages-lock.json
 .vscode/
+**.env

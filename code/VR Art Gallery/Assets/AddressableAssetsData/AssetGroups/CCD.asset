@@ -14,7 +14,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: Unity.Addressables.Editor::UnityEditor.AddressableAssets.Settings.AddressableAssetGroup
   m_GroupName: CCD
   m_GUID: 3e623f2b126196f4f8c7296a7f62f513
-  m_SerializeEntries: []
+  m_SerializeEntries:
+  - m_GUID: 6d30a121ea57d4a1b804fc5068a54cde
+    m_Address: Assets/trailPhoto.png
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   m_ReadOnly: 0
   m_Settings: {fileID: 11400000, guid: 3de9af55d0291334a95bbde586daf8c9, type: 2}
   m_SchemaSet:

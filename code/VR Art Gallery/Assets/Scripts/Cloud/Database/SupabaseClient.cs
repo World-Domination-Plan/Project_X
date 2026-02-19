@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Threading.Tasks;
 using dotenv.net;
 using Supabase;
@@ -57,21 +58,27 @@ namespace VRGallery.Cloud
 
             try
             {
-                // Load environment variables from .env file
-                DotEnv.Load(options: new DotEnvOptions(envFilePaths: new[] { "Assets/Scripts/.env" }));
+                var projectRoot = Directory.GetParent(Application.dataPath)?.FullName;
+                var codeDir = Directory.GetParent(projectRoot)?.FullName;
+                var repoRoot = Directory.GetParent(codeDir)?.FullName
+                                  ?? Directory.GetCurrentDirectory();
 
-                var supabaseUrl = System.Environment.GetEnvironmentVariable("SUPABASE_URL");
-                var supabaseKey = System.Environment.GetEnvironmentVariable("SUPABASE_KEY");
+                var envPath = Path.Combine(repoRoot, ".env");
+
+                if (File.Exists(envPath))
+                    DotEnv.Load(new DotEnvOptions(envFilePaths: new[] { envPath }));
+                else
+                    Debug.Log($"[SupabaseClient] No .env file found at {envPath}, using system environment variables.");
+
+                DotEnv.Load(new DotEnvOptions(envFilePaths: new[] { envPath }));
+
+                var supabaseUrl = Environment.GetEnvironmentVariable("SUPABASE_URL");
+                var supabaseKey = Environment.GetEnvironmentVariable("SUPABASE_KEY");
 
                 if (string.IsNullOrEmpty(supabaseUrl) || string.IsNullOrEmpty(supabaseKey))
-                {
                     throw new InvalidOperationException("SUPABASE_URL and SUPABASE_KEY environment variables are not set");
-                }
 
-                var options = new SupabaseOptions
-                {
-                    AutoConnectRealtime = false
-                };
+                var options = new SupabaseOptions { AutoConnectRealtime = false };
 
                 _instance = new Client(supabaseUrl, supabaseKey, options);
                 await _instance.InitializeAsync();
