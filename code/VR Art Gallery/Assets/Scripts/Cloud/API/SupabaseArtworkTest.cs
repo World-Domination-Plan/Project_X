@@ -15,6 +15,7 @@ public class SupabaseArtworkTest : MonoBehaviour
     [SerializeField] private Texture2D testTexture;
     [SerializeField] private string storageBucket = "artworks";
     [SerializeField] private int signedUrlExpirySeconds = 300;
+    [SerializeField] private bool alsoDeleteFirstArtwork = false;
 
     private SupabaseArtworkRepository _repository;
 
@@ -90,6 +91,13 @@ public class SupabaseArtworkTest : MonoBehaviour
             await _repository.DeleteObjectAsync(storageBucket, createdSecond.thumbnail_url);
 
             Debug.Log("[SupabaseArtworkTest] Deleted second artwork image + thumbnail from bucket");
+
+            if (alsoDeleteFirstArtwork)
+            {
+                await _repository.DeleteObjectAsync(storageBucket, createdFirst.image_url);
+                await _repository.DeleteObjectAsync(storageBucket, createdFirst.thumbnail_url);
+                Debug.Log("[SupabaseArtworkTest] Also deleted first artwork image + thumbnail from bucket");
+            }
         }
         catch (System.Exception ex)
         {
