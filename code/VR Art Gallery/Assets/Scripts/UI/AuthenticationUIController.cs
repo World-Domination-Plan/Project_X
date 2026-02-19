@@ -27,6 +27,7 @@ namespace VRGallery.UI
         [Header("Register UI")]
         [SerializeField] private TMP_InputField registerEmailField;
         [SerializeField] private TMP_InputField registerPasswordField;
+        [SerializeField] private TMP_InputField registerUsernameField;
         [SerializeField] private TMP_InputField confirmPasswordField;
         [SerializeField] private Button registerButton;
         [SerializeField] private Button showLoginButton;
@@ -159,6 +160,7 @@ namespace VRGallery.UI
             if (registerEmailField) registerEmailField.text = "";
             if (registerPasswordField) registerPasswordField.text = "";
             if (confirmPasswordField) confirmPasswordField.text = "";
+            if (registerUsernameField) registerUsernameField.text = "";
         }
 
         #endregion
@@ -168,6 +170,13 @@ namespace VRGallery.UI
         private async void OnLoginClick()
         {
             if (!ValidateLoginInput()) return;
+
+            if (authManager == null)
+            {
+                ShowError("Authentication system not available");
+                // ShowLoginPanel();
+                return;
+            }
 
             ShowLoadingPanel();
             SetButtonsInteractable(false);
@@ -194,8 +203,9 @@ namespace VRGallery.UI
 
             string email = registerEmailField.text.Trim();
             string password = registerPasswordField.text;
+            string username = registerUsernameField.text;
 
-            bool success = await authManager.RegisterUser(email, password);
+            bool success = await authManager.RegisterUser(email, password, username);
 
             SetButtonsInteractable(true);
 
