@@ -2,7 +2,6 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 using dotenv.net;
-// using DotNetEnv.Core; // Using DotNetEnv.Core for more flexible .env loading in Unity
 using Supabase;
 using UnityEngine;
 

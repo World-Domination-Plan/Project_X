@@ -27,8 +27,8 @@ jobs:
         projectPath:
         - "code/VR Art Gallery"
         testMode:
-        - playmode
         - editmode
+        - playmode
     steps:
     - name: Free up disk space
       run: |
