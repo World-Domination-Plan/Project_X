@@ -66,8 +66,10 @@ namespace VRGallery.Cloud
 
                 var envPath = Path.Combine(repoRoot, ".env");
 
-                if (!File.Exists(envPath))
-                    Debug.LogWarning($"[SupabaseClient] .env not found at: {envPath}");
+                if (File.Exists(envPath))
+                    DotEnv.Load(new DotEnvOptions(envFilePaths: new[] { envPath }));
+                else
+                    Debug.Log($"[SupabaseClient] No .env file found at {envPath}, using system environment variables.");
 
                 DotEnv.Load(new DotEnvOptions(envFilePaths: new[] { envPath }));
 
