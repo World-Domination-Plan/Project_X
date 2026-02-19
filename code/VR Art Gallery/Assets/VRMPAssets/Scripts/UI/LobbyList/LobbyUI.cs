@@ -26,6 +26,7 @@ namespace XRMultiplayer
         [SerializeField] private Toggle m_HomeToggle;
         [SerializeField] private Toggle m_PrivateGalleriesToggle;
         [SerializeField] private Toggle m_WorkspacesToggle;
+        [SerializeField] private Toggle m_LoginToggle;
         [SerializeField] private GameObject m_LoginUI;
         [SerializeField] private GameObject m_HomePanel;
         [SerializeField] private GameObject m_PrivateGalleriesPanel;
@@ -75,6 +76,7 @@ namespace XRMultiplayer
             m_HomeToggle.onValueChanged.AddListener((isOn) => { if (isOn) ShowPanel(PanelType.Home); });
             m_PrivateGalleriesToggle.onValueChanged.AddListener((isOn) => { if (isOn) ShowPanel(PanelType.PrivateGalleries); });
             m_WorkspacesToggle.onValueChanged.AddListener((isOn) => { if (isOn) ShowPanel(PanelType.Workspaces); });
+            m_LoginToggle.onValueChanged.AddListener((isOn) => { if (isOn) initLoginPrefab(); });
 
             // Show only the Home panel at start and set Home toggle on
             m_HomeToggle.isOn = true;
@@ -85,6 +87,14 @@ namespace XRMultiplayer
         }
 
         private enum PanelType { Home, PrivateGalleries, Workspaces }
+
+        private void initLoginPrefab()
+    {
+        Instantiate(
+            m_LoginUI, m_HomePanel.transform.position,
+            Quaternion.identity
+        );
+    }
 
         private void ShowPanel(PanelType panel)
         {
