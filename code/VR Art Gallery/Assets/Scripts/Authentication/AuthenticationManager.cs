@@ -13,6 +13,16 @@ namespace VRGallery.Authentication
     /// </summary>
     public class AuthenticationManager : MonoBehaviour
     {
+
+        // -------------------------
+        // Dev Test (optional)
+        // -------------------------
+        [Header("Dev Test (optional)")]
+        [SerializeField] private bool runDevTestOnStart = false;
+        [SerializeField] private string testEmail = "test@example.com";
+        [SerializeField] private string testPassword = "password123";
+        [SerializeField] private string testUsername = "user12345";
+
         [Header("Debug")]
         [SerializeField] private bool enableDebugLogs = true;
 
@@ -34,6 +44,11 @@ namespace VRGallery.Authentication
         // Artist repository for profile management
         private IArtistRepository artistRepository;
 
+        private bool _supabaseInitialized = false;
+        private bool _supabaseInitFailed = false;
+        private bool _devTestRan = false;
+
+
         private void Awake()
         {
             if (Instance == null)
@@ -47,6 +62,91 @@ namespace VRGallery.Authentication
                 Destroy(gameObject);
             }
         }
+
+        private async void Start()
+        {
+            // Wait until InitializeSupabase() finishes (or fails)
+            await WaitForSupabaseInitAsync();
+
+            if (_supabaseInitFailed)
+            {
+                LogError("Supabase init failed; skipping Dev Test.");
+                return;
+            }
+
+            if (runDevTestOnStart && !_devTestRan)
+            {
+                _devTestRan = true;
+                await RunDevAuthFlowAsync();
+            }
+        }
+
+        private async Task WaitForSupabaseInitAsync(int timeoutMs = 15000)
+        {
+            var start = DateTime.UtcNow;
+
+            while (!_supabaseInitialized && !_supabaseInitFailed)
+            {
+                if ((DateTime.UtcNow - start).TotalMilliseconds > timeoutMs)
+                {
+                    _supabaseInitFailed = true;
+                    LogError("Timeout waiting for Supabase initialization.");
+                    break;
+                }
+
+                await Task.Delay(50);
+            }
+        }
+
+        private async Task RunDevAuthFlowAsync()
+        {
+            if (SupabaseClientInstance == null)
+            {
+                LogError("Dev Test aborted: SupabaseClientInstance is null.");
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(testEmail) || string.IsNullOrWhiteSpace(testPassword))
+            {
+                LogError("Dev Test aborted: testEmail/testPassword is empty.");
+                return;
+            }
+
+            LogDebug($"[DevTest] Auth starting for {testEmail} ...");
+
+            // 1) Try login
+            var okLogin = await LoginUser(testEmail, testPassword);
+            if (okLogin)
+            {
+                LogDebug("[DevTest] Login OK.");
+                return;
+            }
+
+            LogDebug("[DevTest] Login failed. Trying Register...");
+
+            // 2) Try register
+            var okRegister = await RegisterUser(testEmail, testPassword, testUsername);
+            if (!okRegister)
+            {
+                LogError("[DevTest] Register failed.");
+                return;
+            }
+
+            LogDebug("[DevTest] Register OK. Trying Login again...");
+
+            // 3) Try login again (in case SignUp doesn’t auto-create a usable session)
+            okLogin = await LoginUser(testEmail, testPassword);
+            if (!okLogin)
+            {
+                LogError("[DevTest] Login after Register failed. (Email confirmation might be ON.)");
+            }
+            else
+            {
+                LogDebug("[DevTest] Login after Register OK.");
+            }
+        }
+
+
 
         private async void InitializeSupabase()
         {
@@ -72,11 +172,15 @@ namespace VRGallery.Authentication
                 }
 
                 LogDebug("Supabase authentication initialized successfully");
+                _supabaseInitialized = true;
+
             }
             catch (Exception ex)
             {
                 LogError($"Failed to initialize Supabase: {ex.Message}");
                 OnAuthenticationError?.Invoke($"Initialization failed: {ex.Message}");
+
+                _supabaseInitFailed = true;
             }
         }
 
