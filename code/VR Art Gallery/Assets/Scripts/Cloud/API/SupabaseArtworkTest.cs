@@ -15,7 +15,7 @@ public class SupabaseArtworkTest : MonoBehaviour
     [SerializeField] private Texture2D testTexture;
     [SerializeField] private string storageBucket = "artworks";
     [SerializeField] private int signedUrlExpirySeconds = 300;
-    [SerializeField] private bool alsoDeleteFirstArtwork = false;
+    [SerializeField] private bool alsoDeleteFirstArtwork = true;
 
     private SupabaseArtworkRepository _repository;
 

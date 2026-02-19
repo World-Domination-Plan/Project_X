@@ -239,7 +239,7 @@ public class SupabaseArtworkRepository : IArtworkRepository
         var source = new Texture2D(2, 2, TextureFormat.RGBA32, false);
         if (!source.LoadImage(originalPngBytes))
         {
-            UnityEngine.Object.Destroy(source);
+            DestroyUnityObjectSafe(source);
             throw new InvalidOperationException("Input image is not a valid PNG/JPG payload.");
         }
 
@@ -264,12 +264,23 @@ public class SupabaseArtworkRepository : IArtworkRepository
         thumbnail.Apply(false, false);
         var bytes = thumbnail.EncodeToPNG();
 
-        UnityEngine.Object.Destroy(source);
-        UnityEngine.Object.Destroy(thumbnail);
+        DestroyUnityObjectSafe(source);
+        DestroyUnityObjectSafe(thumbnail);
 
         if (bytes == null || bytes.Length == 0)
             throw new InvalidOperationException("Failed to encode thumbnail PNG.");
 
         return bytes;
+    }
+
+    private static void DestroyUnityObjectSafe(UnityEngine.Object obj)
+    {
+        if (obj == null)
+            return;
+
+        if (Application.isPlaying)
+            UnityEngine.Object.Destroy(obj);
+        else
+            UnityEngine.Object.DestroyImmediate(obj);
     }
 }
