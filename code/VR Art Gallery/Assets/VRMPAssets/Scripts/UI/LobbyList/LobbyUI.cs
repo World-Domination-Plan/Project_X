@@ -114,7 +114,7 @@ namespace XRMultiplayer
         }
 
         // CHANGED: new method to clean up instance when toggle turns off
-        private void HideLoginUI()
+        public void HideLoginUI()
         {
             if (m_LoginUIInstance != null)
             {
