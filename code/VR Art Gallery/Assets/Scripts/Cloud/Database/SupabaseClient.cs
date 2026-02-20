@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Threading.Tasks;
 using dotenv.net;
 using Supabase;
@@ -69,32 +70,26 @@ namespace VRGallery.Cloud
 
             try
             {
-                // 1) Try .env first (Editor/dev convenience)
-                string supabaseUrl = null;
-                string supabaseKey = null;
+                var projectRoot = Directory.GetParent(Application.dataPath)?.FullName;
+                var codeDir = Directory.GetParent(projectRoot)?.FullName;
+                var repoRoot = Directory.GetParent(codeDir)?.FullName
+                                  ?? Directory.GetCurrentDirectory();
 
-                try
-                {
-                    // Load environment variables from .env file
-                    DotEnv.Load(options: new DotEnvOptions(envFilePaths: new[] { "Assets/Scripts/.env" }));
-                    supabaseUrl = Environment.GetEnvironmentVariable("SUPABASE_URL");
-                    supabaseKey = Environment.GetEnvironmentVariable("SUPABASE_KEY");
-                }
-                catch
-                {
-                    // dotenv not present / file missing -> ignore and fallback
-                }
+                var envPath = Path.Combine(repoRoot, ".env");
+
+                if (File.Exists(envPath))
+                    DotEnv.Load(new DotEnvOptions(envFilePaths: new[] { envPath }));
+                else
+                    Debug.Log($"[SupabaseClient] No .env file found at {envPath}, using system environment variables.");
+
+                DotEnv.Load(new DotEnvOptions(envFilePaths: new[] { envPath }));
+
+                var supabaseUrl = Environment.GetEnvironmentVariable("SUPABASE_URL");
+                var supabaseKey = Environment.GetEnvironmentVariable("SUPABASE_KEY");
 
                 // 2) Fallback to StreamingAssets/supabase.json for builds (Quest/Android)
                 if (string.IsNullOrEmpty(supabaseUrl) || string.IsNullOrEmpty(supabaseKey))
-                {
-                    var cfg = await LoadConfigFromStreamingAssets(configFileName);
-                    supabaseUrl = cfg.url;
-                    supabaseKey = cfg.anonKey;                
-                }
-
-                if (string.IsNullOrEmpty(supabaseUrl) || string.IsNullOrEmpty(supabaseKey))
-                    throw new InvalidOperationException("Supabase config missing: need URL + anon key.");
+                    throw new InvalidOperationException("SUPABASE_URL and SUPABASE_KEY environment variables are not set");
 
                 var options = new SupabaseOptions { AutoConnectRealtime = false };
 
