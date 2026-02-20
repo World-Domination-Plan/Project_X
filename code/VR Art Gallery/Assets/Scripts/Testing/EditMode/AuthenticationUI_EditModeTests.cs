@@ -92,38 +92,156 @@ public class AuthenticationUI_EditModeTests
     }
 
     [Test]
-public void ValidateRegisterInput_InvalidEmail_ShowsErrorAndReturnsFalse()
-{
-    var root = new GameObject("AuthUIRoot");
-    var ui = root.AddComponent<AuthenticationUI>();
+    public void LoginClick_WithInvalidInput_ShowsError()
+    {
+        var root = new GameObject("AuthUIRoot");
+        var ui = root.AddComponent<AuthenticationUI>();
 
-    var errorPanel = new GameObject("ErrorPanel");
-    var errorText = MakeTMPText("ErrorText");
+        // Setup panels
+        var loginPanel = new GameObject("LoginPanel");
+        var errorPanel = new GameObject("ErrorPanel");
+        var loadingPanel = new GameObject("LoadingPanel");
+        var errorText = MakeTMPText("ErrorText");
 
-    var regEmail = MakeTMPInputField("RegEmail");
-    var regPass = MakeTMPInputField("RegPass");
-    var confirm = MakeTMPInputField("Confirm");
+        // Setup input fields
+        var loginEmail = MakeTMPInputField("LoginEmail");
+        var loginPass = MakeTMPInputField("LoginPass");
 
-    SetPrivateField(ui, "errorPanel", errorPanel);
-    SetPrivateField(ui, "errorText", errorText);
+        // Setup login button
+        var loginButton = MakeButton("LoginButton");
 
-    SetPrivateField(ui, "registerEmailField", regEmail);
-    SetPrivateField(ui, "registerPasswordField", regPass);
-    SetPrivateField(ui, "confirmPasswordField", confirm);
+        // Set private fields
+        SetPrivateField(ui, "loginPanel", loginPanel);
+        SetPrivateField(ui, "errorPanel", errorPanel);
+        SetPrivateField(ui, "loadingPanel", loadingPanel);
+        SetPrivateField(ui, "errorText", errorText);
+        SetPrivateField(ui, "loginEmailField", loginEmail);
+        SetPrivateField(ui, "loginPasswordField", loginPass);
+        SetPrivateField(ui, "loginButton", loginButton);
 
-    regEmail.text = "not-an-email";
-    regPass.text = "123456";
-    confirm.text = "123456";
+        // Leave authManager null (don't set it)
 
-    // Expect the log emitted by ShowError
-    LogAssert.Expect(LogType.Error, new Regex(@"\[AuthUI\] Please enter a valid email address"));
+        // Test Case 1: Empty email
+        loginEmail.text = "";
+        loginPass.text = "password123";
 
-    var ok = (bool)CallPrivate(ui, "ValidateRegisterInput");
+        LogAssert.Expect(LogType.Error, new Regex(@"\[AuthUI\] Please enter your email address"));
 
-    Assert.IsFalse(ok);
-    Assert.IsTrue(errorPanel.activeSelf);
-    Assert.AreEqual("Please enter a valid email address", errorText.text);
-}
+        CallPrivate(ui, "OnLoginClick");
 
-    
+        Assert.IsTrue(errorPanel.activeSelf);
+        Assert.AreEqual("Please enter your email address", errorText.text);
+
+        // Reset for Test Case 2
+        errorPanel.SetActive(false);
+
+        // Test Case 2: Empty password
+        loginEmail.text = "test@example.com";
+        loginPass.text = "";
+
+        LogAssert.Expect(LogType.Error, new Regex(@"\[AuthUI\] Please enter your password"));
+
+        CallPrivate(ui, "OnLoginClick");
+
+        Assert.IsTrue(errorPanel.activeSelf);
+        Assert.AreEqual("Please enter your password", errorText.text);
+
+        // Cleanup
+        Object.DestroyImmediate(root);
+        Object.DestroyImmediate(loginPanel);
+        Object.DestroyImmediate(errorPanel);
+        Object.DestroyImmediate(loadingPanel);
+        Object.DestroyImmediate(loginEmail.gameObject);
+        Object.DestroyImmediate(loginPass.gameObject);
+        Object.DestroyImmediate(errorText.gameObject);
+        Object.DestroyImmediate(loginButton.gameObject);
+    }
+
+    // ...existing code...
+
+    [Test]
+    public void LoginClick_WithValidInputs_AndNoAuthManager_ShouldNotThrow_ButShowError()
+    {
+        // Arrange: UI in scene, valid login inputs
+        var root = new GameObject("AuthUIRoot");
+        var ui = root.AddComponent<AuthenticationUI>();
+
+        var loginPanel = new GameObject("LoginPanel");
+        var loadingPanel = new GameObject("LoadingPanel");
+        var errorPanel = new GameObject("ErrorPanel");
+        var errorText = MakeTMPText("ErrorText");
+
+        var loginEmail = MakeTMPInputField("LoginEmail");
+        var loginPass = MakeTMPInputField("LoginPass");
+        var loginButton = MakeButton("LoginButton");
+
+        // Set valid input values after creation
+        loginEmail.text = "someone@example.com";
+        loginPass.text = "password123";
+
+        SetPrivateField(ui, "loginPanel", loginPanel);
+        SetPrivateField(ui, "loadingPanel", loadingPanel);
+        SetPrivateField(ui, "loginEmailField", loginEmail);
+        SetPrivateField(ui, "loginPasswordField", loginPass);
+        SetPrivateField(ui, "loginButton", loginButton);
+        SetPrivateField(ui, "errorPanel", errorPanel);
+        SetPrivateField(ui, "errorText", errorText);
+
+        errorPanel.SetActive(false);
+
+        // Act + Assert: should NOT crash, should show auth-not-available error
+        LogAssert.Expect(LogType.Error, new Regex(@"\[AuthUI\] Authentication system not available"));
+
+        Assert.DoesNotThrow(() => CallPrivate(ui, "OnLoginClick"));
+
+        Assert.IsTrue(errorPanel.activeSelf);
+        Assert.AreEqual("Authentication system not available", errorText.text);
+
+        // Cleanup
+        Object.DestroyImmediate(root);
+        Object.DestroyImmediate(loginPanel);
+        Object.DestroyImmediate(loadingPanel);
+        Object.DestroyImmediate(errorPanel);
+        Object.DestroyImmediate(loginEmail.gameObject);
+        Object.DestroyImmediate(loginPass.gameObject);
+        Object.DestroyImmediate(loginButton.gameObject);
+        Object.DestroyImmediate(errorText.gameObject);
+
+    }
+
+    [Test]
+    public void ValidateRegisterInput_InvalidEmail_ShowsErrorAndReturnsFalse()
+    {
+        var root = new GameObject("AuthUIRoot");
+        var ui = root.AddComponent<AuthenticationUI>();
+
+        var errorPanel = new GameObject("ErrorPanel");
+        var errorText = MakeTMPText("ErrorText");
+
+        var regEmail = MakeTMPInputField("RegEmail");
+        var regPass = MakeTMPInputField("RegPass");
+        var confirm = MakeTMPInputField("Confirm");
+
+        SetPrivateField(ui, "errorPanel", errorPanel);
+        SetPrivateField(ui, "errorText", errorText);
+
+        SetPrivateField(ui, "registerEmailField", regEmail);
+        SetPrivateField(ui, "registerPasswordField", regPass);
+        SetPrivateField(ui, "confirmPasswordField", confirm);
+
+        regEmail.text = "not-an-email";
+        regPass.text = "123456";
+        confirm.text = "123456";
+
+        // Expect the log emitted by ShowError
+        LogAssert.Expect(LogType.Error, new Regex(@"\[AuthUI\] Please enter a valid email address"));
+
+        var ok = (bool)CallPrivate(ui, "ValidateRegisterInput");
+
+        Assert.IsFalse(ok);
+        Assert.IsTrue(errorPanel.activeSelf);
+        Assert.AreEqual("Please enter a valid email address", errorText.text);
+    }
+
+
 }

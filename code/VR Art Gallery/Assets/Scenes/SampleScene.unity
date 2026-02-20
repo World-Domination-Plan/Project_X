@@ -3101,6 +3101,7 @@ MonoBehaviour:
   showRegisterButton: {fileID: 850744854}
   registerEmailField: {fileID: 0}
   registerPasswordField: {fileID: 0}
+  registerUsernameField: {fileID: 0}
   confirmPasswordField: {fileID: 0}
   registerButton: {fileID: 0}
   showLoginButton: {fileID: 0}
@@ -4651,16 +4652,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 1426348390}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: bd4c30487854f478fb4ebf5354d0dddb, type: 3}
+  m_Script: {fileID: 11500000, guid: e13d37bede515d54ea58942c5759cb0c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Scripts::SupabaseAuthManager
-  configFileName: supabase.json
-  artistsTable: artists
-  runDevTestOnStart: 1
-  testEmail: test9@example.com
+  runDevTestOnStart: 0
+  testEmail: mn@gmail.com
   testPassword: password123
-  testUsername: user123456789
-  restoreSessionOnStart: 0
+  testUsername: mn
+  enableDebugLogs: 1
 --- !u!4 &1426348392
 Transform:
   m_ObjectHideFlags: 0
@@ -6044,6 +6043,7 @@ MonoBehaviour:
   showRegisterButton: {fileID: 0}
   registerEmailField: {fileID: 0}
   registerPasswordField: {fileID: 0}
+  registerUsernameField: {fileID: 0}
   confirmPasswordField: {fileID: 0}
   registerButton: {fileID: 0}
   showLoginButton: {fileID: 0}
