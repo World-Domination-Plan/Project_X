@@ -56,7 +56,7 @@ namespace VRGallery.Core
             }
 
             authManager = AuthenticationManager.Instance;
-            
+
             // Subscribe to authentication events
             authManager.OnUserLoggedIn += HandleUserLoggedIn;
             authManager.OnUserLoggedOut += HandleUserLoggedOut;
@@ -78,7 +78,7 @@ namespace VRGallery.Core
         private async void HandleUserLoggedIn(Supabase.Gotrue.User user)
         {
             Debug.Log($"[GameManager] User logged in: {user.Email}");
-            
+
             CurrentUserRole = await authManager.GetCurrentUserRole();
             OnAuthenticationStateChanged?.Invoke(true);
             OnUserRoleChanged?.Invoke(CurrentUserRole);
@@ -87,7 +87,7 @@ namespace VRGallery.Core
         private void HandleUserLoggedOut()
         {
             Debug.Log("[GameManager] User logged out");
-            
+
             CurrentUserRole = UserRole.Guest;
             OnAuthenticationStateChanged?.Invoke(false);
             OnUserRoleChanged?.Invoke(CurrentUserRole);
@@ -96,7 +96,7 @@ namespace VRGallery.Core
         private void HandleUserRoleChanged(UserRole newRole)
         {
             Debug.Log($"[GameManager] User role changed to: {newRole}");
-            
+
             CurrentUserRole = newRole;
             OnUserRoleChanged?.Invoke(CurrentUserRole);
         }
@@ -140,9 +140,12 @@ namespace VRGallery.Core
         /// <summary>
         /// Get current user display name
         /// </summary>
-        public string GetCurrentUserDisplayName()
+        public async Task<string> GetCurrentUserDisplayName()
         {
-            return authManager?.GetUserDisplayName() ?? "Guest";
+            if (authManager == null)
+                return "Guest";
+
+            return await authManager.GetUserDisplayName();
         }
 
         /// <summary>
@@ -191,7 +194,7 @@ namespace VRGallery.Core
             else
             {
                 Debug.LogWarning("[GameManager] User does not have access to gallery");
-                
+
                 if (!IsUserAuthenticated)
                 {
                     // Show authentication UI or load auth scene

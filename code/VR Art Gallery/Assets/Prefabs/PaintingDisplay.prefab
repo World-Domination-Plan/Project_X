@@ -12,8 +12,9 @@ GameObject:
   - component: {fileID: 8323196362430491282}
   - component: {fileID: 3193055905145259249}
   - component: {fileID: 7075014095676040120}
-  - component: {fileID: 7908843807992563919}
-  m_Layer: 0
+  - component: {fileID: 332430511795458479}
+  - component: {fileID: 8088024801783580461}
+  m_Layer: 8
   m_Name: PaintingDisplay
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -113,7 +114,7 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: 10209, guid: 0000000000000000e000000000000000, type: 0}
---- !u!114 &7908843807992563919
+--- !u!114 &332430511795458479
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -122,8 +123,33 @@ MonoBehaviour:
   m_GameObject: {fileID: 6609757802065446040}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f65192db0f3e66742aa4139f344029b6, type: 3}
+  m_Script: {fileID: 11500000, guid: c0ba17288a63042c98b61f0e341a4e52, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
-  imageUrl: https://b40055af-b1ef-4764-a834-4514c762316a.client-api.unity3dusercontent.com/client_api/v1/environments/5e763078-e928-4102-bf17-44493fa27eb0/buckets/c3fe5c96-b9ee-4103-8f78-d1030d0a03f9/entries/1d7142c0-d590-49d0-baaf-5a24d5f29045/versions/1358a2c3-66e5-419a-bdcb-420920f41aed/content/
+  image: {fileID: 2800000, guid: 6d30a121ea57d4a1b804fc5068a54cde, type: 3}
+  resourcesPath: 
+  targetRenderer: {fileID: 3193055905145259249}
+  useDrawableSurfaceIfPresent: 1
+--- !u!114 &8088024801783580461
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6609757802065446040}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6cedda5c430de4d7ba43a1ff6c868adc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PaintableSurfaceRT
+  forceUniqueMaterialInstance: 1
+  reapplyInLateUpdate: 1
+  mode: 1
+  resolution: 1024
+  clearColor: {r: 1, g: 1, b: 1, a: 1}
+  brushBlitMaterial: {fileID: 2100000, guid: 52fc0c9fe60fd43628067f4b46afee94, type: 2}
+  brushMask: {fileID: 2800000, guid: 931f260158f354c18828748a5f3694f2, type: 3}
+  radius: 0.03
+  hardness: 0.7
+  brushColor: {r: 0, g: 0, b: 0, a: 1}
   targetRenderer: {fileID: 3193055905145259249}
