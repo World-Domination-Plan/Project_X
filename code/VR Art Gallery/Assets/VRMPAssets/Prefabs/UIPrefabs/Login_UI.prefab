@@ -435,7 +435,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5569496266467777761}
-  - component: {fileID: 8770654213433017322}
+  - component: {fileID: 2877974364677928431}
   m_Layer: 0
   m_Name: Login_UI
   m_TagString: Untagged
@@ -470,7 +470,7 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 350, y: 522}
   m_Pivot: {x: 0.5, y: 1}
---- !u!114 &8770654213433017322
+--- !u!114 &2877974364677928431
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -481,8 +481,8 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6298cb68c496e7b42b31868b4e2d1b78, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: '::'
-  loginPanel: {fileID: 3009486139092683200}
+  m_EditorClassIdentifier: Scripts::VRGallery.UI.AuthenticationUI
+  loginPanel: {fileID: 0}
   registerPanel: {fileID: 0}
   authenticatedPanel: {fileID: 0}
   loadingPanel: {fileID: 0}
@@ -1117,7 +1117,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: -157.65857}
+  m_AnchoredPosition: {x: 0, y: -457.85858}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!20 &5554228098007901452
@@ -1841,19 +1841,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 7843747768540854179}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 0}
-        m_TargetAssemblyTypeName: SandboxXRI.OfflineMenu, Assembly-CSharp
-        m_MethodName: CompleteCustomization
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!114 &7843747768540854179
 MonoBehaviour:
   m_ObjectHideFlags: 0
