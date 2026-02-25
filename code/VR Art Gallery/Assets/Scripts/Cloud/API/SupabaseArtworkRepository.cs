@@ -39,7 +39,7 @@ public class SupabaseArtworkRepository : IArtworkRepository
         }
         return new SupabaseArtworkRepository(SupabaseClientManager.Instance);
     }
-    
+
     public async Task<ArtworkData> CreateArtworkAsync(ArtworkData artwork)
     {
         try
@@ -47,13 +47,13 @@ public class SupabaseArtworkRepository : IArtworkRepository
             // Set timestamps
             artwork.created_at = DateTime.UtcNow;
             artwork.updated_at = DateTime.UtcNow;
-            
+
             // Insert into Supabase
-           
+
             var result = await SupabaseClientInstance
                 .From<ArtworkData>()
                 .Insert(artwork);
-            
+
             return result.Model ?? artwork;
         }
         catch (Exception ex)
@@ -62,8 +62,8 @@ public class SupabaseArtworkRepository : IArtworkRepository
             throw;
         }
     }
-    
-    public async Task<ArtworkData> GetArtworkAsync(int id)
+
+    public async Task<ArtworkData> GetArtworkAsync(long id)
     {
         try
         {
@@ -71,7 +71,7 @@ public class SupabaseArtworkRepository : IArtworkRepository
                 .From<ArtworkData>()
                 .Where(x => x.id == id)
                 .Single();
-            
+
             return result;
         }
         catch (Exception ex)
@@ -82,12 +82,13 @@ public class SupabaseArtworkRepository : IArtworkRepository
     }
 
     public async Task<ArtworkData> CreateArtworkWithUploadAsync(
-        ArtworkData artwork,
-        byte[] imageBytes,
-        byte[] thumbnailBytes = null,
-        string bucketName = "artwork-images",
-        string extension = "png",
-        string contentType = "image/png")
+    ArtworkData artwork,
+    byte[] imageBytes,
+    byte[] thumbnailBytes = null,
+    string bucketName = "artworks",
+    string extension = "png",
+    string contentType = "image/png",
+    string ownerFolder = null)
     {
         if (artwork == null) throw new ArgumentNullException(nameof(artwork));
         if (imageBytes == null || imageBytes.Length == 0) throw new ArgumentException("Image bytes are empty.");
@@ -98,14 +99,15 @@ public class SupabaseArtworkRepository : IArtworkRepository
         if (string.IsNullOrEmpty(supabaseUrl) || string.IsNullOrEmpty(supabaseKey))
             throw new InvalidOperationException("SUPABASE_URL/SUPABASE_KEY missing.");
 
-        var originalExtension = extension.TrimStart('.');
-        var originalObjectPath = $"{artwork.owner_id}/{Guid.NewGuid():N}.{originalExtension}";
-        var thumbnailObjectPath = $"{artwork.owner_id}/thumb_{Guid.NewGuid():N}.{originalExtension}";
+        // Use auth UUID folder if provided, otherwise fall back to internal owner_id
+        var folder = !string.IsNullOrEmpty(ownerFolder) ? ownerFolder : artwork.owner_id.ToString();
+        var ext = extension.TrimStart('.');
+
+        var originalObjectPath = $"{folder}/{Guid.NewGuid():N}.{ext}";
+        var thumbnailObjectPath = $"{folder}/thumb_{Guid.NewGuid():N}.{ext}";
 
         if (thumbnailBytes == null || thumbnailBytes.Length == 0)
-        {
             thumbnailBytes = GenerateHalfSizePng(imageBytes);
-        }
 
         await UploadObjectAsync(supabaseUrl, supabaseKey, bucketName, originalObjectPath, imageBytes, contentType);
         await UploadObjectAsync(supabaseUrl, supabaseKey, bucketName, thumbnailObjectPath, thumbnailBytes, contentType);
@@ -116,6 +118,7 @@ public class SupabaseArtworkRepository : IArtworkRepository
 
         return await CreateArtworkAsync(artwork);
     }
+
 
     public async Task<string> CreateSignedUrlAsync(string bucketName, string objectPath, int expiresInSeconds = 600)
     {

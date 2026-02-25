@@ -54,20 +54,12 @@ public class PaintableSurfaceRT : MonoBehaviour
     public bool enableAutoSave = true;
     public float autoSaveInterval = 10f;   // seconds, tunable in Inspector
 
+    // checking the last path to save in the database
+    string _lastAutoSavePath;
+    public string LastAutoSavePath => _lastAutoSavePath;
+    public event System.Action<string> OnSessionSaveReady;
+
     float _autoSaveTimer;
-
-    void Update()
-    {
-        if (!enableAutoSave || _a == null) return;
-
-        _autoSaveTimer += Time.deltaTime;
-        if (_autoSaveTimer >= autoSaveInterval)
-        {
-            _autoSaveTimer = 0.0f;
-            string fileName = $"painting_{System.DateTime.Now:yyyyMMdd_HHmmss}.png";
-            SaveCanvasToPNG(fileName);
-        }
-    }
 
     public void Awake()
     {
@@ -95,7 +87,7 @@ public class PaintableSurfaceRT : MonoBehaviour
 
         ApplyToRenderer(_a);
     }
-    
+
     void Start()
     {
         var mf = GetComponent<MeshFilter>();
@@ -104,7 +96,7 @@ public class PaintableSurfaceRT : MonoBehaviour
             var uvs = mf.sharedMesh.uv;
             Vector2 min = new Vector2(float.MaxValue, float.MaxValue);
             Vector2 max = new Vector2(float.MinValue, float.MinValue);
-            
+
             foreach (var uv in uvs)
             {
                 min.x = Mathf.Min(min.x, uv.x);
@@ -112,7 +104,7 @@ public class PaintableSurfaceRT : MonoBehaviour
                 max.x = Mathf.Max(max.x, uv.x);
                 max.y = Mathf.Max(max.y, uv.y);
             }
-            
+
             Debug.Log($"[PaintableSurfaceRT] UV range: min={min}, max={max}", this);
         }
     }
@@ -210,7 +202,7 @@ public class PaintableSurfaceRT : MonoBehaviour
         _displayMat.SetTextureOffset("_BaseMap", Vector2.zero);
         _displayMat.SetColor(ColorId, Color.white);
         _displayMat.SetColor(BaseColorId, Color.white);
-        
+
         // No property block needed since we're using instanced material
     }
 
@@ -273,9 +265,40 @@ public class PaintableSurfaceRT : MonoBehaviour
         return true;
     }
 
+    void Update()
+    {
+        if (!enableAutoSave || _a == null) return;
+
+        _autoSaveTimer += Time.deltaTime;
+        if (_autoSaveTimer >= autoSaveInterval)
+        {
+            _autoSaveTimer = 0.0f;
+            string fileName = $"painting_{System.DateTime.Now:yyyyMMdd_HHmmss}.png";
+            _lastAutoSavePath = SaveCanvasToPNG(fileName);
+            OnSessionSaveReady?.Invoke(_lastAutoSavePath);
+        }
+    }
+
     void LateUpdate()
     {
         if (reapplyInLateUpdate && _a != null)
             ApplyToRenderer(_a);
     }
+
+    void OnApplicationQuit()
+    {
+        if (_a == null) return;
+        // Final save + upload on quit
+        string fileName = $"painting_{System.DateTime.Now:yyyyMMdd_HHmmss}_final.png";
+        _lastAutoSavePath = SaveCanvasToPNG(fileName);
+        Debug.Log($"[PaintableSurfaceRT] Session end save: {_lastAutoSavePath}");
+        OnSessionSaveReady?.Invoke(_lastAutoSavePath);
+    }
+
+    void OnDestroy()
+    {
+        _a?.Release();
+        _b?.Release();
+    }
+
 }
