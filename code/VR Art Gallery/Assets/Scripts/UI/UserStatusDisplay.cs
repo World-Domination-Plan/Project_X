@@ -66,7 +66,7 @@ namespace VRGallery.UI
         {
             if (loginButton)
                 loginButton.onClick.AddListener(OnLoginButtonClick);
-                
+
             if (logoutButton)
                 logoutButton.onClick.AddListener(OnLogoutButtonClick);
         }
@@ -91,7 +91,7 @@ namespace VRGallery.UI
             // 1. Show login UI panel
             // 2. Load authentication scene
             // 3. Trigger authentication UI component
-            
+
             var authUI = Object.FindFirstObjectByType<AuthenticationUI>();
             if (authUI != null)
             {
@@ -133,7 +133,7 @@ namespace VRGallery.UI
             }
         }
 
-        private void ShowAuthenticatedView()
+        private async void ShowAuthenticatedView()
         {
             if (authenticatedPanel) authenticatedPanel.SetActive(true);
             if (guestPanel) guestPanel.SetActive(false);
@@ -141,7 +141,7 @@ namespace VRGallery.UI
             // Update user name
             if (userNameText && gameManager != null)
             {
-                userNameText.text = gameManager.GetCurrentUserDisplayName();
+                userNameText.text = await gameManager.GetCurrentUserDisplayName();
             }
 
             // Update user role
@@ -149,7 +149,7 @@ namespace VRGallery.UI
             {
                 var role = gameManager.CurrentUserRole;
                 userRoleText.text = role.ToDisplayString();
-                
+
                 // Update role icon
                 UpdateRoleIcon(role);
             }

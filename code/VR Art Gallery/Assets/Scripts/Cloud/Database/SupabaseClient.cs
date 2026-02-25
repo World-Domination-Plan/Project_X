@@ -1,8 +1,11 @@
 using System;
+using System.IO;
 using System.Threading.Tasks;
 using dotenv.net;
 using Supabase;
 using UnityEngine;
+using UnityEngine.Networking;
+using System.IO;
 
 namespace VRGallery.Cloud
 {
@@ -30,11 +33,21 @@ namespace VRGallery.Cloud
 
         public static bool IsInitialized => _instance != null;
 
+        public static Task InitializeAsync()
+            => InitializeAsync("supabase.json");
+
+        [Serializable]
+        private class SupabaseConfigFile
+        {
+            public string url;
+            public string anonKey;
+        }
+
         /// <summary>
         /// Initialize the Supabase client from environment variables
         /// Safe to call multiple times - subsequent calls will await the first initialization
         /// </summary>
-        public static async Task InitializeAsync()
+        public static async Task InitializeAsync(string configFileName)
         {
             // If already initialized, return immediately
             if (_instance != null)
@@ -57,23 +70,30 @@ namespace VRGallery.Cloud
 
             try
             {
-                // Load environment variables from .env file
-                DotEnv.Load(options: new DotEnvOptions(envFilePaths: new[] { "Assets/Scripts/.env" }));
+                var projectRoot = Directory.GetParent(Application.dataPath)?.FullName;
+                var codeDir = Directory.GetParent(projectRoot)?.FullName;
+                var repoRoot = Directory.GetParent(codeDir)?.FullName
+                                  ?? Directory.GetCurrentDirectory();
 
-                var supabaseUrl = System.Environment.GetEnvironmentVariable("SUPABASE_URL");
-                var supabaseKey = System.Environment.GetEnvironmentVariable("SUPABASE_KEY");
+                var envPath = Path.Combine(repoRoot, ".env");
 
+                if (File.Exists(envPath))
+                    DotEnv.Load(new DotEnvOptions(envFilePaths: new[] { envPath }));
+                else
+                    Debug.Log($"[SupabaseClient] No .env file found at {envPath}, using system environment variables.");
+
+                DotEnv.Load(new DotEnvOptions(envFilePaths: new[] { envPath }));
+
+                var supabaseUrl = Environment.GetEnvironmentVariable("SUPABASE_URL");
+                var supabaseKey = Environment.GetEnvironmentVariable("SUPABASE_KEY");
+
+                // 2) Fallback to StreamingAssets/supabase.json for builds (Quest/Android)
                 if (string.IsNullOrEmpty(supabaseUrl) || string.IsNullOrEmpty(supabaseKey))
-                {
                     throw new InvalidOperationException("SUPABASE_URL and SUPABASE_KEY environment variables are not set");
-                }
 
-                var options = new SupabaseOptions
-                {
-                    AutoConnectRealtime = false
-                };
+                var options = new SupabaseOptions { AutoConnectRealtime = false };
 
-                _instance = new Client(supabaseUrl, supabaseKey, options);
+                _instance = new Client(supabaseUrl.TrimEnd('/'), supabaseKey, options);
                 await _instance.InitializeAsync();
 
                 Debug.Log("[SupabaseClient] Supabase client initialized successfully");
@@ -89,6 +109,28 @@ namespace VRGallery.Cloud
             {
                 _isInitializing = false;
             }
+        }
+
+        private static async Task<SupabaseConfigFile> LoadConfigFromStreamingAssets(string configFileName)
+        {
+            string path = Path.Combine(Application.streamingAssetsPath, configFileName);
+
+#if UNITY_ANDROID && !UNITY_EDITOR
+            using var req = UnityWebRequest.Get(path);
+            var op = req.SendWebRequest();
+            while (!op.isDone) await Task.Yield();
+
+            if (req.result != UnityWebRequest.Result.Success)
+                throw new Exception($"Failed to load {configFileName} from StreamingAssets: {req.error}");
+
+            return JsonUtility.FromJson<SupabaseConfigFile>(req.downloadHandler.text);
+#else
+            if (!File.Exists(path))
+                throw new FileNotFoundException($"Missing {configFileName} in StreamingAssets: {path}");
+
+            var json = await File.ReadAllTextAsync(path);
+            return JsonUtility.FromJson<SupabaseConfigFile>(json);
+#endif
         }
 
         /// <summary>

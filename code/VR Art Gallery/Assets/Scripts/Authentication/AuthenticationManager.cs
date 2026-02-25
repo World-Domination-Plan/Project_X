@@ -3,9 +3,6 @@ using Supabase;
 using Supabase.Gotrue;
 using System.Threading.Tasks;
 using System;
-using System.Collections.Generic;
-using Unity.Services.Authentication;
-using Unity.Services.Core;
 using VRGallery.Cloud;
 
 namespace VRGallery.Authentication
@@ -16,6 +13,16 @@ namespace VRGallery.Authentication
     /// </summary>
     public class AuthenticationManager : MonoBehaviour
     {
+
+        // -------------------------
+        // Dev Test (optional)
+        // -------------------------
+        [Header("Dev Test (optional)")]
+        [SerializeField] private bool runDevTestOnStart = false;
+        [SerializeField] private string testEmail = "test@example.com";
+        [SerializeField] private string testPassword = "password123";
+        [SerializeField] private string testUsername = "user12345";
+
         [Header("Debug")]
         [SerializeField] private bool enableDebugLogs = true;
 
@@ -34,6 +41,14 @@ namespace VRGallery.Authentication
         public event Action<UserRole> OnUserRoleChanged;
         public event Action<string> OnAuthenticationError;
 
+        // Artist repository for profile management
+        private IArtistRepository artistRepository;
+
+        private bool _supabaseInitialized = false;
+        private bool _supabaseInitFailed = false;
+        private bool _devTestRan = false;
+
+
         private void Awake()
         {
             if (Instance == null)
@@ -48,14 +63,105 @@ namespace VRGallery.Authentication
             }
         }
 
+        private async void Start()
+        {
+            // Wait until InitializeSupabase() finishes (or fails)
+            await WaitForSupabaseInitAsync();
+
+            if (_supabaseInitFailed)
+            {
+                LogError("Supabase init failed; skipping Dev Test.");
+                return;
+            }
+
+            if (runDevTestOnStart && !_devTestRan)
+            {
+                _devTestRan = true;
+                await RunDevAuthFlowAsync();
+            }
+        }
+
+        private async Task WaitForSupabaseInitAsync(int timeoutMs = 15000)
+        {
+            var start = DateTime.UtcNow;
+
+            while (!_supabaseInitialized && !_supabaseInitFailed)
+            {
+                if ((DateTime.UtcNow - start).TotalMilliseconds > timeoutMs)
+                {
+                    _supabaseInitFailed = true;
+                    LogError("Timeout waiting for Supabase initialization.");
+                    break;
+                }
+
+                await Task.Delay(50);
+            }
+        }
+
+        private async Task RunDevAuthFlowAsync()
+        {
+            if (SupabaseClientInstance == null)
+            {
+                LogError("Dev Test aborted: SupabaseClientInstance is null.");
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(testEmail) || string.IsNullOrWhiteSpace(testPassword))
+            {
+                LogError("Dev Test aborted: testEmail/testPassword is empty.");
+                return;
+            }
+
+            LogDebug($"[DevTest] Auth starting for {testEmail} ...");
+
+            // 1) Try login
+            var okLogin = await LoginUser(testEmail, testPassword);
+            if (okLogin)
+            {
+                LogDebug("[DevTest] Login OK.");
+                return;
+            }
+
+            LogDebug("[DevTest] Login failed. Trying Register...");
+
+            // 2) Try register
+            var okRegister = await RegisterUser(testEmail, testPassword, testUsername);
+            if (!okRegister)
+            {
+                LogError("[DevTest] Register failed.");
+                return;
+            }
+
+            LogDebug("[DevTest] Register OK. Trying Login again...");
+
+            // 3) Try login again (in case SignUp doesn’t auto-create a usable session)
+            okLogin = await LoginUser(testEmail, testPassword);
+            if (!okLogin)
+            {
+                LogError("[DevTest] Login after Register failed. (Email confirmation might be ON.)");
+            }
+            else
+            {
+                LogDebug("[DevTest] Login after Register OK.");
+            }
+        }
+
+
+
         private async void InitializeSupabase()
         {
             try
             {
-                if (SupabaseClientManager.Instance == null) {
+                if (SupabaseClientManager.Instance == null)
+                {
                     await SupabaseClientManager.InitializeAsync();
                 }
                 SupabaseClientInstance = SupabaseClientManager.Instance;
+
+                // Initialize artist repository with the correct implementation
+                var clientWrapper = new SupabaseClientWrapper(SupabaseClientInstance);
+                artistRepository = new SupabaseArtistRepository(clientWrapper);
+
                 // Check for existing session
                 var session = SupabaseClientInstance.Auth.CurrentSession;
                 if (session?.User != null)
@@ -65,36 +171,57 @@ namespace VRGallery.Authentication
                     LogDebug($"Restored session for user: {session.User.Email}");
                 }
 
-
                 LogDebug("Supabase authentication initialized successfully");
+                _supabaseInitialized = true;
+
             }
             catch (Exception ex)
             {
                 LogError($"Failed to initialize Supabase: {ex.Message}");
                 OnAuthenticationError?.Invoke($"Initialization failed: {ex.Message}");
+
+                _supabaseInitFailed = true;
             }
         }
 
         #region Authentication Methods
 
         /// <summary>
-        /// Register a new user with email and password
+        /// Register a new user with email, password, and username
         /// </summary>
-        public async Task<bool> RegisterUser(string email, string password)
+        public async Task<bool> RegisterUser(string email, string password, string username)
         {
             try
             {
                 LogDebug($"Attempting to register user: {email}");
 
-                
+                // Validate inputs
+                if (string.IsNullOrWhiteSpace(email) ||
+                    string.IsNullOrWhiteSpace(password) ||
+                    string.IsNullOrWhiteSpace(username))
+                {
+                    OnAuthenticationError?.Invoke("Email, password, and username are required");
+                    return false;
+                }
+
+                // Sign up user with Supabase Auth
                 var response = await SupabaseClientInstance.Auth.SignUp(email, password);
 
                 if (response?.User != null)
                 {
                     LogDebug($"User registered successfully: {response.User.Id}");
 
-                    // Set default role as Guest
-                    await SetUserRole(response.User.Id, UserRole.Guest);
+                    // Create artist profile with username
+                    bool profileCreated = await artistRepository.CreateArtistProfileAsync(
+                        response.User.Id,
+                        username
+                    );
+
+                    if (!profileCreated)
+                    {
+                        LogError("Failed to create artist profile");
+                        OnAuthenticationError?.Invoke("Registration succeeded but profile creation failed");
+                    }
 
                     return true;
                 }
@@ -121,7 +248,7 @@ namespace VRGallery.Authentication
             try
             {
                 LogDebug($"Attempting to login user: {email}");
-                
+
                 var response = await SupabaseClientInstance.Auth.SignIn(email, password);
 
                 if (response?.User != null)
@@ -156,8 +283,8 @@ namespace VRGallery.Authentication
         /// </summary>
         public async Task<bool> LogoutUser()
         {
-            try {
-                
+            try
+            {
                 await SupabaseClientInstance.Auth.SignOut();
                 CurrentSession = null;
                 OnUserLoggedOut?.Invoke();
@@ -177,32 +304,26 @@ namespace VRGallery.Authentication
         #region Role Management
 
         /// <summary>
-        /// Get the role of a specific user
+        /// Get the role of a specific user based on their artist profile
         /// </summary>
         public async Task<UserRole> GetUserRole(string userId)
         {
             try
-            {LogDebug($"Getting role for user: {userId}");
+            {
+                LogDebug($"Getting role for user: {userId}");
 
-                var client = SupabaseClientManager.Instance;
-                // var response = await c
-                var response = await SupabaseClientInstance
-                    .From<UserProfile>()
-                    .Where(x => x.Id == userId)
-                    .Single();
+                var profile = await artistRepository.GetArtistProfileAsync(userId);
 
-                if (response == null)
+                if (profile == null)
                 {
                     LogDebug($"No profile found for user {userId}, returning Guest role");
                     return UserRole.Guest;
                 }
 
-                var role = response.Role?.ToLower() switch
-                {
-                    "artist" => UserRole.Artist,
-                    "admin" => UserRole.Admin,
-                    _ => UserRole.Guest,
-                };
+                // Determine role based on profile data
+                // Check if user is an admin (you may need to add an is_admin field to your profile)
+                // For now, users with profiles are Artists, others are Guests
+                UserRole role = UserRole.Artist;
 
                 LogDebug($"Retrieved role {role} for user: {userId}");
                 return role;
@@ -215,38 +336,19 @@ namespace VRGallery.Authentication
         }
 
         /// <summary>
-        /// Set the role of a specific user
+        /// Get the current user's username from their profile
         /// </summary>
-        public async Task<bool> SetUserRole(string userId, UserRole role)
+        public async Task<string> GetUsername(string userId)
         {
             try
             {
-                LogDebug($"Setting role {role} for user: {userId}");
-
-                var profile = new UserProfile
-                {
-                    Id = userId,
-                    Role = role.ToString()
-                };
-
-                await SupabaseClientInstance
-                    .From<UserProfile>()
-                    .Upsert(profile);
-
-                LogDebug($"Successfully set role {role} for user: {userId}");
-
-                // If this is the current user, notify of role change
-                if (CurrentUser?.Id == userId)
-                {
-                    OnUserRoleChanged?.Invoke(role);
-                }
-
-                return true;
+                var profile = await artistRepository.GetArtistProfileAsync(userId);
+                return profile?.username ?? "User";
             }
             catch (Exception ex)
             {
-                LogError($"Error setting role {role} for user {userId}: {ex.Message}");
-                return false;
+                LogError($"Error getting username for user {userId}: {ex.Message}");
+                return "User";
             }
         }
 
@@ -277,14 +379,20 @@ namespace VRGallery.Authentication
         /// <summary>
         /// Get user display name or email
         /// </summary>
-        public string GetUserDisplayName()
+        public async Task<string> GetUserDisplayName()
         {
             if (CurrentUser == null)
                 return "Guest";
 
-            return CurrentUser.UserMetadata?.ContainsKey("full_name") == true
-                ? CurrentUser.UserMetadata["full_name"].ToString()
-                : CurrentUser.Email ?? "User";
+            // Try to get username from profile
+            string username = await GetUsername(CurrentUser.Id);
+            if (!string.IsNullOrEmpty(username) && username != "User")
+            {
+                return username;
+            }
+
+            // Fallback to email
+            return CurrentUser.Email ?? "User";
         }
 
         private void LogDebug(string message)
@@ -308,16 +416,6 @@ namespace VRGallery.Authentication
             {
                 Instance = null;
             }
-        }
-
-        private void OnApplicationPause(bool pauseStatus)
-        {
-            // Handle app pause/resume if needed
-        }
-
-        private void OnApplicationFocus(bool hasFocus)
-        {
-            // Handle app focus change if needed
         }
 
         #endregion
