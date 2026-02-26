@@ -1,0 +1,17 @@
+on:
+  push:
+    tags:
+      - "*"
+
+jobs:
+  jira-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: Medsien/release-to-jira@main
+        with:
+          jira_server: ${{ secrets.JIRA_SERVER }}
+          jira_project: ${{ secrets.JIRA_PROJECT }}
+          jira_user: ${{ secrets.JIRA_USER }}
+          jira_token: ${{ secrets.JIRA_TOKEN }}
