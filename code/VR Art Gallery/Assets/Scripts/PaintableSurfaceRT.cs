@@ -37,6 +37,7 @@ public class PaintableSurfaceRT : MonoBehaviour
 
     RenderTexture _a, _b;
     MaterialPropertyBlock _mpb;
+    PaintingSessionUploader _uploader;
 
     static readonly int MainTex = Shader.PropertyToID("_MainTex");
     static readonly int BaseMap = Shader.PropertyToID("_BaseMap");
@@ -52,7 +53,7 @@ public class PaintableSurfaceRT : MonoBehaviour
 
     [Header("Autosave")]
     public bool enableAutoSave = true;
-    public float autoSaveInterval = 10f;   // seconds, tunable in Inspector
+    public float autoSaveInterval = 120f;   // seconds, tunable in Inspector
 
     // checking the last path to save in the database
     string _lastAutoSavePath;
@@ -63,30 +64,33 @@ public class PaintableSurfaceRT : MonoBehaviour
 
     public void Awake()
     {
-        //Debug.LogError($"[PaintableSurfaceRT] AWAKE on {name}, active={gameObject.activeInHierarchy}", this);
-
         if (!targetRenderer) targetRenderer = GetComponent<Renderer>();
         _mpb = new MaterialPropertyBlock();
 
         if (forceUniqueMaterialInstance)
         {
             _displayMat = new Material(targetRenderer.sharedMaterial);
-            targetRenderer.material = _displayMat;   // instance, not shared
+            targetRenderer.material = _displayMat;
         }
         else
         {
             _displayMat = targetRenderer.material;
         }
 
-
         _a = CreateRT(resolution);
         _b = CreateRT(resolution);
-
         ClearRT(_a, clearColor);
         ClearRT(_b, clearColor);
-
         ApplyToRenderer(_a);
+
+        // Find uploader — search this GameObject AND children
+        _uploader = GetComponentInChildren<PaintingSessionUploader>();
+        if (_uploader == null)
+            Debug.LogError("[PaintableSurfaceRT] *** No PaintingSessionUploader found on this GameObject or its children! Paintings will NOT be uploaded. ***", this);
+        else
+            Debug.Log($"[PaintableSurfaceRT] Uploader found: {_uploader.gameObject.name}", this);
     }
+
 
     void Start()
     {
@@ -273,11 +277,11 @@ public class PaintableSurfaceRT : MonoBehaviour
         if (_autoSaveTimer >= autoSaveInterval)
         {
             _autoSaveTimer = 0.0f;
-            string fileName = $"painting_{System.DateTime.Now:yyyyMMdd_HHmmss}.png";
-            _lastAutoSavePath = SaveCanvasToPNG(fileName);
-            OnSessionSaveReady?.Invoke(_lastAutoSavePath);
+            string timestamp = System.DateTime.UtcNow.ToString("yyyy-MM-ddTHH-mm-ss.fffZ");
+            _lastAutoSavePath = SaveCanvasToPNG($"{timestamp}.png");
         }
     }
+
 
     void LateUpdate()
     {
@@ -288,11 +292,16 @@ public class PaintableSurfaceRT : MonoBehaviour
     void OnApplicationQuit()
     {
         if (_a == null) return;
-        // Final save + upload on quit
-        string fileName = $"painting_{System.DateTime.Now:yyyyMMdd_HHmmss}_final.png";
+
+        string timestamp = System.DateTime.UtcNow.ToString("yyyy-MM-ddTHH-mm-ss.fffZ");
+        string fileName = $"{timestamp}.png";
         _lastAutoSavePath = SaveCanvasToPNG(fileName);
-        Debug.Log($"[PaintableSurfaceRT] Session end save: {_lastAutoSavePath}");
-        OnSessionSaveReady?.Invoke(_lastAutoSavePath);
+        Debug.Log($"[PaintableSurfaceRT] Final save: {_lastAutoSavePath}");
+
+        if (_uploader != null)
+            _uploader.TriggerUpload(_lastAutoSavePath, timestamp);  // pass timestamp through
+        else
+            Debug.LogWarning("[PaintableSurfaceRT] No uploader found — final save not uploaded.");
     }
 
     void OnDestroy()

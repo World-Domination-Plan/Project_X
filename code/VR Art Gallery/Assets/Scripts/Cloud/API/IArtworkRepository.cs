@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 public interface IArtworkRepository
@@ -11,8 +12,10 @@ public interface IArtworkRepository
         string bucketName = "artwork-images",
         string extension = "png",
         string contentType = "image/png",
-        string ownerFolder = null);
+        string ownerFolder = null,
+        string timestamp = null);
     Task<string> CreateSignedUrlAsync(string bucketName, string objectPath, int expiresInSeconds = 600);
     Task<byte[]> DownloadWithSignedUrlAsync(string signedUrl);
+    Task<List<ArtworkData>> GetArtworksByOwnerAsync(long ownerId);
     Task DeleteObjectAsync(string bucketName, string objectPath);
 }

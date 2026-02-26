@@ -157,47 +157,25 @@ public class SupabaseArtworkTest : MonoBehaviour
         }
     }
 
-    private static byte[] EncodeTextureToPngSafe(Texture2D source)
+    private byte[] EncodeTextureToPngSafe(Texture2D texture)
     {
-        if (source == null)
-            return null;
+        // Blit to a readable RGBA32 texture first
+        RenderTexture rt = RenderTexture.GetTemporary(texture.width, texture.height, 0, RenderTextureFormat.ARGB32);
+        Graphics.Blit(texture, rt);
 
-        try
-        {
-            var direct = source.EncodeToPNG();
-            if (direct != null && direct.Length > 0)
-                return direct;
-        }
-        catch
-        {
-        }
+        RenderTexture previous = RenderTexture.active;
+        RenderTexture.active = rt;
 
-        var renderTarget = RenderTexture.GetTemporary(
-            source.width,
-            source.height,
-            0,
-            RenderTextureFormat.ARGB32,
-            RenderTextureReadWrite.sRGB);
+        Texture2D readable = new Texture2D(texture.width, texture.height, TextureFormat.RGBA32, false);
+        readable.ReadPixels(new Rect(0, 0, rt.width, rt.height), 0, 0);
+        readable.Apply();
 
-        var previous = RenderTexture.active;
+        RenderTexture.active = previous;
+        RenderTexture.ReleaseTemporary(rt);
 
-        try
-        {
-            Graphics.Blit(source, renderTarget);
-            RenderTexture.active = renderTarget;
-
-            var readable = new Texture2D(source.width, source.height, TextureFormat.RGBA32, false);
-            readable.ReadPixels(new Rect(0, 0, source.width, source.height), 0, 0);
-            readable.Apply(false, false);
-
-            var bytes = readable.EncodeToPNG();
-            Destroy(readable);
-            return bytes;
-        }
-        finally
-        {
-            RenderTexture.active = previous;
-            RenderTexture.ReleaseTemporary(renderTarget);
-        }
+        byte[] bytes = readable.EncodeToPNG();
+        Object.DestroyImmediate(readable);
+        return bytes;
     }
+
 }

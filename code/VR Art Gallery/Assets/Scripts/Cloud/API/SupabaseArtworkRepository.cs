@@ -1,6 +1,7 @@
 using System;
 using System.Text;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 using Supabase;
 using VRGallery.Cloud;
 
@@ -88,7 +89,8 @@ public class SupabaseArtworkRepository : IArtworkRepository
     string bucketName = "artworks",
     string extension = "png",
     string contentType = "image/png",
-    string ownerFolder = null)
+    string ownerFolder = null,
+    string timestamp = null)
     {
         if (artwork == null) throw new ArgumentNullException(nameof(artwork));
         if (imageBytes == null || imageBytes.Length == 0) throw new ArgumentException("Image bytes are empty.");
@@ -99,12 +101,14 @@ public class SupabaseArtworkRepository : IArtworkRepository
         if (string.IsNullOrEmpty(supabaseUrl) || string.IsNullOrEmpty(supabaseKey))
             throw new InvalidOperationException("SUPABASE_URL/SUPABASE_KEY missing.");
 
-        // Use auth UUID folder if provided, otherwise fall back to internal owner_id
         var folder = !string.IsNullOrEmpty(ownerFolder) ? ownerFolder : artwork.owner_id.ToString();
         var ext = extension.TrimStart('.');
 
-        var originalObjectPath = $"{folder}/{Guid.NewGuid():N}.{ext}";
-        var thumbnailObjectPath = $"{folder}/thumb_{Guid.NewGuid():N}.{ext}";
+        var ts = !string.IsNullOrEmpty(timestamp) ? timestamp
+                 : System.DateTime.UtcNow.ToString("yyyy-MM-ddTHH-mm-ss.fffZ");
+
+        var originalObjectPath = $"{folder}/{ts}.{ext}";
+        var thumbnailObjectPath = $"{folder}/thumb_{ts}.{ext}";
 
         if (thumbnailBytes == null || thumbnailBytes.Length == 0)
             thumbnailBytes = GenerateHalfSizePng(imageBytes);
@@ -118,6 +122,7 @@ public class SupabaseArtworkRepository : IArtworkRepository
 
         return await CreateArtworkAsync(artwork);
     }
+
 
 
     public async Task<string> CreateSignedUrlAsync(string bucketName, string objectPath, int expiresInSeconds = 600)
@@ -274,6 +279,23 @@ public class SupabaseArtworkRepository : IArtworkRepository
             throw new InvalidOperationException("Failed to encode thumbnail PNG.");
 
         return bytes;
+    }
+
+    public async Task<List<ArtworkData>> GetArtworksByOwnerAsync(long ownerId)
+    {
+        try
+        {
+            var result = await SupabaseClientInstance
+                .From<ArtworkData>()
+                .Filter("ownerid", Postgrest.Constants.Operator.Equals, ownerId.ToString())
+                .Get();
+            return result.Models ?? new List<ArtworkData>();
+        }
+        catch (Exception ex)
+        {
+            UnityEngine.Debug.LogError($"Error fetching artworks for owner {ownerId}: {ex.Message}");
+            return new List<ArtworkData>();
+        }
     }
 
     private static void DestroyUnityObjectSafe(UnityEngine.Object obj)

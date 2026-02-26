@@ -12,60 +12,54 @@ public class PaintingSessionUploader : MonoBehaviour
 
     const string BucketName = "artworks";
 
-    PaintableSurfaceRT _surface;
     bool _uploadInProgress = false;
     string _pendingPath = null;
+    string _pendingTimestamp = null;
 
-    void Awake()
+    void Start()
     {
-        _surface = GetComponent<PaintableSurfaceRT>();
-
-        if (_surface == null)
-        {
-            Debug.LogError("[PaintingSessionUploader] No PaintableSurfaceRT found on this GameObject!");
-            return;
-        }
-
-        _surface.OnSessionSaveReady += HandleSessionSaveReady;
-        Debug.Log("[PaintingSessionUploader] Subscribed to OnSessionSaveReady.");
+        if (string.IsNullOrEmpty(authUserId))
+            Debug.LogError("[PaintingSessionUploader] *** authUserId is EMPTY ***");
+        else
+            Debug.Log($"[PaintingSessionUploader] Ready. authUserId={authUserId}");
     }
 
-    void HandleSessionSaveReady(string localFilePath)
+    public void TriggerUpload(string localFilePath, string timestamp)
     {
-        Debug.Log($"[PaintingSessionUploader] Save ready received: {localFilePath}");
+        Debug.Log($"[PaintingSessionUploader] TriggerUpload: {localFilePath}");
 
         if (_uploadInProgress)
         {
-            // Queue it — will be picked up when current upload finishes
             _pendingPath = localFilePath;
-            Debug.Log("[PaintingSessionUploader] Upload in progress, queued for after.");
+            _pendingTimestamp = timestamp;
+            Debug.Log("[PaintingSessionUploader] Upload busy — queued.");
             return;
         }
 
-        _ = UploadAsync(localFilePath);
+        _ = UploadAsync(localFilePath, timestamp);
     }
 
-    async Task UploadAsync(string localFilePath)
+    async Task UploadAsync(string localFilePath, string timestamp)
     {
         _uploadInProgress = true;
+        Debug.Log($"[PaintingSessionUploader] Starting upload: {localFilePath}");
 
         try
         {
-            if (string.IsNullOrEmpty(localFilePath) || !File.Exists(localFilePath))
+            if (!File.Exists(localFilePath))
             {
-                Debug.LogWarning($"[PaintingSessionUploader] File not found: {localFilePath}");
+                Debug.LogWarning($"[PaintingSessionUploader] File missing: {localFilePath}");
                 return;
             }
 
             if (string.IsNullOrEmpty(authUserId))
             {
-                Debug.LogError("[PaintingSessionUploader] authUserId is not set!");
+                Debug.LogError("[PaintingSessionUploader] authUserId is empty — aborting.");
                 return;
             }
 
-            Debug.Log("[PaintingSessionUploader] Resolving owner...");
             long internalOwnerId = await ResolveOwnerIdAsync(authUserId);
-            Debug.Log($"[PaintingSessionUploader] Owner id={internalOwnerId}, reading file...");
+            Debug.Log($"[PaintingSessionUploader] Owner id={internalOwnerId}");
 
             byte[] imageBytes = await File.ReadAllBytesAsync(localFilePath);
 
@@ -84,26 +78,28 @@ public class PaintingSessionUploader : MonoBehaviour
                 bucketName: BucketName,
                 extension: "png",
                 contentType: "image/png",
-                ownerFolder: authUserId
+                ownerFolder: authUserId,
+                timestamp: timestamp
             );
 
-            Debug.Log($"[PaintingSessionUploader] ✓ Uploaded — db id={saved.id}, path={saved.image_url}");
+            Debug.Log($"[PaintingSessionUploader] ✓ Done — id={saved.id}, path={saved.image_url}");
             File.Delete(localFilePath);
         }
         catch (System.Exception ex)
         {
-            Debug.LogError($"[PaintingSessionUploader] Upload failed: {ex.Message}\n{ex.StackTrace}");
+            Debug.LogError($"[PaintingSessionUploader] FAILED: {ex.Message}\n{ex.StackTrace}");
         }
         finally
         {
             _uploadInProgress = false;
 
-            // If a newer save came in while we were uploading, process it now
             if (_pendingPath != null)
             {
                 var next = _pendingPath;
+                var nextTs = _pendingTimestamp;
                 _pendingPath = null;
-                _ = UploadAsync(next);
+                _pendingTimestamp = null;
+                _ = UploadAsync(next, nextTs);
             }
         }
     }
@@ -117,7 +113,10 @@ public class PaintingSessionUploader : MonoBehaviour
             .Single();
 
         if (result == null)
-            throw new System.Exception($"No artist profile found for auth_user_id={authUuid}");
+            throw new System.Exception($"No ArtistProfile found for auth_user_id={authUuid}");
+
+        if (result.id == 0)
+            throw new System.Exception($"ArtistProfile resolved to id=0 — check [Column(\"user_id\")] on ArtistProfile. auth_user_id={result.auth_user_id}");
 
         return result.id;
     }

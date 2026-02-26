@@ -5,7 +5,6 @@ using dotenv.net;
 using Supabase;
 using UnityEngine;
 using UnityEngine.Networking;
-using System.IO;
 
 namespace VRGallery.Cloud
 {
