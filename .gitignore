@@ -1,0 +1,63 @@
+# =============== #
+# Unity generated #
+# =============== #
+[Ll]ibrary/
+[Tt]emp/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Mm]emoryCaptures/
+Obj/
+UserSettings/
+sysinfo.txt
+
+# ============ #
+# Visual Studio #
+# ============ #
+.vs/
+*.csproj
+*.unityproj
+*.sln
+*.suo
+*.tmp
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+*.pidb.meta
+
+# ========== #
+# Rider / JetBrains #
+# ========== #
+.idea/
+*.sln.iml
+
+# ============ #
+# OS generated #
+# ============ #
+.DS_Store
+Thumbs.db
+
+# ============ #
+# Builds #
+# ============ #
+*.apk
+*.aab
+*.xcodeproj
+*.xcworkspace/
+*.app/
+*.exe
+*.appx
+*.ipa
+
+# ============ #
+# Custom #
+# ============ #
+**/Packages/packages-lock.json
+.vscode/
+**.env

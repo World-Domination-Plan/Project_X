@@ -1,0 +1,95 @@
+name: Unity CI - Run Tests on Push
+
+on:
+  push:
+    branches: [ main, development ]
+  pull_request:
+    branches: [ main, development ]
+  workflow_dispatch:
+    inputs:
+      environment_name:
+        description: dev or prod
+        required: false
+
+permissions:
+  contents: read
+  checks: write
+  pull-requests: write
+
+jobs:
+  testAllModes:
+    name: Test in ${{ matrix.testMode }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        projectPath:
+        - "code/VR Art Gallery"
+        testMode:
+        - editmode
+        - playmode
+    steps:
+    - name: Free up disk space
+      run: |
+        sudo docker system prune -af || true
+        sudo apt-get clean
+        sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc || true
+        df -h
+
+    - uses: actions/checkout@v4
+      with:
+        lfs: true
+
+    - name: Remove problematic Meta packages for Linux CI
+      run: |
+        jq 'del(.dependencies."com.meta.xr.sdk.all") |
+            .dependencies."com.meta.xr.sdk.core" = "81.0.0"' \
+          "code/VR Art Gallery/Packages/manifest.json" > temp.json && mv temp.json "code/VR Art Gallery/Packages/manifest.json"
+        echo "Modified manifest.json for CI compatibility"
+        cat "code/VR Art Gallery/Packages/manifest.json"
+
+    - uses: actions/cache@v3
+      with:
+        path: ${{ matrix.projectPath }}/Library
+        key: Library-${{ matrix.projectPath }}
+        restore-keys: |
+          Library-
+
+    - name: Write Supabase .env file
+      run: |
+        echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" > .env
+        echo "SUPABASE_KEY=${{ secrets.SUPABASE_KEY }}" >> .env
+      working-directory: ${{ github.workspace }}
+
+    - uses: game-ci/unity-test-runner@v4
+      id: tests
+      env:
+        UNITY_LICENSE: ${{ secrets.UNITY_LISCENCE }}
+        UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+        UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+      with:
+        projectPath: ${{ matrix.projectPath }}
+        testMode: ${{ matrix.testMode }}
+        customParameters: -assemblyNames "PlayMode;EditMode" -nographics -silent-crashes -disable-assembly-updater
+        artifactsPath: ${{ matrix.testMode }}-artifacts
+        githubToken: ${{ secrets.GITHUB_TOKEN }}
+        checkName: ${{ matrix.testMode }} Test Results
+        coverageOptions: "generateAdditionalMetrics;generateHtmlReport;generateBadgeReport;assemblyFilters:+my.assembly.*"
+
+    - name: Delete .env file
+      if: always()
+      run: rm -f .env
+      working-directory: ${{ github.workspace }}
+
+    - uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: Test results for ${{ matrix.testMode }}
+        path: ${{ steps.tests.outputs.artifactsPath }}
+
+    - uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: Coverage results for ${{ matrix.testMode }}
+        path: ${{ steps.tests.outputs.coveragePath }}
