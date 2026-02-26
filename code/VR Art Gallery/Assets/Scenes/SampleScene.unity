@@ -4140,6 +4140,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: EmailInputField
       objectReference: {fileID: 0}
+    - target: {fileID: 8770654213433017322, guid: 6d66f0e6bfdc7b0419e63c09e70aaaa5, type: 3}
+      propertyPath: doorObject
+      value: 
+      objectReference: {fileID: 8374908807138913193}
     - target: {fileID: 8940002035656410775, guid: 6d66f0e6bfdc7b0419e63c09e70aaaa5, type: 3}
       propertyPath: m_Name
       value: PassInput
