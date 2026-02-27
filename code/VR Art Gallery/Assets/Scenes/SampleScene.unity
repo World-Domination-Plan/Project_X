@@ -3106,7 +3106,6 @@ MonoBehaviour:
   registerPanel: {fileID: 0}
   authenticatedPanel: {fileID: 0}
   loadingPanel: {fileID: 0}
-  doorObject: {fileID: 8374908807138913193}
   loginEmailField: {fileID: 850744852}
   loginPasswordField: {fileID: 850744853}
   loginButton: {fileID: 850744855}
@@ -3125,6 +3124,7 @@ MonoBehaviour:
   closeErrorButton: {fileID: 0}
   hideUIWhenAuthenticated: 1
   errorDisplayDuration: 5
+  doorObject: {fileID: 8374908807138913193}
 --- !u!1 &557733316
 GameObject:
   m_ObjectHideFlags: 0
@@ -3453,7 +3453,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6598815579406187037, guid: 18ddb545287c546e19cc77dc9fbb2189, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -4016,6 +4016,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: EmailInputField
       objectReference: {fileID: 0}
+    - target: {fileID: 8770654213433017322, guid: 6d66f0e6bfdc7b0419e63c09e70aaaa5, type: 3}
+      propertyPath: doorObject
+      value: 
+      objectReference: {fileID: 8374908807138913193}
     - target: {fileID: 8940002035656410775, guid: 6d66f0e6bfdc7b0419e63c09e70aaaa5, type: 3}
       propertyPath: m_Name
       value: PassInput
@@ -5290,6 +5294,10 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6128767186495270469, guid: 858e5deb08a20c34c9ca456cb548dfcc, type: 3}
+      propertyPath: testOnStart
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6128767186495270469, guid: 858e5deb08a20c34c9ca456cb548dfcc, type: 3}
       propertyPath: testTexture
       value: 
       objectReference: {fileID: 2800000, guid: 6d30a121ea57d4a1b804fc5068a54cde, type: 3}
@@ -6052,7 +6060,6 @@ MonoBehaviour:
   registerPanel: {fileID: 0}
   authenticatedPanel: {fileID: 0}
   loadingPanel: {fileID: 0}
-  doorObject: {fileID: 0}
   loginEmailField: {fileID: 0}
   loginPasswordField: {fileID: 0}
   loginButton: {fileID: 0}
@@ -6071,6 +6078,7 @@ MonoBehaviour:
   closeErrorButton: {fileID: 0}
   hideUIWhenAuthenticated: 1
   errorDisplayDuration: 5
+  doorObject: {fileID: 0}
 --- !u!114 &2139361617
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -11105,7 +11113,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1641682437618806733, guid: 95bd29654e15ad844be6210374a75967, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 1713736141589046007, guid: 95bd29654e15ad844be6210374a75967, type: 3}
       propertyPath: m_AnchorMax.y
