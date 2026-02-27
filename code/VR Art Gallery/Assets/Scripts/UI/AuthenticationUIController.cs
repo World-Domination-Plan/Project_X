@@ -16,7 +16,7 @@ namespace VRGallery.UI
         [SerializeField] private GameObject registerPanel;
         [SerializeField] private GameObject authenticatedPanel;
         [SerializeField] private GameObject loadingPanel;
-        [SerializeField] private GameObject doorObject;
+        
 
         [Header("Login UI")]
         [SerializeField] private TMP_InputField loginEmailField;
@@ -45,6 +45,7 @@ namespace VRGallery.UI
         [Header("Settings")]
         [SerializeField] private bool hideUIWhenAuthenticated = true;
         [SerializeField] private float errorDisplayDuration = 5f;
+        [SerializeField] private GameObject doorObject;
 
         private AuthenticationManager authManager;
 
@@ -77,7 +78,6 @@ namespace VRGallery.UI
             else
             {
                 ShowLoginPanel();
-                doorObject.SetActive(true);
             }
         }
 
@@ -117,7 +117,7 @@ namespace VRGallery.UI
         private void HideAllPanels()
         {
             if (loginPanel) loginPanel.SetActive(false);
-            if (doorObject) doorObject.SetActive(false);
+            //if (doorObject) doorObject.SetActive(false);
             if (registerPanel) registerPanel.SetActive(false);
             if (authenticatedPanel) authenticatedPanel.SetActive(false);
             if (loadingPanel) loadingPanel.SetActive(false);
@@ -127,6 +127,7 @@ namespace VRGallery.UI
         private void ShowLoginPanel()
         {
             ShowPanel(loginPanel);
+            if (doorObject) doorObject.SetActive(true);
             ClearInputFields();
         }
 
@@ -301,11 +302,14 @@ namespace VRGallery.UI
             var role = await authManager.GetCurrentUserRole();
             HandleUserRoleChanged(role);
 
+            if (doorObject) doorObject.SetActive(false);
+
             ShowAuthenticatedPanel();
         }
 
         private void HandleUserLoggedOut()
         {
+            if (doorObject) doorObject.SetActive(false);
             ShowLoginPanel();
         }
 
