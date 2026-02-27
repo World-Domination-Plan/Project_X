@@ -5,6 +5,8 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using VRGallery.Authentication;
 using VRGallery.Cloud;
+using static Postgrest.Constants;
+
 
 /// <summary>
 /// MVP gallery loader: fetches the logged-in user's saved artworks from Supabase
@@ -44,21 +46,28 @@ public class GalleryArtworkLoader : MonoBehaviour
         try
         {
             var repo = await SupabaseArtworkRepository.CreateAsync();
+
             long ownerId = await ResolveOwnerId(authUserId);
+            Debug.Log($"[GalleryArtworkLoader] Resolved ownerId: {ownerId}");
+
+            if (ownerId == 0)
+            {
+                Debug.LogWarning("[GalleryArtworkLoader] ResolveOwnerId returned 0 — no matching artist row found.");
+                return;
+            }
 
             var artworks = await repo.GetArtworksByOwnerAsync(ownerId);
             Debug.Log($"GalleryArtworkLoader: found {artworks.Count} artworks");
 
             // Auto-find ALL PaintableSurfaceRT in the scene at load time
             // no need to drag anything in the Inspector
-            var slots = FindObjectsByType<PaintableSurfaceRT>(FindObjectsSortMode.None);
+            var slots = FindObjectsByType<PaintableSurfaceRT>(FindObjectsInactive.Include, FindObjectsSortMode.None);
             Debug.Log($"GalleryArtworkLoader: found {slots.Length} canvas slots in scene");
 
             int count = Mathf.Min(artworks.Count, slots.Length);
             for (int i = 0; i < count; i++)
             {
-                var imagePath = artworks[i].GetType()
-                    .GetProperty("imageurl")?.GetValue(artworks[i]) as string;
+                var imagePath = artworks[i].image_url;
                 if (string.IsNullOrEmpty(imagePath)) continue;
 
                 string url = await repo.CreateSignedUrlAsync(bucketName, imagePath, signedUrlExpirySeconds);
@@ -73,12 +82,18 @@ public class GalleryArtworkLoader : MonoBehaviour
 
     public async void LoadAfterSpawn()
     {
+        Debug.Log("[GalleryArtworkLoader] LoadAfterSpawn called");
+
         if (AuthenticationManager.Instance == null || !AuthenticationManager.Instance.IsAuthenticated)
         {
             Debug.LogWarning("GalleryArtworkLoader: Not authenticated, skipping load.");
             return;
         }
+
+        Debug.Log($"[GalleryArtworkLoader] IsAuthenticated: {AuthenticationManager.Instance.IsAuthenticated}");
+
         string authUserId = AuthenticationManager.Instance.CurrentUser.Id;
+        Debug.Log($"[GalleryArtworkLoader] authUserId: {authUserId}");
         await LoadGallery(authUserId);
     }
 
@@ -103,7 +118,7 @@ public class GalleryArtworkLoader : MonoBehaviour
         var client = SupabaseClientManager.Instance;
         var result = await client
             .From<ArtistProfile>()
-            .Filter("authuserid", Postgrest.Constants.Operator.Equals, authUuid)
+            .Filter("auth_user_id", Operator.Equals, authUuid)
             .Single();
 
         if (result == null)

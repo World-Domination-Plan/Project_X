@@ -287,7 +287,7 @@ public class SupabaseArtworkRepository : IArtworkRepository
         {
             var result = await SupabaseClientInstance
                 .From<ArtworkData>()
-                .Filter("ownerid", Postgrest.Constants.Operator.Equals, ownerId.ToString())
+                .Filter("owner_id", Postgrest.Constants.Operator.Equals, ownerId.ToString())
                 .Get();
             return result.Models ?? new List<ArtworkData>();
         }

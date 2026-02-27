@@ -64,9 +64,13 @@ public class CanvasSpawner : MonoBehaviour
         }
 
         var go = Instantiate(canvasPrefab, pos, rot);
+        FindObjectOfType<GalleryArtworkLoader>()?.LoadAfterSpawn();
+
 
         // Optional: apply test texture to the Painting Display script inside the prefab
         //var display = go.GetComponentInChildren<PaintingDisplay>(true);
         //if (display && testTexture) display.SetTexture(testTexture);
     }
+
+
 }
