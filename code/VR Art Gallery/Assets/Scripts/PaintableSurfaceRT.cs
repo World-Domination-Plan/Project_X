@@ -259,12 +259,22 @@ public class PaintableSurfaceRT : MonoBehaviour
 
     public bool TryPaintAt(Vector2 uv)
     {
+        return PaintAt(uv, GetCurrentBrushState());
+    }
+
+    public BrushState GetCurrentBrushState()
+    {
+        return new BrushState(brushColor, radius, hardness);
+    }
+
+    public bool PaintAt(Vector2 uv, BrushState brush)
+    {
         if (mode == SurfaceMode.DisplayOnly) return false;
         if (!brushBlitMaterial) return false;
 
         brushBlitMaterial.SetTexture(BrushTex, brushMask ? brushMask : Texture2D.whiteTexture);
-        brushBlitMaterial.SetColor(BrushColorID, brushColor);
-        brushBlitMaterial.SetVector(BrushParams, new Vector4(uv.x, uv.y, radius, hardness));
+        brushBlitMaterial.SetColor(BrushColorID, brush.color);
+        brushBlitMaterial.SetVector(BrushParams, new Vector4(uv.x, uv.y, brush.radius, brush.hardness));
 
         Graphics.Blit(_a, _b, brushBlitMaterial);
         (_a, _b) = (_b, _a);
