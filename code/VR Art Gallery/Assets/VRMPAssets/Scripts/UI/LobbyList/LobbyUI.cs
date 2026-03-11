@@ -22,19 +22,22 @@ namespace XRMultiplayer
         [SerializeField] float m_AutoRefreshTime = 5.0f;
         [SerializeField] float m_RefreshCooldownTime = .5f;
 
+        [Header("Login UI Positioning")]
+        [SerializeField] private float m_UIDistance = 1.5f;
+        [SerializeField] private float m_UIHeightOffset = 0.0f;
+        [SerializeField] private float m_UISideOffset = 0.0f;
+
         [Header("Navigation Toggles & Panels")]
         [SerializeField] private Toggle m_HomeToggle;
         [SerializeField] private Toggle m_PrivateGalleriesToggle;
         [SerializeField] private Toggle m_WorkspacesToggle;
         [SerializeField] private Toggle m_LoginToggle;
-        [SerializeField] private GameObject m_LoginUI;
+        [SerializeField] private GameObject m_LoginUI;        // Assign the SCENE object here
         [SerializeField] private Transform m_HeadCamera;
-        [SerializeField] private float m_UIDistance = 1.5f;
+        // [SerializeField] private float m_UIDistance = 1.5f;
         [SerializeField] private GameObject m_HomePanel;
         [SerializeField] private GameObject m_PrivateGalleriesPanel;
         [SerializeField] private GameObject m_WorkspacesPanel;
-        // CHANGED: renamed from loginUIPrefab to track single active instance
-        private GameObject m_LoginUIInstance;
 
         [Header("Connection Texts")]
         [SerializeField] TMP_Text m_ConnectionUpdatedText;
@@ -74,66 +77,48 @@ namespace XRMultiplayer
             m_HomeToggle.onValueChanged.AddListener((isOn) => { if (isOn) ShowPanel(PanelType.Home); });
             m_PrivateGalleriesToggle.onValueChanged.AddListener((isOn) => { if (isOn) ShowPanel(PanelType.PrivateGalleries); });
             m_WorkspacesToggle.onValueChanged.AddListener((isOn) => { if (isOn) ShowPanel(PanelType.Workspaces); });
-            // CHANGED: toggle now calls ShowLoginUI/HideLoginUI instead of initLoginPrefab
             m_LoginToggle.onValueChanged.AddListener((isOn) => { if (isOn) ShowLoginUI(); else HideLoginUI(); });
 
             m_HomeToggle.isOn = true;
             m_PrivateGalleriesToggle.isOn = false;
             m_WorkspacesToggle.isOn = false;
             ShowPanel(PanelType.Home);
+
+            // Make sure login panel starts hidden
+            if (m_LoginUI != null) m_LoginUI.SetActive(false);
         }
 
         private enum PanelType { Home, PrivateGalleries, Workspaces }
 
-        // CHANGED: replaces initLoginPrefab(); destroys old clone, spawns once in front of camera
-        private void ShowLoginUIBox()
-        {
-            if (m_LoginUIInstance != null) Destroy(m_LoginUIInstance);
-            if (m_HeadCamera == null) m_HeadCamera = Camera.main.transform;
-
-            // Spawn a visible debug cube first
-            GameObject cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            cube.transform.position = m_HeadCamera.position + m_HeadCamera.forward * 1.5f;
-            cube.transform.localScale = Vector3.one * 0.1f;
-
-            // Then spawn UI
-            m_LoginUIInstance = Instantiate(m_LoginUI);
-
-        }
         private void ShowLoginUI()
         {
-            if (m_LoginUIInstance != null)
-                Destroy(m_LoginUIInstance);
+            if (m_LoginUI == null)
+            {
+                Debug.Log("No login panel in scene — skipping.");
+                return;
+            }
 
             if (m_HeadCamera == null) m_HeadCamera = Camera.main.transform;
 
-            Vector3 spawnPos = m_HeadCamera.position + m_HeadCamera.forward * m_UIDistance;
-            spawnPos.y = m_HeadCamera.position.y;
-            m_LoginUIInstance = Instantiate(m_LoginUI, spawnPos, Quaternion.LookRotation(m_HeadCamera.forward));
-            m_LoginUIInstance.transform.localScale = Vector3.one * 0.001f;
+            // Reposition in front of camera then show
+            Vector3 spawnPos = m_HeadCamera.position 
+            + m_HeadCamera.forward * m_UIDistance
+            + Vector3.up * m_UIHeightOffset
+            + m_HeadCamera.right * m_UISideOffset;
+
+            m_LoginUI.transform.position = spawnPos;
+            m_LoginUI.transform.rotation = Quaternion.LookRotation(m_HeadCamera.forward);
+            m_LoginUI.SetActive(true);
+
+            Debug.Log("Login UI shown at: " + spawnPos);
         }
 
-        // CHANGED: new method to clean up instance when toggle turns off
         public void HideLoginUI()
         {
-            if (m_LoginUIInstance != null)
-            {
-                Destroy(m_LoginUIInstance);
-                m_LoginUIInstance = null;
-            }
+            if (m_LoginUI == null) return;
+            m_LoginUI.SetActive(false);
+            Debug.Log("Login UI hidden.");
         }
-
-        // CHANGED: fixed feedback loop; uses camera forward directly instead of direction from UI position
-        //private void Update()
-        //{
-        //    if (m_LoginUIInstance != null && m_HeadCamera != null)
-        //    {
-        //        Vector3 targetPos = m_HeadCamera.position + m_HeadCamera.forward * m_UIDistance;
-        //        targetPos.y = m_HeadCamera.position.y;
-        //        m_LoginUIInstance.transform.position = targetPos;
-        //        m_LoginUIInstance.transform.rotation = Quaternion.LookRotation(m_HeadCamera.forward);
-        //    }
-        //}
 
         private void ShowPanel(PanelType panel)
         {
@@ -162,7 +147,7 @@ namespace XRMultiplayer
 
         Lobby CreateFakeLobby(string name, int currentPlayers, int maxPlayers)
         {
-            var lobby = new Lobby(
+            return new Lobby(
                 id: System.Guid.NewGuid().ToString(),
                 lobbyCode: "TEST" + UnityEngine.Random.Range(1000, 9999),
                 name: name,
@@ -175,21 +160,15 @@ namespace XRMultiplayer
                 lastUpdated: System.DateTime.UtcNow,
                 hostId: "fake-host-id",
                 players: CreateFakePlayers(currentPlayers),
-                data: new System.Collections.Generic.Dictionary<string, DataObject>()
+                data: new Dictionary<string, DataObject>()
             );
-            return lobby;
         }
 
-        System.Collections.Generic.List<Player> CreateFakePlayers(int count)
+        List<Player> CreateFakePlayers(int count)
         {
-            var players = new System.Collections.Generic.List<Player>();
+            var players = new List<Player>();
             for (int i = 0; i < count; i++)
-            {
-                players.Add(new Player(
-                    id: $"player-{i}",
-                    data: new System.Collections.Generic.Dictionary<string, PlayerDataObject>()
-                ));
-            }
+                players.Add(new Player(id: $"player-{i}", data: new Dictionary<string, PlayerDataObject>()));
             return players;
         }
 
@@ -237,12 +216,9 @@ namespace XRMultiplayer
             if (m_RoomNameText.text.IsNullOrEmpty() || m_RoomNameText.text == "<Room Name>")
                 m_RoomNameText.text = $"{XRINetworkGameManager.LocalPlayerName.Value}'s Room";
 
-
             XRINetworkGameManager.Instance.CreateNewLobby(m_RoomNameText.text, m_Private, m_PlayerCount);
-
             m_ConnectionSuccessText.text = $"Joining {m_RoomNameText.text}";
         }
-
 
         public void UpdatePlayerCount(int count)
         {
@@ -319,11 +295,6 @@ namespace XRMultiplayer
             else HideLobbies();
         }
 
-        public void OpenLogin(bool isOn)
-        {
-            if (isOn) m_LoginUI.SetActive(true);
-        }
-
         void OnConnected(bool connected)
         {
             if (connected)
@@ -395,7 +366,7 @@ namespace XRMultiplayer
             QueryResponse lobbies = await LobbyManager.GetLobbiesAsync();
             ClearLobbyParents();
 
-            if (lobbies.Results != null || lobbies.Results.Count > 0)
+            if (lobbies.Results != null && lobbies.Results.Count > 0)
             {
                 foreach (var lobby in lobbies.Results)
                 {
