@@ -33,12 +33,21 @@ namespace XRMultiplayer
         /// </summary>
         [SerializeField] bool m_UseCommandLineArgs = true;
 
+        private Task<bool> _pendingAuthTask;
 
         /// <summary>
         /// Simple Authentication function. This uses bare bones authentication and anonymous sign in.
+        /// Concurrent calls share the same in-flight task to avoid "already signing in" exceptions.
         /// </summary>
         /// <returns></returns>
-        public virtual async Task<bool> Authenticate()
+        public virtual Task<bool> Authenticate()
+        {
+            if (_pendingAuthTask == null || _pendingAuthTask.IsCompleted)
+                _pendingAuthTask = AuthenticateInternal();
+            return _pendingAuthTask;
+        }
+
+        private async Task<bool> AuthenticateInternal()
         {
             // Check if UGS has not been initialized yet, and initialize.
             if (UnityServices.State == ServicesInitializationState.Uninitialized)
@@ -48,7 +57,7 @@ namespace XRMultiplayer
                 // Check for editor clones (MPPM or ParrelSync).
                 // This allows for multiple instances of the editor to connect to UGS.
 #if UNITY_EDITOR
-                playerId = "Editor";
+                playerId = "Editor2";
 
 // #if HAS_MPPM
 //                 //Check for MPPM
