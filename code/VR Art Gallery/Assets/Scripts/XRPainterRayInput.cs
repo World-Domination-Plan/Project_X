@@ -8,14 +8,17 @@ using UnityEngine.InputSystem.Controls;
 public class XRPainterRayInput : MonoBehaviour
 {
     [Header("Ray")]
-    public Transform rayOrigin;     // assign Aim Pose if you have one
+    public Transform rayOrigin;
     public float maxDistance = 5f;
-    public LayerMask paintMask = ~0; // default: Everything
+    public LayerMask paintMask = ~0;
+
+    [Header("Brush Check")]
+    public BrushGrabState brushGrabState;
 
 #if ENABLE_INPUT_SYSTEM
     [Header("Input System")]
-    public InputActionProperty drawAction;   // bind to RightHand Activate/Select
-    public bool mouseFallback = true;        // for editor testing
+    public InputActionProperty drawAction;
+    public bool mouseFallback = true;
 #endif
 
     Vector2 _lastUV;
@@ -35,19 +38,21 @@ public class XRPainterRayInput : MonoBehaviour
 #endif
     }
 
+    bool CanPaint()
+    {
+        return brushGrabState != null && brushGrabState.IsGrabbed;
+    }
+
     bool IsDrawing()
     {
 #if ENABLE_INPUT_SYSTEM
-        // Primary: XR action
         if (drawAction.action != null)
         {
-            // Robust for both button + axis
             var ctrl = drawAction.action.activeControl;
             if (ctrl is ButtonControl bc) return bc.isPressed;
             return drawAction.action.ReadValue<float>() > 0.1f;
         }
 
-        // Optional editor fallback (Input System mouse, not UnityEngine.Input)
         if (mouseFallback && Mouse.current != null)
             return Mouse.current.leftButton.isPressed;
 
@@ -61,10 +66,9 @@ public class XRPainterRayInput : MonoBehaviour
     {
         if (!rayOrigin) rayOrigin = transform;
 
-        // If you forgot to set a mask, don’t silently fail
         if (paintMask.value == 0) paintMask = ~0;
 
-        if (!IsDrawing())
+        if (!CanPaint() || !IsDrawing())
         {
             _hasLast = false;
             return;
@@ -86,12 +90,9 @@ public class XRPainterRayInput : MonoBehaviour
 
         Vector2 uv = hit.textureCoord;
 
-        // Interpolate between last UV and current UV to avoid gaps
         if (_hasLast)
         {
             float dist = Vector2.Distance(_lastUV, uv);
-
-            // surface.radius is UV-space (0..1). Step at half radius.
             float step = Mathf.Max(0.0005f, surface.radius * 0.5f);
             int steps = Mathf.Clamp(Mathf.CeilToInt(dist / step), 1, 64);
 
