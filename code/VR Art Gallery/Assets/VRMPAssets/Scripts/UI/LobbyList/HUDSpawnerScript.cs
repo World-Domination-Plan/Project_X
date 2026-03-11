@@ -29,13 +29,16 @@ public class HUDSpawner : MonoBehaviour
         if (headCamera == null) headCamera = Camera.main.transform;
         Vector3 spawnPos = headCamera.position + headCamera.forward * spawnDistance;
         spawnPos.y = headCamera.position.y + spawnHeightOffset;
+
         if (spawnedInstance != null)
         {
-
-            m_PrefabScript = spawnedInstance.GetComponent<LobbyUI>();
-            m_PrefabScript.HideLoginUI();
-            Destroy(spawnedInstance); // Optional: Destroy previous instance if needed
+            LobbyUI existingScript = spawnedInstance.GetComponent<LobbyUI>();
+            if (existingScript != null) existingScript.HideLoginUI();
+            Destroy(spawnedInstance);
         }
+
         spawnedInstance = Instantiate(prefabToSpawn, spawnPos, Quaternion.LookRotation(headCamera.forward));
+        m_PrefabScript = spawnedInstance.GetComponent<LobbyUI>();
+
     }
 }

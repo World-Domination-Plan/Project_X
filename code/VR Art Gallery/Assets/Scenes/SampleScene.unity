@@ -5894,7 +5894,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 1864569576}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: bb27d2df843c11942ba4454eae026cbc, type: 3}
+  m_Script: {fileID: 11500000, guid: af68428a7f8be1b40b202d14d4759054, type: 3}
   m_Name: 
   m_EditorClassIdentifier: VRMP::HUDSpawner
   spawnButton: {fileID: 4546399164687744209, guid: da2b439d1a2de5c46a4f428f8cf4fe19, type: 3}
