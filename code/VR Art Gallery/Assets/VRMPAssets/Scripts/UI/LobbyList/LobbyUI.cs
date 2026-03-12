@@ -76,15 +76,18 @@ namespace XRMultiplayer
             // Create test lobby UI components
             CreateTestLobbies();
 
-            // Set up navigation toggles
-            m_HomeToggle.onValueChanged.AddListener((isOn) => { if (isOn) ShowPanel(PanelType.Home); });
-            m_PrivateGalleriesToggle.onValueChanged.AddListener((isOn) => { if (isOn) ShowPanel(PanelType.PrivateGalleries); });
-            m_WorkspacesToggle.onValueChanged.AddListener((isOn) => { if (isOn) ShowPanel(PanelType.Workspaces); });
+            // Set up navigation toggles (guard against missing references)
+            if (m_HomeToggle != null)
+                m_HomeToggle.onValueChanged.AddListener((isOn) => { if (isOn) ShowPanel(PanelType.Home); });
+            if (m_PrivateGalleriesToggle != null)
+                m_PrivateGalleriesToggle.onValueChanged.AddListener((isOn) => { if (isOn) ShowPanel(PanelType.PrivateGalleries); });
+            if (m_WorkspacesToggle != null)
+                m_WorkspacesToggle.onValueChanged.AddListener((isOn) => { if (isOn) ShowPanel(PanelType.Workspaces); });
 
             // Show only the Home panel at start and set Home toggle on
-            m_HomeToggle.isOn = true;
-            m_PrivateGalleriesToggle.isOn = false;
-            m_WorkspacesToggle.isOn = false;
+            if (m_HomeToggle != null) m_HomeToggle.isOn = true;
+            if (m_PrivateGalleriesToggle != null) m_PrivateGalleriesToggle.isOn = false;
+            if (m_WorkspacesToggle != null) m_WorkspacesToggle.isOn = false;
             ShowPanel(PanelType.Home);
 
             // hookup connection button callbacks
@@ -106,9 +109,12 @@ namespace XRMultiplayer
 
         private void ShowPanel(PanelType panel)
         {
-            m_HomePanel.SetActive(panel == PanelType.Home);
-            m_PrivateGalleriesPanel.SetActive(panel == PanelType.PrivateGalleries);
-            m_WorkspacesPanel.SetActive(panel == PanelType.Workspaces);
+            if (m_HomePanel != null)
+                m_HomePanel.SetActive(panel == PanelType.Home);
+            if (m_PrivateGalleriesPanel != null)
+                m_PrivateGalleriesPanel.SetActive(panel == PanelType.PrivateGalleries);
+            if (m_WorkspacesPanel != null)
+                m_WorkspacesPanel.SetActive(panel == PanelType.Workspaces);
         }
 
         // Testing method to create fake lobbies
