@@ -17,6 +17,7 @@ public class CanvasSpawner : MonoBehaviour
     [Header("Brush Spawn")]
     public Vector3 brushOffset = new Vector3(0.35f, -0.2f, 0f);
     public Vector3 brushRotationEuler = Vector3.zero;
+    public float brushDespawnDelay = 20f;
 
     [Header("Anti-overlap (optional)")]
     public float checkRadius = 0.25f;
@@ -70,10 +71,13 @@ public class CanvasSpawner : MonoBehaviour
 
         if (paintbrushPrefab != null)
         {
-            Vector3 brushWorldPos = canvas.transform.TransformPoint(brushOffset);
-            Quaternion brushWorldRot = canvas.transform.rotation * Quaternion.Euler(brushRotationEuler);
-
-            Instantiate(paintbrushPrefab, brushWorldPos, brushWorldRot);
+            CanvasBrushSpawner brushSpawner = canvas.AddComponent<CanvasBrushSpawner>();
+            brushSpawner.paintbrushPrefab = paintbrushPrefab;
+            brushSpawner.canvasTransform = canvas.transform;
+            brushSpawner.brushOffset = brushOffset;
+            brushSpawner.brushRotationEuler = brushRotationEuler;
+            brushSpawner.brushDespawnDelay = brushDespawnDelay;
+            brushSpawner.SpawnBrush();
         }
 
         // var display = canvas.GetComponentInChildren<PaintingDisplay>(true);
