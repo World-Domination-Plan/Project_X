@@ -35,6 +35,12 @@ namespace XRMultiplayer
         [SerializeField] TMP_Text m_ConnectionSuccessText;
         [SerializeField] TMP_Text m_ConnectionFailedText;
 
+        [Header("Connection Buttons")]
+        [SerializeField] Button m_CancelButton;                        // shows while attempting to connect
+        [SerializeField] Button m_ConnectionSuccessDoneButton;        // shown when a connection succeeds
+        [SerializeField] Button m_ConnectionFailedDoneButton;         // shown when a connection fails
+        [SerializeField] Button m_RetryConnectionButton;              // shown when there is no internet
+
         [Header("Room Creation")]
         [SerializeField] TMP_InputField m_RoomNameText;
         [SerializeField] Toggle m_PrivacyToggle;
@@ -80,6 +86,19 @@ namespace XRMultiplayer
             m_PrivateGalleriesToggle.isOn = false;
             m_WorkspacesToggle.isOn = false;
             ShowPanel(PanelType.Home);
+
+            // hookup connection button callbacks
+            if (m_CancelButton != null)
+                m_CancelButton.onClick.AddListener(CancelConnection);
+
+            if (m_ConnectionSuccessDoneButton != null)
+                m_ConnectionSuccessDoneButton.onClick.AddListener(() => ToggleConnectionSubPanel(0));
+
+            if (m_ConnectionFailedDoneButton != null)
+                m_ConnectionFailedDoneButton.onClick.AddListener(() => ToggleConnectionSubPanel(0));
+
+            if (m_RetryConnectionButton != null)
+                m_RetryConnectionButton.onClick.AddListener(CheckForInternet);
 
         }
 
@@ -214,6 +233,9 @@ namespace XRMultiplayer
         public void CancelConnection()
         {
             XRINetworkGameManager.Instance.CancelMatchmaking();
+            // return to the lobby list and reset status text
+            ToggleConnectionSubPanel(0);
+            m_ConnectionUpdatedText.text = string.Empty;
         }
 
         /// <summary>
