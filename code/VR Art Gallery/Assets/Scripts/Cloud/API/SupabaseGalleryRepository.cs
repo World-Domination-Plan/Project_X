@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Supabase;
@@ -114,15 +113,47 @@ public class SupabaseGalleryRepository : IGalleryRepository
         }
     }
 
-    // ── Layout Management ─────────────────────────────────────────────────────
+    // ── Artwork inventory management ──────────────────────────────────────────
 
-    public Hashtable MapWorldToGallery(Hashtable worldMapCoord, GalleryData gallery)
+    public async Task<GalleryData> AddArtworkToGalleryAsync(int galleryId, int artworkId)
     {
-        Hashtable gallerySlotMap = new Hashtable();
-        foreach (DictionaryEntry entry in worldMapCoord)
+        try
         {
-            if (gallery.artwork_map != null && gallery.artwork_map.ContainsKey(entry.Key))
-                gallerySlotMap[entry.Key] = gallery.artwork_map[entry.Key];
+            var gallery = await GetGalleryAsync(galleryId);
+            gallery.AddArtwork(artworkId);
+            return await UpdateGalleryAsync(gallery);
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError($"Error adding artwork {artworkId} to gallery {galleryId}: {ex.Message}");
+            throw;
+        }
+    }
+
+    public async Task<GalleryData> RemoveArtworkFromGalleryAsync(int galleryId, int artworkId)
+    {
+        try
+        {
+            var gallery = await GetGalleryAsync(galleryId);
+            gallery.RemoveArtwork(artworkId);
+            return await UpdateGalleryAsync(gallery);
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError($"Error removing artwork {artworkId} from gallery {galleryId}: {ex.Message}");
+            throw;
+        }
+    }
+
+    // ── Layout management ─────────────────────────────────────────────────────
+
+    public Dictionary<int, int> MapWorldToGallery(Dictionary<int, int> worldMapCoord, GalleryData gallery)
+    {
+        var gallerySlotMap = new Dictionary<int, int>();
+        foreach (var entry in worldMapCoord)
+        {
+            if (gallery.artwork_map != null && gallery.artwork_map.TryGetValue(entry.Key, out int artworkId))
+                gallerySlotMap[entry.Key] = artworkId;
             else
                 gallerySlotMap[entry.Key] = entry.Value;
         }
@@ -131,10 +162,10 @@ public class SupabaseGalleryRepository : IGalleryRepository
 
     public GalleryData SwapArtworks(int from_index, int to_index, GalleryData galleryObject)
     {
-        Hashtable artwork_table = galleryObject.artwork_map;
+        var artwork_table = galleryObject.artwork_map;
         if (!artwork_table.ContainsKey(from_index) || !artwork_table.ContainsKey(to_index))
             throw new ArgumentOutOfRangeException("Swap indices do not exist in artwork_map.");
-        object temp = artwork_table[to_index];
+        int temp = artwork_table[to_index];
         artwork_table[to_index] = artwork_table[from_index];
         artwork_table[from_index] = temp;
         galleryObject.artwork_map = artwork_table;
