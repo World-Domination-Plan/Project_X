@@ -1,5 +1,6 @@
 using UnityEngine;
 
+
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.Controls;
@@ -12,8 +13,8 @@ public class XRPainterRayInput : MonoBehaviour
     public float maxDistance = 5f;
     public LayerMask paintMask = ~0;
 
-    [Header("Brush Check")]
-    public BrushGrabState brushGrabState;
+    [Header("Grab Check")]
+    public UnityEngine.XR.Interaction.Toolkit.Interactors.XRBaseInteractor rightHandInteractor;
 
 #if ENABLE_INPUT_SYSTEM
     [Header("Input System")]
@@ -38,9 +39,23 @@ public class XRPainterRayInput : MonoBehaviour
 #endif
     }
 
-    bool CanPaint()
+    bool IsHoldingPaintbrush()
     {
-        return brushGrabState != null && brushGrabState.IsGrabbed;
+        if (rightHandInteractor == null)
+            return false;
+
+        if (rightHandInteractor.interactablesSelected.Count == 0)
+            return false;
+
+        var interactable = rightHandInteractor.interactablesSelected[0];
+        if (interactable == null)
+            return false;
+
+        var mb = interactable.transform.GetComponent<PaintbrushTag>();
+        if (mb != null)
+            return true;
+
+        return interactable.transform.GetComponentInParent<PaintbrushTag>() != null;
     }
 
     bool IsDrawing()
@@ -68,7 +83,7 @@ public class XRPainterRayInput : MonoBehaviour
 
         if (paintMask.value == 0) paintMask = ~0;
 
-        if (!CanPaint() || !IsDrawing())
+        if (!IsHoldingPaintbrush() || !IsDrawing())
         {
             _hasLast = false;
             return;
