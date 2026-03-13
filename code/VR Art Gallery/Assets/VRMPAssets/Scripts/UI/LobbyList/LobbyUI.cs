@@ -44,6 +44,12 @@ namespace XRMultiplayer
         [SerializeField] TMP_Text m_ConnectionSuccessText;
         [SerializeField] TMP_Text m_ConnectionFailedText;
 
+        [Header("Connection Buttons")]
+        [SerializeField] Button m_CancelButton;                        // shows while attempting to connect
+        [SerializeField] Button m_ConnectionSuccessDoneButton;        // shown when a connection succeeds
+        [SerializeField] Button m_ConnectionFailedDoneButton;         // shown when a connection fails
+        [SerializeField] Button m_RetryConnectionButton;              // shown when there is no internet
+
         [Header("Room Creation")]
         [SerializeField] TMP_InputField m_RoomNameText;
         [SerializeField] Toggle m_PrivacyToggle;
@@ -74,18 +80,33 @@ namespace XRMultiplayer
             ClearLobbyParents();
             CreateTestLobbies();
 
-            m_HomeToggle.onValueChanged.AddListener((isOn) => { if (isOn) ShowPanel(PanelType.Home); });
-            m_PrivateGalleriesToggle.onValueChanged.AddListener((isOn) => { if (isOn) ShowPanel(PanelType.PrivateGalleries); });
-            m_WorkspacesToggle.onValueChanged.AddListener((isOn) => { if (isOn) ShowPanel(PanelType.Workspaces); });
-            m_LoginToggle.onValueChanged.AddListener((isOn) => { if (isOn) ShowLoginUI(); else HideLoginUI(); });
+            // Set up navigation toggles (guard against missing references)
+            if (m_HomeToggle != null)
+                m_HomeToggle.onValueChanged.AddListener((isOn) => { if (isOn) ShowPanel(PanelType.Home); });
+            if (m_PrivateGalleriesToggle != null)
+                m_PrivateGalleriesToggle.onValueChanged.AddListener((isOn) => { if (isOn) ShowPanel(PanelType.PrivateGalleries); });
+            if (m_WorkspacesToggle != null)
+                m_WorkspacesToggle.onValueChanged.AddListener((isOn) => { if (isOn) ShowPanel(PanelType.Workspaces); });
 
-            m_HomeToggle.isOn = true;
-            m_PrivateGalleriesToggle.isOn = false;
-            m_WorkspacesToggle.isOn = false;
+            // Show only the Home panel at start and set Home toggle on
+            if (m_HomeToggle != null) m_HomeToggle.isOn = true;
+            if (m_PrivateGalleriesToggle != null) m_PrivateGalleriesToggle.isOn = false;
+            if (m_WorkspacesToggle != null) m_WorkspacesToggle.isOn = false;
             ShowPanel(PanelType.Home);
 
-            // Make sure login panel starts hidden
-            if (m_LoginUI != null) m_LoginUI.SetActive(false);
+            // hookup connection button callbacks
+            if (m_CancelButton != null)
+                m_CancelButton.onClick.AddListener(CancelConnection);
+
+            if (m_ConnectionSuccessDoneButton != null)
+                m_ConnectionSuccessDoneButton.onClick.AddListener(() => ToggleConnectionSubPanel(0));
+
+            if (m_ConnectionFailedDoneButton != null)
+                m_ConnectionFailedDoneButton.onClick.AddListener(() => ToggleConnectionSubPanel(0));
+
+            if (m_RetryConnectionButton != null)
+                m_RetryConnectionButton.onClick.AddListener(CheckForInternet);
+
         }
 
         private enum PanelType { Home, PrivateGalleries, Workspaces }
@@ -122,9 +143,12 @@ namespace XRMultiplayer
 
         private void ShowPanel(PanelType panel)
         {
-            m_HomePanel.SetActive(panel == PanelType.Home);
-            m_PrivateGalleriesPanel.SetActive(panel == PanelType.PrivateGalleries);
-            m_WorkspacesPanel.SetActive(panel == PanelType.Workspaces);
+            if (m_HomePanel != null)
+                m_HomePanel.SetActive(panel == PanelType.Home);
+            if (m_PrivateGalleriesPanel != null)
+                m_PrivateGalleriesPanel.SetActive(panel == PanelType.PrivateGalleries);
+            if (m_WorkspacesPanel != null)
+                m_WorkspacesPanel.SetActive(panel == PanelType.Workspaces);
         }
 
         void CreateTestLobbies()
@@ -228,6 +252,9 @@ namespace XRMultiplayer
         public void CancelConnection()
         {
             XRINetworkGameManager.Instance.CancelMatchmaking();
+            // return to the lobby list and reset status text
+            ToggleConnectionSubPanel(0);
+            m_ConnectionUpdatedText.text = string.Empty;
         }
 
         public void SetRoomName(string roomName)
