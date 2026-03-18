@@ -1,8 +1,9 @@
 using UnityEngine;
 using UnityEngine.XR.Interaction.Toolkit;
 using System.Collections;
+using Unity.Netcode;
 
-public class BrushRespawnOnGrab : MonoBehaviour
+public class BrushRespawnOnGrab : NetworkBehaviour
 {
     public CanvasBrushSpawner spawner;
     public float despawnDelay = 20f;
@@ -45,9 +46,8 @@ public class BrushRespawnOnGrab : MonoBehaviour
         if (!hasSpawnedReplacement)
         {
             hasSpawnedReplacement = true;
-
-        if (spawner != null)
-            spawner.SpawnReplacementBrush();
+            // Ask the server to spawn a replacement brush
+            RequestReplacementBrushServerRpc();
         }
     }
 
@@ -64,6 +64,24 @@ public class BrushRespawnOnGrab : MonoBehaviour
         yield return new WaitForSeconds(despawnDelay);
 
         if (grabInteractable != null && !grabInteractable.isSelected)
-            Destroy(gameObject);
+        {
+            // Ask the server to despawn this brush for all clients
+            DespawnBrushServerRpc();
+        }
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    void RequestReplacementBrushServerRpc()
+    {
+        if (spawner != null)
+            spawner.SpawnReplacementBrush();
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    void DespawnBrushServerRpc()
+    {
+        NetworkObject netObj = GetComponent<NetworkObject>();
+        if (netObj != null)
+            netObj.Despawn(); // Destroys on all clients by default
     }
 }

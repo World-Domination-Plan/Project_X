@@ -1,6 +1,7 @@
+using Unity.Netcode;
 using UnityEngine;
 
-public class CanvasSpawner : MonoBehaviour
+public class CanvasSpawner : NetworkBehaviour
 {
     [Header("Prefab")]
     public GameObject canvasPrefab;
@@ -35,13 +36,13 @@ public class CanvasSpawner : MonoBehaviour
             Debug.LogError("[CanvasSpawner] canvasPrefab not assigned.");
             return;
         }
-
         if (!playerHead)
         {
-            Debug.LogError("[CanvasSpawner] playerHead not assigned (XR Camera / CenterEye).");
+            Debug.LogError("[CanvasSpawner] playerHead not assigned.");
             return;
         }
 
+        // Calculate position & rotation locally, then send to server
         Vector3 forwardFlat = Vector3.ProjectOnPlane(playerHead.forward, Vector3.up).normalized;
         if (forwardFlat.sqrMagnitude < 0.001f) forwardFlat = playerHead.forward;
 
@@ -51,7 +52,6 @@ public class CanvasSpawner : MonoBehaviour
         {
             if (!Physics.CheckSphere(pos, checkRadius, overlapMask, QueryTriggerInteraction.Ignore))
                 break;
-
             pos += forwardFlat * pushStep;
         }
 
@@ -67,7 +67,16 @@ public class CanvasSpawner : MonoBehaviour
             rot = Quaternion.LookRotation(forwardFlat, Vector3.up);
         }
 
+        // Send spawn request to server with calculated pos/rot
+        SpawnCanvasServerRpc(pos, rot);
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    private void SpawnCanvasServerRpc(Vector3 pos, Quaternion rot)
+    {
+        // Spawn canvas on network — visible to ALL clients
         GameObject canvas = Instantiate(canvasPrefab, pos, rot);
+        canvas.GetComponent<NetworkObject>().Spawn();
 
         if (paintbrushPrefab != null)
         {
@@ -79,8 +88,5 @@ public class CanvasSpawner : MonoBehaviour
             brushSpawner.brushDespawnDelay = brushDespawnDelay;
             brushSpawner.SpawnBrush();
         }
-
-        // var display = canvas.GetComponentInChildren<PaintingDisplay>(true);
-        // if (display && testTexture) display.SetTexture(testTexture);
     }
 }

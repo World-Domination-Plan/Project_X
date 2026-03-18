@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections;
+using Unity.Netcode;
 
 public class CanvasBrushSpawner : MonoBehaviour
 {
@@ -44,6 +45,17 @@ public class CanvasBrushSpawner : MonoBehaviour
         Quaternion brushWorldRot = canvasTransform.rotation * Quaternion.Euler(brushRotationEuler);
 
         GameObject brush = Instantiate(paintbrushPrefab, brushWorldPos, brushWorldRot);
+
+        // Spawn on network so all clients see the brush
+        NetworkObject netObj = brush.GetComponent<NetworkObject>();
+        if (netObj != null)
+        {
+            netObj.Spawn();
+        }
+        else
+        {
+            Debug.LogError("[CanvasBrushSpawner] paintbrushPrefab is missing a NetworkObject component!");
+        }
 
         BrushRespawnOnGrab respawn = brush.GetComponent<BrushRespawnOnGrab>();
         if (respawn == null)
