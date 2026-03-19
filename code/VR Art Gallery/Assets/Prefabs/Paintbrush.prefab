@@ -24,13 +24,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4675509539360387026}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.7071068, y: 0, z: 0, w: 0.7071068}
-  m_LocalPosition: {x: 0, y: -1.94, z: 0.11}
-  m_LocalScale: {x: 0.59999996, y: 0.59999996, z: 0.59999996}
+  m_LocalRotation: {x: -0.5735764, y: 0, z: 0, w: 0.8191521}
+  m_LocalPosition: {x: 0, y: 24, z: 0.1}
+  m_LocalScale: {x: 0.6, y: 0.59999996, z: 0.59999996}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 8667235737136213466}
-  m_LocalEulerAnglesHint: {x: -90, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: -70, y: 0, z: 0}
 --- !u!1 &6157771925820107923
 GameObject:
   m_ObjectHideFlags: 0
@@ -43,6 +43,10 @@ GameObject:
   - component: {fileID: 117102388298622460}
   - component: {fileID: 5985059714315776363}
   - component: {fileID: 586407636893832798}
+  - component: {fileID: 5952598730544682284}
+  - component: {fileID: 7167497855333515993}
+  - component: {fileID: 30504701357570817}
+  - component: {fileID: 2712933426389813818}
   m_Layer: 0
   m_Name: Paintbrush
   m_TagString: Untagged
@@ -60,7 +64,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 2, y: 2, z: 2}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 8667235737136213466}
@@ -243,6 +247,96 @@ MonoBehaviour:
   m_LimitAngularVelocity: 0
   m_MaxLinearVelocityDelta: 10
   m_MaxAngularVelocityDelta: 20
+--- !u!114 &5952598730544682284
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6157771925820107923}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2ffe79613a87e4906af9b65769c4eece, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Scripts::BrushGrabState
+--- !u!114 &7167497855333515993
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6157771925820107923}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dc12ff2b24f820d48bf87552663bd2d1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Scripts::PaintbrushTag
+--- !u!114 &30504701357570817
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6157771925820107923}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 773ae0993909b484db55b426ed072c3f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Scripts::BrushToolState
+  selectedColor: {r: 0.7075472, g: 0.15686187, b: 0.15686187, a: 1}
+  radius: 0.001
+  hardness: 0.067
+  brushTipRenderer: {fileID: 0}
+  colorProperty: _BaseColor
+  presetColors:
+  - {r: 0, g: 0, b: 0, a: 1}
+  - {r: 1, g: 1, b: 1, a: 1}
+  - {r: 1, g: 0, b: 0, a: 1}
+  - {r: 0, g: 1, b: 0, a: 1}
+  - {r: 0, g: 0, b: 1, a: 1}
+  - {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  - {r: 0, g: 1, b: 1, a: 1}
+  - {r: 1, g: 0, b: 1, a: 1}
+--- !u!114 &2712933426389813818
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6157771925820107923}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5efea06a4729c4dd8956e45c68c24cda, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Scripts::BrushVrColorCycleInput
+  brushToolState: {fileID: 30504701357570817}
+  brushGrabState: {fileID: 5952598730544682284}
+  requireGrabbed: 1
+  nextColorAction:
+    m_UseReference: 0
+    m_Action:
+      m_Name: Next Color
+      m_Type: 0
+      m_ExpectedControlType: 
+      m_Id: 9831c01c-bcea-475d-9629-c37699c2fe86
+      m_Processors: 
+      m_Interactions: 
+      m_SingletonActionBindings: []
+      m_Flags: 0
+    m_Reference: {fileID: 0}
+  previousColorAction:
+    m_UseReference: 0
+    m_Action:
+      m_Name: Previous Color
+      m_Type: 0
+      m_ExpectedControlType: 
+      m_Id: 8ef5b2bb-1b6b-4584-913d-a6a7d27cf09b
+      m_Processors: 
+      m_Interactions: 
+      m_SingletonActionBindings: []
+      m_Flags: 0
+    m_Reference: {fileID: 0}
+  pressThreshold: 0.5
 --- !u!1001 &9206076195470199345
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -269,7 +363,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 1c17bd70e8593494fae742a551465fe5, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 1.35
+      value: 0.763
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 1c17bd70e8593494fae742a551465fe5, type: 3}
       propertyPath: m_LocalPosition.z
@@ -317,7 +411,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1071153316551704322, guid: 1c17bd70e8593494fae742a551465fe5, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0
+      value: 26.4
       objectReference: {fileID: 0}
     - target: {fileID: 1071153316551704322, guid: 1c17bd70e8593494fae742a551465fe5, type: 3}
       propertyPath: m_LocalPosition.z

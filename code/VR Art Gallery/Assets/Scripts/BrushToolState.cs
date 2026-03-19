@@ -5,7 +5,7 @@ public class BrushToolState : MonoBehaviour
 {
     [Header("Brush Settings")]
     [SerializeField] private Color selectedColor = Color.black;
-    [SerializeField, Range(0.001f, 0.25f)] private float radius = 0.03f;
+    [SerializeField, Range(0.001f, 10f)] private float radius = 0.03f;
     [SerializeField, Range(0f, 1f)] private float hardness = 0.7f;
 
     [Header("Optional Visual Preview")]
@@ -33,6 +33,7 @@ public class BrushToolState : MonoBehaviour
     public float Radius => radius;
     public float Hardness => hardness;
 
+    public BrushPaintSettings CurrentPaintSettings => new BrushPaintSettings(selectedColor, radius, hardness);
     public BrushState CurrentBrushState => new BrushState(selectedColor, radius, hardness);
 
     private void Awake()
