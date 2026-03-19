@@ -63,6 +63,14 @@ public class CanvasBrushSpawner : NetworkBehaviour
 
         Debug.Log($"[BrushSpawner] Brush instantiated: {brush}");
 
+
+        BrushRespawnOnGrab respawn = brush.GetComponent<BrushRespawnOnGrab>();
+        if (respawn == null)
+            respawn = brush.AddComponent<BrushRespawnOnGrab>();
+
+        respawn.spawner = this;
+        respawn.despawnDelay = brushDespawnDelay;
+
         NetworkObject netObj = brush.GetComponent<NetworkObject>();
         if (netObj != null)
         {
@@ -74,11 +82,5 @@ public class CanvasBrushSpawner : NetworkBehaviour
             Debug.LogError("[BrushSpawner] paintbrushPrefab is missing NetworkObject component!");
         }
 
-        BrushRespawnOnGrab respawn = brush.GetComponent<BrushRespawnOnGrab>();
-        if (respawn == null)
-            respawn = brush.AddComponent<BrushRespawnOnGrab>();
-
-        respawn.spawner = this;
-        respawn.despawnDelay = brushDespawnDelay;
     }
 }
