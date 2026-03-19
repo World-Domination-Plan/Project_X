@@ -1,9 +1,7 @@
 using UnityEngine;
 
-
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
-using UnityEngine.InputSystem.Controls;
 #endif
 
 public class XRPainterRayInput : MonoBehaviour
@@ -20,6 +18,7 @@ public class XRPainterRayInput : MonoBehaviour
     [Header("Input System")]
     public InputActionProperty drawAction;
     public bool mouseFallback = true;
+    public float pressThreshold = 0.1f;
 #endif
 
     Vector2 _lastUV;
@@ -28,45 +27,50 @@ public class XRPainterRayInput : MonoBehaviour
     void OnEnable()
     {
 #if ENABLE_INPUT_SYSTEM
-        if (drawAction.action != null) drawAction.action.Enable();
+        if (drawAction.action != null)
+            drawAction.action.Enable();
 #endif
     }
 
     void OnDisable()
     {
 #if ENABLE_INPUT_SYSTEM
-        if (drawAction.action != null) drawAction.action.Disable();
+        if (drawAction.action != null)
+            drawAction.action.Disable();
 #endif
     }
 
-    bool IsHoldingPaintbrush()
+    BrushToolState GetHeldBrushToolState()
     {
         if (rightHandInteractor == null)
-            return false;
+            return null;
 
         if (rightHandInteractor.interactablesSelected.Count == 0)
-            return false;
+            return null;
 
         var interactable = rightHandInteractor.interactablesSelected[0];
         if (interactable == null)
-            return false;
+            return null;
 
-        var mb = interactable.transform.GetComponent<PaintbrushTag>();
-        if (mb != null)
-            return true;
+        var brushTag = interactable.transform.GetComponent<PaintbrushTag>();
+        if (brushTag == null)
+            brushTag = interactable.transform.GetComponentInParent<PaintbrushTag>();
 
-        return interactable.transform.GetComponentInParent<PaintbrushTag>() != null;
+        if (brushTag == null)
+            return null;
+
+        var brushToolState = interactable.transform.GetComponent<BrushToolState>();
+        if (brushToolState != null)
+            return brushToolState;
+
+        return interactable.transform.GetComponentInParent<BrushToolState>();
     }
 
     bool IsDrawing()
     {
 #if ENABLE_INPUT_SYSTEM
         if (drawAction.action != null)
-        {
-            var ctrl = drawAction.action.activeControl;
-            if (ctrl is ButtonControl bc) return bc.isPressed;
-            return drawAction.action.ReadValue<float>() > 0.1f;
-        }
+            return drawAction.action.ReadValue<float>() > pressThreshold;
 
         if (mouseFallback && Mouse.current != null)
             return Mouse.current.leftButton.isPressed;
@@ -79,24 +83,33 @@ public class XRPainterRayInput : MonoBehaviour
 
     void Update()
     {
-        if (!rayOrigin) rayOrigin = transform;
+        if (!rayOrigin)
+            rayOrigin = transform;
 
-        if (paintMask.value == 0) paintMask = ~0;
+        if (paintMask.value == 0)
+            paintMask = ~0;
 
-        if (!IsHoldingPaintbrush() || !IsDrawing())
+        BrushToolState brushToolState = GetHeldBrushToolState();
+
+        if (brushToolState == null || !IsDrawing())
         {
             _hasLast = false;
             return;
         }
 
-        if (!Physics.Raycast(rayOrigin.position, rayOrigin.forward, out var hit,
-                maxDistance, paintMask, QueryTriggerInteraction.Ignore))
+        if (!Physics.Raycast(
+                rayOrigin.position,
+                rayOrigin.forward,
+                out RaycastHit hit,
+                maxDistance,
+                paintMask,
+                QueryTriggerInteraction.Ignore))
         {
             _hasLast = false;
             return;
         }
 
-        var surface = hit.collider.GetComponentInParent<PaintableSurfaceRT>();
+        PaintableSurfaceRT surface = hit.collider.GetComponentInParent<PaintableSurfaceRT>();
         if (!surface)
         {
             _hasLast = false;
@@ -104,19 +117,23 @@ public class XRPainterRayInput : MonoBehaviour
         }
 
         Vector2 uv = hit.textureCoord;
+        BrushState brush = brushToolState.CurrentBrushState;
 
         if (_hasLast)
         {
             float dist = Vector2.Distance(_lastUV, uv);
-            float step = Mathf.Max(0.0005f, surface.radius * 0.5f);
+            float step = Mathf.Max(0.0005f, brush.radius * 0.5f);
             int steps = Mathf.Clamp(Mathf.CeilToInt(dist / step), 1, 64);
 
             for (int s = 1; s <= steps; s++)
-                surface.TryPaintAt(Vector2.Lerp(_lastUV, uv, s / (float)steps));
+            {
+                Vector2 lerpedUV = Vector2.Lerp(_lastUV, uv, s / (float)steps);
+                surface.PaintAt(lerpedUV, brush);
+            }
         }
         else
         {
-            surface.TryPaintAt(uv);
+            surface.PaintAt(uv, brush);
         }
 
         _lastUV = uv;
