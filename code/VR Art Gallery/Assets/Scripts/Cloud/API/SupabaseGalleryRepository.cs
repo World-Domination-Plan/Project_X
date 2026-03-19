@@ -86,7 +86,6 @@ public class SupabaseGalleryRepository : IGalleryRepository
             gallery.updated_at = DateTime.UtcNow;
             var result = await SupabaseClientInstance
                 .From<GalleryData>()
-                .Where(x => x.id == gallery.id)
                 .Update(gallery);
             return result.Model ?? gallery;
         }
