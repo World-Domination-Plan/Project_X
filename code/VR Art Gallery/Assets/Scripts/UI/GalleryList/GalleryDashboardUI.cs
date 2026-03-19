@@ -1,3 +1,10 @@
+using UnityEngine;
+using TMPro;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+
+
 public class GalleryDashboardUI : MonoBehaviour
 {
     [SerializeField] Transform m_GalleryListParent;
@@ -15,6 +22,7 @@ public class GalleryDashboardUI : MonoBehaviour
 
     public async Task RefreshGalleryList()
     {
+        m_LoadingText.gameObject.SetActive(true);
         m_LoadingText.text = "Loading galleries...";
 
         try
@@ -24,6 +32,7 @@ public class GalleryDashboardUI : MonoBehaviour
         }
         catch (Exception ex)
         {
+            m_LoadingText.gameObject.SetActive(true);
             m_LoadingText.text = $"Error loading galleries: {ex.Message}";
             Debug.LogError(ex);
         }
@@ -31,12 +40,17 @@ public class GalleryDashboardUI : MonoBehaviour
 
     private void DisplayGalleries(List<GalleryData> galleries)
     {
-        // Clear existing items
         foreach (var item in m_ActiveGalleryItems)
             Destroy(item.gameObject);
         m_ActiveGalleryItems.Clear();
 
-        // Instantiate new items
+        if (galleries == null || galleries.Count == 0)
+        {
+            m_LoadingText.gameObject.SetActive(true);
+            m_LoadingText.text = "No galleries yet.";
+            return;
+        }
+
         foreach (var gallery in galleries)
         {
             GameObject itemObj = Instantiate(m_GalleryItemPrefab, m_GalleryListParent);

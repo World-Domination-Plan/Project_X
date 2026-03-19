@@ -1,3 +1,7 @@
+using UnityEngine;
+using UnityEngine.UI;
+using TMPro;
+
 public class GalleryItemUI : MonoBehaviour
 {
     [SerializeField] TMP_Text m_GalleryNameText;
@@ -16,7 +20,6 @@ public class GalleryItemUI : MonoBehaviour
 
         // Populate UI fields from GalleryData
         m_GalleryNameText.text = gallery.name;
-        m_DescriptionText.text = gallery.description;
         m_ArtworkCountText.text = $"{gallery.artwork_ids.Count} artworks";
 
         // Hook up button callbacks
