@@ -66,7 +66,7 @@ public class GalleryRepositoryTestAndPopulate
         {
             name = TEST_GALLERY_NAME,
             description = TEST_GALLERY_DESCRIPTION,
-            owner_id = testArtist.user_id.ToString(),
+            owner_id = testArtist.user_id,
             artwork_ids = selectedArtworks.Select(a => a.id).ToList(),
             artwork_map = CreateArtworkMap(selectedArtworks),
             created_at = DateTime.UtcNow,
