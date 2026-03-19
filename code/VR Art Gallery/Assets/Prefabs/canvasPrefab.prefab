@@ -94,8 +94,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d1f1951456c986b438fa22a53be83d8b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Scripts::CanvasBrushSpawner
-  paintbrushPrefab: {fileID: 0}
-  canvasTransform: {fileID: 0}
+  paintbrushPrefab: {fileID: 6157771925820107923, guid: f6cbcce40717380409c32c8bdb440bdf, type: 3}
+  canvasTransform: {fileID: 98501652969008110}
   brushOffset: {x: 0, y: 0, z: 0}
   brushRotationEuler: {x: 0, y: 0, z: 0}
   brushDespawnDelay: 20
