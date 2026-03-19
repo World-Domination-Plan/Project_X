@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 98501652969008110}
   - component: {fileID: 5996327552157538832}
   - component: {fileID: -7890259881662259684}
+  - component: {fileID: -937053613395505371}
   m_Layer: 0
   m_Name: canvasPrefab
   m_TagString: Untagged
@@ -81,6 +82,25 @@ MonoBehaviour:
   AutoObjectParentSync: 1
   SyncOwnerTransformWhenParented: 1
   AllowOwnerToParent: 0
+--- !u!114 &-937053613395505371
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6675986418902653827}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d1f1951456c986b438fa22a53be83d8b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Scripts::CanvasBrushSpawner
+  paintbrushPrefab: {fileID: 0}
+  canvasTransform: {fileID: 0}
+  brushOffset: {x: 0, y: 0, z: 0}
+  brushRotationEuler: {x: 0, y: 0, z: 0}
+  brushDespawnDelay: 20
+  respawnDelay: 2
+  extraRespawnOffset: {x: 0.15, y: 0, z: 0}
 --- !u!1 &7944279168436153233
 GameObject:
   m_ObjectHideFlags: 0

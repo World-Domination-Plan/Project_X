@@ -80,7 +80,7 @@ public class CanvasSpawner : NetworkBehaviour
 
         if (paintbrushPrefab != null)
         {
-            CanvasBrushSpawner brushSpawner = canvas.AddComponent<CanvasBrushSpawner>();
+            CanvasBrushSpawner brushSpawner = canvas.GetComponent<CanvasBrushSpawner>();
             brushSpawner.paintbrushPrefab = paintbrushPrefab;
             brushSpawner.canvasTransform = canvas.transform;
             brushSpawner.brushOffset = brushOffset;
