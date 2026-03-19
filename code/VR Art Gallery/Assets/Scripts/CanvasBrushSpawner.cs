@@ -58,6 +58,9 @@ public class CanvasBrushSpawner : NetworkBehaviour
         Quaternion brushWorldRot = canvasTransform.rotation * Quaternion.Euler(brushRotationEuler);
 
         GameObject brush = Instantiate(paintbrushPrefab, brushWorldPos, brushWorldRot);
+
+        brush.transform.localScale = paintbrushPrefab.transform.localScale;
+
         Debug.Log($"[BrushSpawner] Brush instantiated: {brush}");
 
         NetworkObject netObj = brush.GetComponent<NetworkObject>();
