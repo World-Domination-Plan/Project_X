@@ -2,7 +2,7 @@
 using System.Collections;
 using Unity.Netcode;
 
-public class CanvasBrushSpawner : MonoBehaviour
+public class CanvasBrushSpawner : NetworkBehaviour
 {
     public GameObject paintbrushPrefab;
     public Transform canvasTransform;
@@ -19,6 +19,7 @@ public class CanvasBrushSpawner : MonoBehaviour
     // ✅ Added here — fires automatically when canvas is spawned
     void Start()
     {
+        Debug.Log($"[BrushSpawner] Start called. IsServer: {NetworkManager.Singleton?.IsServer}");
         if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer)
             SpawnBrush();
     }
@@ -44,23 +45,30 @@ public class CanvasBrushSpawner : MonoBehaviour
 
     void SpawnBrushAtOffset(Vector3 additionalOffset)
     {
+        Debug.Log($"[BrushSpawner] SpawnBrushAtOffset called. paintbrushPrefab: {paintbrushPrefab}, canvasTransform: {canvasTransform}");
+
         if (paintbrushPrefab == null || canvasTransform == null)
+        {
+            Debug.LogError("[BrushSpawner] STOPPING — paintbrushPrefab or canvasTransform is null!");
             return;
+        }
 
         Vector3 finalOffset = brushOffset + additionalOffset;
         Vector3 brushWorldPos = canvasTransform.TransformPoint(finalOffset);
         Quaternion brushWorldRot = canvasTransform.rotation * Quaternion.Euler(brushRotationEuler);
 
         GameObject brush = Instantiate(paintbrushPrefab, brushWorldPos, brushWorldRot);
+        Debug.Log($"[BrushSpawner] Brush instantiated: {brush}");
 
         NetworkObject netObj = brush.GetComponent<NetworkObject>();
         if (netObj != null)
         {
             netObj.Spawn();
+            Debug.Log("[BrushSpawner] Brush spawned on network ✅");
         }
         else
         {
-            Debug.LogError("[CanvasBrushSpawner] paintbrushPrefab is missing a NetworkObject component!");
+            Debug.LogError("[BrushSpawner] paintbrushPrefab is missing NetworkObject component!");
         }
 
         BrushRespawnOnGrab respawn = brush.GetComponent<BrushRespawnOnGrab>();
