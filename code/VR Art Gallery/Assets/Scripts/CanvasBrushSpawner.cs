@@ -65,3 +65,4 @@ public class CanvasBrushSpawner : MonoBehaviour
         respawn.despawnDelay = brushDespawnDelay;
     }
 }
+    

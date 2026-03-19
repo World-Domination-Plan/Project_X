@@ -2024,6 +2024,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 874452183138526564, guid: 3967f87296c892e40b57e37bc8601550, type: 3}
+      propertyPath: m_NetworkConfig.Prefabs.NetworkPrefabsLists.Array.size
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 874452183138526564, guid: 3967f87296c892e40b57e37bc8601550, type: 3}
+      propertyPath: 'm_NetworkConfig.Prefabs.NetworkPrefabsLists.Array.data[3]'
+      value: 
+      objectReference: {fileID: 11400000, guid: 7c6e842cd7704084fa88682fe4e71ae6, type: 2}
     - target: {fileID: 4145292139985048678, guid: 3967f87296c892e40b57e37bc8601550, type: 3}
       propertyPath: m_RootOrder
       value: 1
@@ -2728,6 +2736,22 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: -6004120384233621424, guid: f6cbcce40717380409c32c8bdb440bdf, type: 3}
+      propertyPath: GlobalObjectIdHash
+      value: 192956731
+      objectReference: {fileID: 0}
+    - target: {fileID: -6004120384233621424, guid: f6cbcce40717380409c32c8bdb440bdf, type: 3}
+      propertyPath: SceneMigrationSynchronization
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -6004120384233621424, guid: f6cbcce40717380409c32c8bdb440bdf, type: 3}
+      propertyPath: InScenePlacedSourceGlobalObjectIdHash
+      value: 3971921665
+      objectReference: {fileID: 0}
+    - target: {fileID: 117102388298622460, guid: f6cbcce40717380409c32c8bdb440bdf, type: 3}
+      propertyPath: m_IsTrigger
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 586407636893832798, guid: f6cbcce40717380409c32c8bdb440bdf, type: 3}
       propertyPath: m_InteractionManager
       value: 
@@ -4450,8 +4474,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1212051091}
-  - component: {fileID: 1212051090}
   - component: {fileID: 1212051092}
+  - component: {fileID: 1212051090}
   m_Layer: 0
   m_Name: CanvasSpawner
   m_TagString: Untagged
