@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using System.Collections;
 using Unity.Netcode;
 
@@ -15,6 +15,13 @@ public class CanvasBrushSpawner : MonoBehaviour
     public Vector3 extraRespawnOffset = new Vector3(0.15f, 0f, 0f);
 
     bool isRespawnPending = false;
+
+    // ✅ Added here — fires automatically when canvas is spawned
+    void Start()
+    {
+        if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer)
+            SpawnBrush();
+    }
 
     public void SpawnBrush()
     {
@@ -46,7 +53,6 @@ public class CanvasBrushSpawner : MonoBehaviour
 
         GameObject brush = Instantiate(paintbrushPrefab, brushWorldPos, brushWorldRot);
 
-        // Spawn on network so all clients see the brush
         NetworkObject netObj = brush.GetComponent<NetworkObject>();
         if (netObj != null)
         {
@@ -65,4 +71,3 @@ public class CanvasBrushSpawner : MonoBehaviour
         respawn.despawnDelay = brushDespawnDelay;
     }
 }
-    

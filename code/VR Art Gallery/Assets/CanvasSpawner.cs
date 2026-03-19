@@ -1,73 +1,92 @@
-﻿using UnityEngine;
-using System.Collections;
-using Unity.Netcode;
+﻿using Unity.Netcode;
+using UnityEngine;
 
-public class CanvasBrushSpawner : MonoBehaviour
+public class CanvasSpawner : NetworkBehaviour
 {
+    [Header("Prefab")]
+    public GameObject canvasPrefab;
     public GameObject paintbrushPrefab;
-    public Transform canvasTransform;
-    public Vector3 brushOffset;
-    public Vector3 brushRotationEuler;
+
+    [Header("VR Camera / Head Transform (CenterEye)")]
+    public Transform playerHead;
+
+    [Header("Spawn Tuning")]
+    public float spawnDistance = 1.5f;
+    public float heightOffset = -0.15f;
+    public bool faceUser = true;
+
+    [Header("Brush Spawn")]
+    public Vector3 brushOffset = new Vector3(0.35f, -0.2f, 0f);
+    public Vector3 brushRotationEuler = Vector3.zero;
     public float brushDespawnDelay = 20f;
 
-    [Header("Respawn Tuning")]
-    public float respawnDelay = 2f;
-    public Vector3 extraRespawnOffset = new Vector3(0.15f, 0f, 0f);
+    [Header("Anti-overlap (optional)")]
+    public float checkRadius = 0.25f;
+    public float pushStep = 0.3f;
+    public int maxPushTries = 8;
+    public LayerMask overlapMask = ~0;
 
-    bool isRespawnPending = false;
+    [Header("Test image (optional override)")]
+    public Texture2D testTexture;
 
-    // ✅ Added here — fires automatically when canvas is spawned
-    void Start()
+    public void Create()
     {
-        if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer)
-            SpawnBrush();
-    }
-
-    public void SpawnBrush()
-    {
-        SpawnBrushAtOffset(Vector3.zero);
-    }
-
-    public void SpawnReplacementBrush()
-    {
-        if (!isRespawnPending)
-            StartCoroutine(SpawnReplacementAfterDelay());
-    }
-
-    IEnumerator SpawnReplacementAfterDelay()
-    {
-        isRespawnPending = true;
-        yield return new WaitForSeconds(respawnDelay);
-        SpawnBrushAtOffset(extraRespawnOffset);
-        isRespawnPending = false;
-    }
-
-    void SpawnBrushAtOffset(Vector3 additionalOffset)
-    {
-        if (paintbrushPrefab == null || canvasTransform == null)
-            return;
-
-        Vector3 finalOffset = brushOffset + additionalOffset;
-        Vector3 brushWorldPos = canvasTransform.TransformPoint(finalOffset);
-        Quaternion brushWorldRot = canvasTransform.rotation * Quaternion.Euler(brushRotationEuler);
-
-        GameObject brush = Instantiate(paintbrushPrefab, brushWorldPos, brushWorldRot);
-
-        NetworkObject netObj = brush.GetComponent<NetworkObject>();
-        if (netObj != null)
+        if (!canvasPrefab)
         {
-            netObj.Spawn();
+            Debug.LogError("[CanvasSpawner] canvasPrefab not assigned.");
+            return;
+        }
+        if (!playerHead)
+        {
+            Debug.LogError("[CanvasSpawner] playerHead not assigned.");
+            return;
+        }
+
+        // Calculate position & rotation locally, then send to server
+        Vector3 forwardFlat = Vector3.ProjectOnPlane(playerHead.forward, Vector3.up).normalized;
+        if (forwardFlat.sqrMagnitude < 0.001f) forwardFlat = playerHead.forward;
+
+        Vector3 pos = playerHead.position + forwardFlat * spawnDistance + Vector3.up * heightOffset;
+
+        for (int i = 0; i < maxPushTries; i++)
+        {
+            if (!Physics.CheckSphere(pos, checkRadius, overlapMask, QueryTriggerInteraction.Ignore))
+                break;
+            pos += forwardFlat * pushStep;
+        }
+
+        Quaternion rot;
+        if (faceUser)
+        {
+            Vector3 toUserFlat = Vector3.ProjectOnPlane(playerHead.position - pos, Vector3.up).normalized;
+            if (toUserFlat.sqrMagnitude < 0.001f) toUserFlat = -forwardFlat;
+            rot = Quaternion.LookRotation(toUserFlat, Vector3.up);
         }
         else
         {
-            Debug.LogError("[CanvasBrushSpawner] paintbrushPrefab is missing a NetworkObject component!");
+            rot = Quaternion.LookRotation(forwardFlat, Vector3.up);
         }
 
-        BrushRespawnOnGrab respawn = brush.GetComponent<BrushRespawnOnGrab>();
-        if (respawn == null)
-            respawn = brush.AddComponent<BrushRespawnOnGrab>();
+        // Send spawn request to server with calculated pos/rot
+        SpawnCanvasServerRpc(pos, rot);
+    }
 
-        respawn.spawner = this;
-        respawn.despawnDelay = brushDespawnDelay;
+    [ServerRpc(RequireOwnership = false)]
+    private void SpawnCanvasServerRpc(Vector3 pos, Quaternion rot)
+    {
+        // Spawn canvas on network — visible to ALL clients
+        GameObject canvas = Instantiate(canvasPrefab, pos, rot);
+        canvas.GetComponent<NetworkObject>().Spawn();
+
+        if (paintbrushPrefab != null)
+        {
+            CanvasBrushSpawner brushSpawner = canvas.GetComponent<CanvasBrushSpawner>();
+            brushSpawner.paintbrushPrefab = paintbrushPrefab;
+            brushSpawner.canvasTransform = canvas.transform;
+            brushSpawner.brushOffset = brushOffset;
+            brushSpawner.brushRotationEuler = brushRotationEuler;
+            brushSpawner.brushDespawnDelay = brushDespawnDelay;
+            brushSpawner.SpawnBrush();
+        }
     }
 }
