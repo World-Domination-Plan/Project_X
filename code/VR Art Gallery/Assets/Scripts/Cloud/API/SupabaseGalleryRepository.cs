@@ -31,7 +31,7 @@ public class SupabaseGalleryRepository : IGalleryRepository
 
         try
         {
-            gallery.created_at = DateTime.UtcNow;
+            gallery.created_at = DateTime.UtcNow; 
             gallery.updated_at = DateTime.UtcNow;
 
             // Insert gallery row
@@ -242,6 +242,44 @@ public class SupabaseGalleryRepository : IGalleryRepository
         catch (Exception ex)
         {
             Debug.LogError($"Error removing artwork {artworkId} from gallery {galleryId}: {ex.Message}");
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Gets you a map of slot index => artwork url , thumbnail url (if getThumbnail == true) for first maxArtworks(9 by default, -1 if you need all) in the gallery.
+    /// </summary>
+
+    public async Task<Dictionary<int, (string, string)>> GetArtworkPaths(int galleryId, int maxArtWork = 9, bool getThumbnails = false)
+    {
+        try
+        {
+            var gallery = await GetGalleryAsync(galleryId);
+            var artworkPaths = new Dictionary<int, (string, string)>();
+            if (gallery.artwork_map == null)
+                return artworkPaths;
+            var map_iterable = maxArtWork > 0 ? gallery.artwork_map.Take(maxArtWork) : gallery.artwork_map;
+            foreach (var kvp in map_iterable)
+            {
+                int slotIndex = kvp.Key;
+                int artworkId = kvp.Value;
+
+                // Fetch artwork data to get the path
+                var artwork = await SupabaseClientInstance
+                    .From<ArtworkData>()
+                    .Where(x => x.id == artworkId)
+                    .Single();
+                if (artwork != null)
+                {
+                    string thumbnailPath = getThumbnails ? artwork.thumbnail_url : null;
+                    artworkPaths[slotIndex] = (artwork.image_url, thumbnailPath);
+                }
+            }
+            return artworkPaths;
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError($"Error getting artwork paths for gallery {galleryId}: {ex.Message}");
             throw;
         }
     }
