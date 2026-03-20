@@ -1,5 +1,4 @@
 using UnityEngine;
-using System.Collections;
 
 public class CanvasBrushSpawner : MonoBehaviour
 {
@@ -7,31 +6,21 @@ public class CanvasBrushSpawner : MonoBehaviour
     public Transform canvasTransform;
     public Vector3 brushOffset;
     public Vector3 brushRotationEuler;
-    public float brushDespawnDelay = 20f;
 
-    [Header("Respawn Tuning")]
-    public float respawnDelay = 2f;
-    public Vector3 extraRespawnOffset = new Vector3(0.15f, 0f, 0f);
-
-    bool isRespawnPending = false;
+    private GameObject currentBrush;
 
     public void SpawnBrush()
     {
+        if (currentBrush != null)
+            return;
+
         SpawnBrushAtOffset(Vector3.zero);
     }
 
-    public void SpawnReplacementBrush()
+    public void RespawnBrushIfMissing()
     {
-        if (!isRespawnPending)
-            StartCoroutine(SpawnReplacementAfterDelay());
-    }
-
-    IEnumerator SpawnReplacementAfterDelay()
-    {
-        isRespawnPending = true;
-        yield return new WaitForSeconds(respawnDelay);
-        SpawnBrushAtOffset(extraRespawnOffset);
-        isRespawnPending = false;
+        if (currentBrush == null)
+            SpawnBrushAtOffset(Vector3.zero);
     }
 
     void SpawnBrushAtOffset(Vector3 additionalOffset)
@@ -43,13 +32,21 @@ public class CanvasBrushSpawner : MonoBehaviour
         Vector3 brushWorldPos = canvasTransform.TransformPoint(finalOffset);
         Quaternion brushWorldRot = canvasTransform.rotation * Quaternion.Euler(brushRotationEuler);
 
-        GameObject brush = Instantiate(paintbrushPrefab, brushWorldPos, brushWorldRot);
+        currentBrush = Instantiate(paintbrushPrefab, brushWorldPos, brushWorldRot);
 
-        BrushRespawnOnGrab respawn = brush.GetComponent<BrushRespawnOnGrab>();
-        if (respawn == null)
-            respawn = brush.AddComponent<BrushRespawnOnGrab>();
+        BrushRespawnOnGrab grabState = currentBrush.GetComponent<BrushRespawnOnGrab>();
+        if (grabState == null)
+            currentBrush.AddComponent<BrushRespawnOnGrab>();
+    }
 
-        respawn.spawner = this;
-        respawn.despawnDelay = brushDespawnDelay;
+    public GameObject GetCurrentBrush()
+    {
+        return currentBrush;
+    }
+
+    public void ClearBrushReference(GameObject brush)
+    {
+        if (currentBrush == brush)
+            currentBrush = null;
     }
 }
