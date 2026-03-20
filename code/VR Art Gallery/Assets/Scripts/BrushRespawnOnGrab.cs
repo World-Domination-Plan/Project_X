@@ -11,6 +11,7 @@ public class BrushRespawnOnGrab : NetworkBehaviour
     UnityEngine.XR.Interaction.Toolkit.Interactables.XRGrabInteractable grabInteractable;
     bool hasSpawnedReplacement = false;
     Coroutine despawnRoutine;
+    public bool IsGrabbed { get; private set; }
 
     void Awake()
     {
