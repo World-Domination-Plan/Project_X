@@ -121,7 +121,7 @@ public class XRPainterRayInput : MonoBehaviour
             return;
         }
 
-        // Get the sync component � it lives on the same GameObject as PaintableSurfaceRT
+        // Get the sync component – it lives on the same GameObject as PaintableSurfaceRT
         var sync = surface.GetComponent<CanvasStrokeSyncNgo>();
         if (!sync)
         {
@@ -132,26 +132,40 @@ public class XRPainterRayInput : MonoBehaviour
             return;
         }
 
+        // // If we switched surfaces or this is a fresh sync stroke, start a new stroke context
+        // if (!_strokeOpen || _activeSync != sync)
+        // {
+        //     EndStroke();
+        //     _activeSync = sync;
+        //     _strokeOpen = true;
+        //     _activeStrokeId = 0ul; // The current sync protocol tracks an active stroke by ID
+        //     _hasLast = false;      // start fresh interpolation in this stroke
+        // }
+
         Vector2 uv = hit.textureCoord;
         BrushState brush = brushToolState.CurrentBrushState;
+
         if (_hasLast)
         {
             float dist = Vector2.Distance(_lastUV, uv);
             float step = Mathf.Max(0.0005f, brush.radius * 0.5f);
             int steps = Mathf.Clamp(Mathf.CeilToInt(dist / step), 1, 64);
 
-            // Batch all interpolated points into one RPC call
+            // Keep local painting consistent with synced points for visual feedback.
             ushort[] points = new ushort[steps * 2];
             for (int s = 1; s <= steps; s++)
             {
                 Vector2 p = Vector2.Lerp(_lastUV, uv, s / (float)steps);
                 points[(s - 1) * 2] = CanvasStrokeSyncNgo.EncodeAxis(p.x);
                 points[(s - 1) * 2 + 1] = CanvasStrokeSyncNgo.EncodeAxis(p.y);
+                surface.TryPaintAt(p);
             }
+
             sync.LocalStrokePoints(_activeStrokeId, points);
         }
         else
         {
+            surface.TryPaintAt(uv);
             sync.LocalStrokePoints(_activeStrokeId, new ushort[]
             {
                 CanvasStrokeSyncNgo.EncodeAxis(uv.x),
