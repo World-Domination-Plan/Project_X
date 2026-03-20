@@ -132,15 +132,16 @@ public class XRPainterRayInput : MonoBehaviour
             return;
         }
 
-        // // If we switched surfaces or this is a fresh sync stroke, start a new stroke context
-        // if (!_strokeOpen || _activeSync != sync)
-        // {
-        //     EndStroke();
-        //     _activeSync = sync;
-        //     _strokeOpen = true;
-        //     _activeStrokeId = 0ul; // The current sync protocol tracks an active stroke by ID
-        //     _hasLast = false;      // start fresh interpolation in this stroke
-        // }
+        // Begin a new stroke if we just started painting or switched canvas
+        if (!_strokeOpen || _activeSync != sync)
+        {
+            EndStroke(); // close previous stroke if we switched canvas
+            _activeSync = sync;
+            _activeStrokeId = sync.CreateLocalStrokeId();
+            sync.LocalStrokeBegin(_activeStrokeId, sync.Surface.GetCurrentBrushState());
+            _strokeOpen = true;
+            _hasLast = false;
+        }
 
         Vector2 uv = hit.textureCoord;
         BrushState brush = brushToolState.CurrentBrushState;
