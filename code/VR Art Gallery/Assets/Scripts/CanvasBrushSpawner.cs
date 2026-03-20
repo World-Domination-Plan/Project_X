@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections;
+using Unity.Netcode;
 
 public class CanvasBrushSpawner : NetworkBehaviour
 {
@@ -15,18 +16,36 @@ public class CanvasBrushSpawner : NetworkBehaviour
 
     bool isRespawnPending = false;
 
+    // ✅ Added here — fires automatically when canvas is spawned
+    void Start()
+    {
+        Debug.Log($"[BrushSpawner] Start called. IsServer: {NetworkManager.Singleton?.IsServer}");
+        if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer)
+            SpawnBrush();
+    }
+
     public void SpawnBrush()
     {
-        if (currentBrush != null)
-            return;
-
         SpawnBrushAtOffset(Vector3.zero);
+    }
+
+    public void SpawnReplacementBrush()
+    {
+        if (!isRespawnPending)
+            StartCoroutine(SpawnReplacementAfterDelay());
+    }
+
+    IEnumerator SpawnReplacementAfterDelay()
+    {
+        isRespawnPending = true;
+        yield return new WaitForSeconds(respawnDelay);
+        SpawnBrushAtOffset(extraRespawnOffset);
+        isRespawnPending = false;
     }
 
     public void RespawnBrushIfMissing()
     {
-        if (currentBrush == null)
-            SpawnBrushAtOffset(Vector3.zero);
+        SpawnBrushAtOffset(Vector3.zero);
     }
 
     void SpawnBrushAtOffset(Vector3 additionalOffset)
@@ -45,11 +64,27 @@ public class CanvasBrushSpawner : NetworkBehaviour
 
         GameObject brush = Instantiate(paintbrushPrefab, brushWorldPos, brushWorldRot);
 
+        brush.transform.localScale = paintbrushPrefab.transform.localScale;
+
+        Debug.Log($"[BrushSpawner] Brush instantiated: {brush}");
+
         BrushRespawnOnGrab respawn = brush.GetComponent<BrushRespawnOnGrab>();
         if (respawn == null)
             respawn = brush.AddComponent<BrushRespawnOnGrab>();
 
         respawn.spawner = this;
         respawn.despawnDelay = brushDespawnDelay;
+
+        NetworkObject netObj = brush.GetComponent<NetworkObject>();
+        if (netObj != null)
+        {
+            netObj.Spawn();
+            Debug.Log("[BrushSpawner] Brush spawned on network ✅");
+        }
+        else
+        {
+            Debug.LogError("[BrushSpawner] paintbrushPrefab is missing NetworkObject component!");
+        }
+
     }
 }

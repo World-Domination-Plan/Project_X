@@ -5,9 +5,12 @@ using Unity.Netcode;
 
 public class BrushRespawnOnGrab : NetworkBehaviour
 {
-    private UnityEngine.XR.Interaction.Toolkit.Interactables.XRGrabInteractable grabInteractable;
+    public CanvasBrushSpawner spawner;
+    public float despawnDelay = 20f;
 
-    public bool IsGrabbed { get; private set; }
+    UnityEngine.XR.Interaction.Toolkit.Interactables.XRGrabInteractable grabInteractable;
+    bool hasSpawnedReplacement = false;
+    Coroutine despawnRoutine;
 
     void Awake()
     {
