@@ -18,7 +18,6 @@ public class CanvasSpawner : NetworkBehaviour
     [Header("Brush Spawn")]
     public Vector3 brushOffset = new Vector3(0.35f, -0.2f, 0f);
     public Vector3 brushRotationEuler = Vector3.zero;
-    public float brushDespawnDelay = 20f;
 
     [Header("Anti-overlap (optional)")]
     public float checkRadius = 0.25f;
@@ -44,7 +43,8 @@ public class CanvasSpawner : NetworkBehaviour
 
         // Calculate position & rotation locally, then send to server
         Vector3 forwardFlat = Vector3.ProjectOnPlane(playerHead.forward, Vector3.up).normalized;
-        if (forwardFlat.sqrMagnitude < 0.001f) forwardFlat = playerHead.forward;
+        if (forwardFlat.sqrMagnitude < 0.001f)
+            forwardFlat = playerHead.forward;
 
         Vector3 pos = playerHead.position + forwardFlat * spawnDistance + Vector3.up * heightOffset;
 
@@ -59,7 +59,9 @@ public class CanvasSpawner : NetworkBehaviour
         if (faceUser)
         {
             Vector3 toUserFlat = Vector3.ProjectOnPlane(playerHead.position - pos, Vector3.up).normalized;
-            if (toUserFlat.sqrMagnitude < 0.001f) toUserFlat = -forwardFlat;
+            if (toUserFlat.sqrMagnitude < 0.001f)
+                toUserFlat = -forwardFlat;
+
             rot = Quaternion.LookRotation(toUserFlat, Vector3.up);
         }
         else
@@ -85,7 +87,6 @@ public class CanvasSpawner : NetworkBehaviour
             brushSpawner.canvasTransform = canvas.transform;
             brushSpawner.brushOffset = brushOffset;
             brushSpawner.brushRotationEuler = brushRotationEuler;
-            brushSpawner.brushDespawnDelay = brushDespawnDelay;
             brushSpawner.SpawnBrush();
         }
     }

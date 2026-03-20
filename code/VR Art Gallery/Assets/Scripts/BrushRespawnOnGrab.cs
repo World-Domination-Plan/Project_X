@@ -5,12 +5,9 @@ using Unity.Netcode;
 
 public class BrushRespawnOnGrab : NetworkBehaviour
 {
-    public CanvasBrushSpawner spawner;
-    public float despawnDelay = 20f;
+    private UnityEngine.XR.Interaction.Toolkit.Interactables.XRGrabInteractable grabInteractable;
 
-    UnityEngine.XR.Interaction.Toolkit.Interactables.XRGrabInteractable grabInteractable;
-    bool hasSpawnedReplacement = false;
-    Coroutine despawnRoutine;
+    public bool IsGrabbed { get; private set; }
 
     void Awake()
     {
@@ -49,6 +46,7 @@ public class BrushRespawnOnGrab : NetworkBehaviour
             // Ask the server to spawn a replacement brush
             RequestReplacementBrushServerRpc();
         }
+        IsGrabbed = true;
     }
 
     void OnReleased(SelectExitEventArgs args)
@@ -83,5 +81,6 @@ public class BrushRespawnOnGrab : NetworkBehaviour
         NetworkObject netObj = GetComponent<NetworkObject>();
         if (netObj != null)
             netObj.Despawn(); // Destroys on all clients by default
+        IsGrabbed = false;
     }
 }
