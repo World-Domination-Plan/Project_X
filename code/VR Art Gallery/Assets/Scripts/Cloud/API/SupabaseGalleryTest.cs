@@ -259,6 +259,8 @@ public class SupabaseGalleryTest : MonoBehaviour
         }
     }
 
+
+
     /// <summary>
     /// Tests MapWorldToGallery locally — no network calls needed.
     /// </summary>
