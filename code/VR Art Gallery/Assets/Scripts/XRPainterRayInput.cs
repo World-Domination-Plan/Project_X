@@ -2,7 +2,6 @@ using UnityEngine;
 
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
-using UnityEngine.InputSystem.Controls;
 #endif
 
 public class XRPainterRayInput : MonoBehaviour
@@ -19,6 +18,7 @@ public class XRPainterRayInput : MonoBehaviour
     [Header("Input System")]
     public InputActionProperty drawAction;
     public bool mouseFallback = true;
+    public float pressThreshold = 0.1f;
 #endif
 
     Vector2 _lastUV;
@@ -32,39 +32,52 @@ public class XRPainterRayInput : MonoBehaviour
     void OnEnable()
     {
 #if ENABLE_INPUT_SYSTEM
-        if (drawAction.action != null) drawAction.action.Enable();
+        if (drawAction.action != null)
+            drawAction.action.Enable();
 #endif
     }
 
     void OnDisable()
     {
 #if ENABLE_INPUT_SYSTEM
-        if (drawAction.action != null) drawAction.action.Disable();
+        if (drawAction.action != null)
+            drawAction.action.Disable();
 #endif
         EndStroke(); // clean up if disabled mid-stroke
     }
 
-    bool IsHoldingPaintbrush()
+    BrushToolState GetHeldBrushToolState()
     {
-        if (rightHandInteractor == null) return false;
-        if (rightHandInteractor.interactablesSelected.Count == 0) return false;
+        if (rightHandInteractor == null)
+            return null;
+
+        if (rightHandInteractor.interactablesSelected.Count == 0)
+            return null;
 
         var interactable = rightHandInteractor.interactablesSelected[0];
-        if (interactable == null) return false;
+        if (interactable == null)
+            return null;
 
-        return interactable.transform.GetComponent<PaintbrushTag>() != null
-            || interactable.transform.GetComponentInParent<PaintbrushTag>() != null;
+        var brushTag = interactable.transform.GetComponent<PaintbrushTag>();
+        if (brushTag == null)
+            brushTag = interactable.transform.GetComponentInParent<PaintbrushTag>();
+
+        if (brushTag == null)
+            return null;
+
+        var brushToolState = interactable.transform.GetComponent<BrushToolState>();
+        if (brushToolState != null)
+            return brushToolState;
+
+        return interactable.transform.GetComponentInParent<BrushToolState>();
     }
 
     bool IsDrawing()
     {
 #if ENABLE_INPUT_SYSTEM
         if (drawAction.action != null)
-        {
-            var ctrl = drawAction.action.activeControl;
-            if (ctrl is ButtonControl bc) return bc.isPressed;
-            return drawAction.action.ReadValue<float>() > 0.1f;
-        }
+            return drawAction.action.ReadValue<float>() > pressThreshold;
+
         if (mouseFallback && Mouse.current != null)
             return Mouse.current.leftButton.isPressed;
         return false;
@@ -75,32 +88,40 @@ public class XRPainterRayInput : MonoBehaviour
 
     void Update()
     {
-        if (!rayOrigin) rayOrigin = transform;
-        if (paintMask.value == 0) paintMask = ~0;
+        if (!rayOrigin)
+            rayOrigin = transform;
 
-        bool canPaint = IsHoldingPaintbrush() && IsDrawing();
+        if (paintMask.value == 0)
+            paintMask = ~0;
 
-        if (!canPaint)
+        BrushToolState brushToolState = GetHeldBrushToolState();
+
+        if (brushToolState == null || !IsDrawing())
         {
             EndStroke();
             return;
         }
 
-        if (!Physics.Raycast(rayOrigin.position, rayOrigin.forward, out var hit,
-                maxDistance, paintMask, QueryTriggerInteraction.Ignore))
+        if (!Physics.Raycast(
+                rayOrigin.position,
+                rayOrigin.forward,
+                out RaycastHit hit,
+                maxDistance,
+                paintMask,
+                QueryTriggerInteraction.Ignore))
         {
             EndStroke();
             return;
         }
 
-        var surface = hit.collider.GetComponentInParent<PaintableSurfaceRT>();
+        PaintableSurfaceRT surface = hit.collider.GetComponentInParent<PaintableSurfaceRT>();
         if (!surface)
         {
             EndStroke();
             return;
         }
 
-        // Get the sync component — it lives on the same GameObject as PaintableSurfaceRT
+        // Get the sync component ï¿½ it lives on the same GameObject as PaintableSurfaceRT
         var sync = surface.GetComponent<CanvasStrokeSyncNgo>();
         if (!sync)
         {
@@ -112,23 +133,11 @@ public class XRPainterRayInput : MonoBehaviour
         }
 
         Vector2 uv = hit.textureCoord;
-
-        // Begin a new stroke if we just started painting or switched canvas
-        if (!_strokeOpen || _activeSync != sync)
-        {
-            EndStroke(); // close previous stroke if we switched canvas
-            _activeSync = sync;
-            _activeStrokeId = sync.CreateLocalStrokeId();
-            sync.LocalStrokeBegin(_activeStrokeId, sync.Surface.GetCurrentBrushState());
-            _strokeOpen = true;
-            _hasLast = false;
-        }
-
-        // Interpolate between last UV and current to fill gaps
+        BrushState brush = brushToolState.CurrentBrushState;
         if (_hasLast)
         {
             float dist = Vector2.Distance(_lastUV, uv);
-            float step = Mathf.Max(0.0005f, surface.radius * 0.5f);
+            float step = Mathf.Max(0.0005f, brush.radius * 0.5f);
             int steps = Mathf.Clamp(Mathf.CeilToInt(dist / step), 1, 64);
 
             // Batch all interpolated points into one RPC call
