@@ -16,8 +16,8 @@ public class CreateGalleryUI : MonoBehaviour
     [SerializeField] TMP_Text m_ErrorText;
     [SerializeField] TMP_Text m_LoadingText;
 
-    [Header("Dashboard Reference")]
-    [SerializeField] GalleryDashboardUI m_GalleryDashboard;
+    [Header("Gallery Profile Reference")]
+    [SerializeField] GalleryProfileUI m_GalleryProfile;
 
     [Header("Debug")]
     [SerializeField] private bool enableDebugLogs = true;
@@ -49,7 +49,13 @@ public class CreateGalleryUI : MonoBehaviour
             return;
         }
 
+        LogDebug($"Panel reference: {m_CreateGalleryPanel}");
+        LogDebug($"Panel active before: {m_CreateGalleryPanel.activeSelf}");
+
         m_CreateGalleryPanel.SetActive(true);
+
+        LogDebug($"Panel active after: {m_CreateGalleryPanel.activeSelf}");
+
         m_NameInputField.text = "";
         m_ErrorText.text = "";
         m_LoadingText.text = "";
@@ -133,8 +139,8 @@ public class CreateGalleryUI : MonoBehaviour
 
             await Task.Delay(1000); // Brief success feedback
 
-            // Refresh the dashboard
-            await m_GalleryDashboard.RefreshGalleryList();
+            // Refresh the gallery profile
+            await m_GalleryProfile.RefreshUserGalleries();
 
             ClosePanel();
         }

@@ -11,21 +11,21 @@ public class GalleryItemUI : MonoBehaviour
     [SerializeField] Button m_DeleteButton;
 
     private GalleryData m_GalleryData;
-    private GalleryDashboardUI m_DashboardUI;
+    private GalleryProfileUI m_GalleryProfile;
 
-    public void InitializeGalleryItem(GalleryData gallery, GalleryDashboardUI dashboardUI)
+    public void InitializeGalleryItem(GalleryData gallery, GalleryProfileUI galleryProfile)
     {
         m_GalleryData = gallery;
-        m_DashboardUI = dashboardUI;
+        m_GalleryProfile = galleryProfile;
 
         // Populate UI fields from GalleryData
         m_GalleryNameText.text = gallery.name;
         m_ArtworkCountText.text = $"{gallery.artwork_ids.Count} artworks";
 
         // Hook up button callbacks
-        m_ViewButton.onClick.AddListener(() => m_DashboardUI.ViewGallery(gallery));
-        m_EditButton.onClick.AddListener(() => m_DashboardUI.EditGallery(gallery));
-        m_DeleteButton.onClick.AddListener(() => m_DashboardUI.DeleteGallery(gallery.id));
+        m_ViewButton.onClick.AddListener(() => m_GalleryProfile.ViewGallery(gallery));
+        m_EditButton.onClick.AddListener(() => m_GalleryProfile.EditGallery(gallery));
+        m_DeleteButton.onClick.AddListener(() => m_GalleryProfile.DeleteGallery(gallery.id));
     }
 
     public GalleryData GetGalleryData() => m_GalleryData;
