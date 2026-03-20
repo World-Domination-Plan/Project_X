@@ -2082,6 +2082,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0a6d047dd7b36be40a5d4f319c3aab4e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  panelRoot: {fileID: 0}
+  targetBrush: {fileID: 30504701357570817, guid: f6cbcce40717380409c32c8bdb440bdf, type: 3}
   positionIndicator: {fileID: 2645092814138065597}
   mainComponent: {fileID: 2645092812663001058}
   rComponent: {fileID: 2645092814292194683}
