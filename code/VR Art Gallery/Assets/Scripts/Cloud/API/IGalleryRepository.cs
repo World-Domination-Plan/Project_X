@@ -23,6 +23,7 @@ public interface IGalleryRepository
     /// </summary>
     Task<GalleryData> RemoveArtworkFromGalleryAsync(int galleryId, int artworkId);
 
+    Task<Dictionary<int, (string, string)>> GetArtworkPaths(int galleryId, int maxArtWork = 9, bool getThumbnails = false);
     // ── Layout management ─────────────────────────────────────────────────────
     Dictionary<int, int> MapWorldToGallery(Dictionary<int, int> worldMapCoord, GalleryData gallery);
     GalleryData SwapArtworks(int from_index, int to_index, GalleryData galleryObject);

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Supabase;
 
@@ -15,6 +16,13 @@ namespace VRGallery.Cloud
         public SupabaseArtistRepository(ISupabaseClient client)
         {
             supabaseClient = client ?? throw new ArgumentNullException(nameof(client));
+        }
+
+        public static async Task<SupabaseArtistRepository> CreateAsync()
+        {
+            if (!SupabaseClientManager.IsInitialized)
+                await SupabaseClientManager.InitializeAsync();
+            return new SupabaseArtistRepository(new SupabaseClientWrapper(SupabaseClientManager.Instance));
         }
 
         public async Task<bool> CreateArtistProfileAsync(string userId, string username)
@@ -53,6 +61,22 @@ namespace VRGallery.Cloud
             {
                 UnityEngine.Debug.LogError($"[SupabaseArtistRepository] Error getting profile: {ex.Message}");
                 return null;
+            }
+        }
+
+        public async Task<List<ArtistProfile>> GetAllArtistsAsync()
+        {
+            try
+            {
+                var client = supabaseClient.GetClient();
+                var response = await client.From<ArtistProfile>()
+                    .Get();
+                return response.Models;
+            }
+            catch (Exception ex)
+            {
+                UnityEngine.Debug.LogError($"[SupabaseArtistRepository] Error getting all artists: {ex.Message}");
+                throw;
             }
         }
 
