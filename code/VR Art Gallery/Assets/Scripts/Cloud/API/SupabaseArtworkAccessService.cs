@@ -45,7 +45,7 @@ namespace VRGallery.Cloud
             if (profile == null)
                 return false;
 
-            var currentArtistId = (int)profile.id;
+            var currentArtistId = (int)profile.user_id;
 
             ArtworkData artwork;
             try

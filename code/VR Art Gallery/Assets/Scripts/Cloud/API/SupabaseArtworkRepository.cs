@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 using Supabase;
@@ -77,6 +78,23 @@ public class SupabaseArtworkRepository : IArtworkRepository
         catch (Exception ex)
         {
             UnityEngine.Debug.LogError($"Error retrieving artwork from Supabase: {ex.Message}");
+            throw;
+        }
+    }
+
+    public async Task<List<ArtworkData>> GetAllArtworksAsync()
+    {
+        try
+        {
+            var result = await SupabaseClientInstance
+                .From<ArtworkData>()
+                .Get();
+            
+            return result.Models;
+        }
+        catch (Exception ex)
+        {
+            UnityEngine.Debug.LogError($"Error retrieving all artworks from Supabase: {ex.Message}");
             throw;
         }
     }
