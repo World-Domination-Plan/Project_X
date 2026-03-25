@@ -38,8 +38,7 @@ public class GalleryProfileUI : MonoBehaviour
     /// </summary>
     public async Task RefreshUserGalleries()
     {
-        m_LoadingText.gameObject.SetActive(true);
-        m_LoadingText.text = "Loading your galleries...";
+        SetLoadingText("Loading your galleries...");
 
         try
         {
@@ -57,8 +56,7 @@ public class GalleryProfileUI : MonoBehaviour
 
             if (profile == null)
             {
-                m_LoadingText.gameObject.SetActive(true);
-                m_LoadingText.text = "Could not load profile.";
+                SetLoadingText("Could not load profile.");
                 LogError("Artist profile not found for user.");
                 return;
             }
@@ -96,8 +94,7 @@ public class GalleryProfileUI : MonoBehaviour
         }
         catch (Exception ex)
         {
-            m_LoadingText.gameObject.SetActive(true);
-            m_LoadingText.text = $"Error loading galleries: {ex.Message}";
+            SetLoadingText($"Error loading galleries: {ex.Message}");
             LogError($"RefreshUserGalleries failed: {ex}");
         }
     }
@@ -112,15 +109,14 @@ public class GalleryProfileUI : MonoBehaviour
         // Show empty state if no galleries
         if (galleries == null || galleries.Count == 0)
         {
-            m_LoadingText.gameObject.SetActive(true);
-            m_LoadingText.text = "You haven't created any galleries yet.";
+            SetLoadingText("You haven't created any galleries yet.");
             if (m_CreateGalleryButtonContainer != null)
                 m_CreateGalleryButtonContainer.SetActive(true);
             return;
         }
 
         // Hide loading text and empty state
-        m_LoadingText.gameObject.SetActive(false);
+        HideLoadingText();
         if (m_CreateGalleryButtonContainer != null)
             m_CreateGalleryButtonContainer.SetActive(false);
 
@@ -173,6 +169,25 @@ public class GalleryProfileUI : MonoBehaviour
     {
         m_ArtistRepository = artistRepo;
         m_GalleryRepository = galleryRepo;
+    }
+
+    // ── UI Helpers ─────────────────────────────────────────────────────────────
+
+    private void SetLoadingText(string text)
+    {
+        if (m_LoadingText != null)
+        {
+            m_LoadingText.gameObject.SetActive(true);
+            m_LoadingText.text = text;
+        }
+    }
+
+    private void HideLoadingText()
+    {
+        if (m_LoadingText != null)
+        {
+            m_LoadingText.gameObject.SetActive(false);
+        }
     }
 
     // ── Logging ───────────────────────────────────────────────────────────────
