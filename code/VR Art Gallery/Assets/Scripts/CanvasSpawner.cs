@@ -4,7 +4,7 @@ using UnityEngine;
 public class CanvasSpawner : NetworkBehaviour
 {
     [Header("Prefab")]
-    public GameObject canvasPrefab;
+    public GameObject workspacePrefab;   // ← drag the WORKSPACE root prefab here
     public GameObject paintbrushPrefab;
 
     [Header("VR Camera / Head Transform (CenterEye)")]
@@ -30,9 +30,9 @@ public class CanvasSpawner : NetworkBehaviour
 
     public void Create()
     {
-        if (!canvasPrefab)
+        if (!workspacePrefab)
         {
-            Debug.LogError("[CanvasSpawner] canvasPrefab not assigned.");
+            Debug.LogError("[CanvasSpawner] workspacePrefab not assigned.");
             return;
         }
         if (!playerHead)
@@ -41,7 +41,6 @@ public class CanvasSpawner : NetworkBehaviour
             return;
         }
 
-        // Calculate position & rotation locally, then send to server
         Vector3 forwardFlat = Vector3.ProjectOnPlane(playerHead.forward, Vector3.up).normalized;
         if (forwardFlat.sqrMagnitude < 0.001f)
             forwardFlat = playerHead.forward;
@@ -69,22 +68,37 @@ public class CanvasSpawner : NetworkBehaviour
             rot = Quaternion.LookRotation(forwardFlat, Vector3.up);
         }
 
-        // Send spawn request to server with calculated pos/rot
-        SpawnCanvasServerRpc(pos, rot);
+        SpawnWorkspaceServerRpc(pos, rot);
     }
 
     [ServerRpc(RequireOwnership = false)]
-    private void SpawnCanvasServerRpc(Vector3 pos, Quaternion rot)
+    private void SpawnWorkspaceServerRpc(Vector3 pos, Quaternion rot)
     {
-        // Spawn canvas on network — visible to ALL clients
-        GameObject canvas = Instantiate(canvasPrefab, pos, rot);
-        canvas.GetComponent<NetworkObject>().Spawn();
+        // Instantiate the full Workspace prefab (root has NetworkObject)
+        GameObject workspace = Instantiate(workspacePrefab, pos, rot);
+        NetworkObject netObj = workspace.GetComponent<NetworkObject>();
+
+        if (netObj == null)
+        {
+            Debug.LogError("[CanvasSpawner] NetworkObject not found on workspacePrefab root! Make sure it is on the Workspace root, not a child.");
+            return;
+        }
+
+        netObj.Spawn();
 
         if (paintbrushPrefab != null)
         {
-            CanvasBrushSpawner brushSpawner = canvas.GetComponent<CanvasBrushSpawner>();
+            // Use GetComponentInChildren in case CanvasBrushSpawner is not on the root
+            CanvasBrushSpawner brushSpawner = workspace.GetComponentInChildren<CanvasBrushSpawner>();
+
+            if (brushSpawner == null)
+            {
+                Debug.LogWarning("[CanvasSpawner] CanvasBrushSpawner not found in workspace hierarchy.");
+                return;
+            }
+
             brushSpawner.paintbrushPrefab = paintbrushPrefab;
-            brushSpawner.canvasTransform = canvas.transform;
+            brushSpawner.canvasTransform = workspace.transform;
             brushSpawner.brushOffset = brushOffset;
             brushSpawner.brushRotationEuler = brushRotationEuler;
             brushSpawner.SpawnBrush();
