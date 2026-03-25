@@ -27,6 +27,7 @@ public class CanvasStrokeSyncNgo : NetworkBehaviour
     void Awake()
     {
         if (!surface) surface = GetComponent<PaintableSurfaceRT>();
+        Debug.Log($"[StrokeSync] Awake — surface: {surface}, IsSpawned: {IsSpawned}");
     }
 
     void Update()
@@ -52,8 +53,12 @@ public class CanvasStrokeSyncNgo : NetworkBehaviour
         _localStrokes.Add(strokeId);
         _activeStrokes[strokeId] = brush;
 
+        Debug.Log($"[StrokeSync] LocalStrokeBegin — IsSpawned: {IsSpawned}, IsNetworkReady: {NetworkManager?.IsListening}");
+
         if (IsSpawned)
             StrokeBeginServerRpc(strokeId, brush, GetLocalClientId());
+        else
+            Debug.LogWarning("[StrokeSync] NOT spawned — ServerRpc not sent, strokes won't sync!");
     }
 
     public void LocalStrokePoints(ulong strokeId, ushort[] uvPoints)
