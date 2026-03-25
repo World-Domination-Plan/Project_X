@@ -1,15 +1,11 @@
 using UnityEngine;
 using UnityEngine.XR.Interaction.Toolkit;
-using System.Collections;
 
 public class BrushRespawnOnGrab : MonoBehaviour
 {
-    public CanvasBrushSpawner spawner;
-    public float despawnDelay = 20f;
+    private UnityEngine.XR.Interaction.Toolkit.Interactables.XRGrabInteractable grabInteractable;
 
-    UnityEngine.XR.Interaction.Toolkit.Interactables.XRGrabInteractable grabInteractable;
-    bool hasSpawnedReplacement = false;
-    Coroutine despawnRoutine;
+    public bool IsGrabbed { get; private set; }
 
     void Awake()
     {
@@ -36,34 +32,11 @@ public class BrushRespawnOnGrab : MonoBehaviour
 
     void OnGrabbed(SelectEnterEventArgs args)
     {
-        if (despawnRoutine != null)
-        {
-            StopCoroutine(despawnRoutine);
-            despawnRoutine = null;
-        }
-
-        if (!hasSpawnedReplacement)
-        {
-            hasSpawnedReplacement = true;
-
-        if (spawner != null)
-            spawner.SpawnReplacementBrush();
-        }
+        IsGrabbed = true;
     }
 
     void OnReleased(SelectExitEventArgs args)
     {
-        if (despawnRoutine != null)
-            StopCoroutine(despawnRoutine);
-
-        despawnRoutine = StartCoroutine(DespawnAfterDelay());
-    }
-
-    IEnumerator DespawnAfterDelay()
-    {
-        yield return new WaitForSeconds(despawnDelay);
-
-        if (grabInteractable != null && !grabInteractable.isSelected)
-            Destroy(gameObject);
+        IsGrabbed = false;
     }
 }
