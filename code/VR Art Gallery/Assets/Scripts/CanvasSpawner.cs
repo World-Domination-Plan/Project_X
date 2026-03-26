@@ -1,9 +1,10 @@
+﻿using Unity.Netcode;
 using UnityEngine;
 
-public class CanvasSpawner : MonoBehaviour
+public class CanvasSpawner : NetworkBehaviour
 {
     [Header("Prefab")]
-    public GameObject canvasPrefab;
+    public GameObject workspacePrefab;   // ← drag the WORKSPACE root prefab here
     public GameObject paintbrushPrefab;
 
     [Header("VR Camera / Head Transform (CenterEye)")]
@@ -17,7 +18,6 @@ public class CanvasSpawner : MonoBehaviour
     [Header("Brush Spawn")]
     public Vector3 brushOffset = new Vector3(0.35f, -0.2f, 0f);
     public Vector3 brushRotationEuler = Vector3.zero;
-    public float brushDespawnDelay = 20f;
 
     [Header("Anti-overlap (optional)")]
     public float checkRadius = 0.25f;
@@ -30,20 +30,20 @@ public class CanvasSpawner : MonoBehaviour
 
     public void Create()
     {
-        if (!canvasPrefab)
+        if (!workspacePrefab)
         {
-            Debug.LogError("[CanvasSpawner] canvasPrefab not assigned.");
+            Debug.LogError("[CanvasSpawner] workspacePrefab not assigned.");
             return;
         }
-
         if (!playerHead)
         {
-            Debug.LogError("[CanvasSpawner] playerHead not assigned (XR Camera / CenterEye).");
+            Debug.LogError("[CanvasSpawner] playerHead not assigned.");
             return;
         }
 
         Vector3 forwardFlat = Vector3.ProjectOnPlane(playerHead.forward, Vector3.up).normalized;
-        if (forwardFlat.sqrMagnitude < 0.001f) forwardFlat = playerHead.forward;
+        if (forwardFlat.sqrMagnitude < 0.001f)
+            forwardFlat = playerHead.forward;
 
         Vector3 pos = playerHead.position + forwardFlat * spawnDistance + Vector3.up * heightOffset;
 
@@ -51,7 +51,6 @@ public class CanvasSpawner : MonoBehaviour
         {
             if (!Physics.CheckSphere(pos, checkRadius, overlapMask, QueryTriggerInteraction.Ignore))
                 break;
-
             pos += forwardFlat * pushStep;
         }
 
@@ -59,7 +58,9 @@ public class CanvasSpawner : MonoBehaviour
         if (faceUser)
         {
             Vector3 toUserFlat = Vector3.ProjectOnPlane(playerHead.position - pos, Vector3.up).normalized;
-            if (toUserFlat.sqrMagnitude < 0.001f) toUserFlat = -forwardFlat;
+            if (toUserFlat.sqrMagnitude < 0.001f)
+                toUserFlat = -forwardFlat;
+
             rot = Quaternion.LookRotation(toUserFlat, Vector3.up);
         }
         else
@@ -67,20 +68,40 @@ public class CanvasSpawner : MonoBehaviour
             rot = Quaternion.LookRotation(forwardFlat, Vector3.up);
         }
 
-        GameObject canvas = Instantiate(canvasPrefab, pos, rot);
+        SpawnWorkspaceServerRpc(pos, rot);
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    private void SpawnWorkspaceServerRpc(Vector3 pos, Quaternion rot)
+    {
+        // Instantiate the full Workspace prefab (root has NetworkObject)
+        GameObject workspace = Instantiate(workspacePrefab, pos, rot);
+        NetworkObject netObj = workspace.GetComponent<NetworkObject>();
+
+        if (netObj == null)
+        {
+            Debug.LogError("[CanvasSpawner] NetworkObject not found on workspacePrefab root! Make sure it is on the Workspace root, not a child.");
+            return;
+        }
+
+        netObj.Spawn();
 
         if (paintbrushPrefab != null)
         {
-            CanvasBrushSpawner brushSpawner = canvas.AddComponent<CanvasBrushSpawner>();
+            // Use GetComponentInChildren in case CanvasBrushSpawner is not on the root
+            CanvasBrushSpawner brushSpawner = workspace.GetComponentInChildren<CanvasBrushSpawner>();
+
+            if (brushSpawner == null)
+            {
+                Debug.LogWarning("[CanvasSpawner] CanvasBrushSpawner not found in workspace hierarchy.");
+                return;
+            }
+
             brushSpawner.paintbrushPrefab = paintbrushPrefab;
-            brushSpawner.canvasTransform = canvas.transform;
+            brushSpawner.canvasTransform = workspace.transform;
             brushSpawner.brushOffset = brushOffset;
             brushSpawner.brushRotationEuler = brushRotationEuler;
-            brushSpawner.brushDespawnDelay = brushDespawnDelay;
             brushSpawner.SpawnBrush();
         }
-
-        // var display = canvas.GetComponentInChildren<PaintingDisplay>(true);
-        // if (display && testTexture) display.SetTexture(testTexture);
     }
 }
