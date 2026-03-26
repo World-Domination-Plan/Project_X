@@ -16,7 +16,7 @@ public class GalleryData : BaseModel
     public string description { get; set; }
 
     [Column("owner_id")]
-    public int owner_id { get; set; }
+    public long owner_id { get; set; }
 
     /// <summary>
     /// Flat list of all artwork IDs inside this gallery.

@@ -135,6 +135,9 @@ public class CreateGalleryUI : MonoBehaviour
             m_LoadingText.text = "Creating gallery...";
             LogDebug("Starting gallery creation...");
 
+            if (!AuthenticationManager.Instance.IsAuthenticated || AuthenticationManager.Instance.CurrentUser == null)
+                throw new InvalidOperationException("User not authenticated.");
+
             // Get currently authenticated user
             string authUserId = AuthenticationManager.Instance.CurrentUser.Id;
             LogDebug($"Auth User ID: {authUserId}");

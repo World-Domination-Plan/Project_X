@@ -13,7 +13,7 @@ public class ArtworkData : BaseModel
     public int id { get; set; }
     
     public string title { get; set; }
-    public int owner_id { get; set; }
+    public long owner_id { get; set; }
   
     // Image storage
     public string image_url { get; set; }        // Full resolution artwork
