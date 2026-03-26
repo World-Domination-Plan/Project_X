@@ -24,6 +24,11 @@ public class XRPainterRayInput : MonoBehaviour
     Vector2 _lastUV;
     bool _hasLast;
 
+    // --- Stroke state ---
+    CanvasStrokeSyncNgo _activeSync;
+    ulong _activeStrokeId;
+    bool _strokeOpen;
+
     void OnEnable()
     {
 #if ENABLE_INPUT_SYSTEM
@@ -38,6 +43,7 @@ public class XRPainterRayInput : MonoBehaviour
         if (drawAction.action != null)
             drawAction.action.Disable();
 #endif
+        EndStroke(); // clean up if disabled mid-stroke
     }
 
     BrushToolState GetHeldBrushToolState()
@@ -74,7 +80,6 @@ public class XRPainterRayInput : MonoBehaviour
 
         if (mouseFallback && Mouse.current != null)
             return Mouse.current.leftButton.isPressed;
-
         return false;
 #else
         return false;
@@ -93,7 +98,7 @@ public class XRPainterRayInput : MonoBehaviour
 
         if (brushToolState == null || !IsDrawing())
         {
-            _hasLast = false;
+            EndStroke();
             return;
         }
 
@@ -105,15 +110,37 @@ public class XRPainterRayInput : MonoBehaviour
                 paintMask,
                 QueryTriggerInteraction.Ignore))
         {
-            _hasLast = false;
+            EndStroke();
             return;
         }
 
         PaintableSurfaceRT surface = hit.collider.GetComponentInParent<PaintableSurfaceRT>();
         if (!surface)
         {
-            _hasLast = false;
+            EndStroke();
             return;
+        }
+
+        // Get the sync component – it lives on the same GameObject as PaintableSurfaceRT
+        var sync = surface.GetComponent<CanvasStrokeSyncNgo>();
+        if (!sync)
+        {
+            // Fallback: no network sync present, paint locally as before
+            surface.TryPaintAt(hit.textureCoord);
+            _lastUV = hit.textureCoord;
+            _hasLast = true;
+            return;
+        }
+
+        // Begin a new stroke if we just started painting or switched canvas
+        if (!_strokeOpen || _activeSync != sync)
+        {
+            EndStroke(); // close previous stroke if we switched canvas
+            _activeSync = sync;
+            _activeStrokeId = sync.CreateLocalStrokeId();
+            sync.LocalStrokeBegin(_activeStrokeId, sync.Surface.GetCurrentBrushState());
+            _strokeOpen = true;
+            _hasLast = false;
         }
 
         Vector2 uv = hit.textureCoord;
@@ -125,18 +152,40 @@ public class XRPainterRayInput : MonoBehaviour
             float step = Mathf.Max(0.0005f, brush.radius * 0.5f);
             int steps = Mathf.Clamp(Mathf.CeilToInt(dist / step), 1, 64);
 
+            // Keep local painting consistent with synced points for visual feedback.
+            ushort[] points = new ushort[steps * 2];
             for (int s = 1; s <= steps; s++)
             {
-                Vector2 lerpedUV = Vector2.Lerp(_lastUV, uv, s / (float)steps);
-                surface.PaintAt(lerpedUV, brush);
+                Vector2 p = Vector2.Lerp(_lastUV, uv, s / (float)steps);
+                points[(s - 1) * 2] = CanvasStrokeSyncNgo.EncodeAxis(p.x);
+                points[(s - 1) * 2 + 1] = CanvasStrokeSyncNgo.EncodeAxis(p.y);
+                surface.TryPaintAt(p);
             }
+
+            sync.LocalStrokePoints(_activeStrokeId, points);
         }
         else
         {
-            surface.PaintAt(uv, brush);
+            surface.TryPaintAt(uv);
+            sync.LocalStrokePoints(_activeStrokeId, new ushort[]
+            {
+                CanvasStrokeSyncNgo.EncodeAxis(uv.x),
+                CanvasStrokeSyncNgo.EncodeAxis(uv.y)
+            });
         }
 
         _lastUV = uv;
         _hasLast = true;
+    }
+
+    void EndStroke()
+    {
+        if (_strokeOpen && _activeSync != null)
+        {
+            _activeSync.LocalStrokeEnd(_activeStrokeId);
+        }
+        _strokeOpen = false;
+        _activeSync = null;
+        _hasLast = false;
     }
 }
