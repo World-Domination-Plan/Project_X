@@ -82,8 +82,6 @@ namespace VRGallery.Cloud
                 else
                     Debug.Log($"[SupabaseClient] No .env file found at {envPath}, using system environment variables.");
 
-                DotEnv.Load(new DotEnvOptions(envFilePaths: new[] { envPath }));
-
                 var supabaseUrl = Environment.GetEnvironmentVariable("SUPABASE_URL");
                 var supabaseKey = Environment.GetEnvironmentVariable("SUPABASE_KEY");
 
