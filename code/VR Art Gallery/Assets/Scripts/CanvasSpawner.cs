@@ -1,9 +1,10 @@
+﻿using Unity.Netcode;
 using UnityEngine;
 
-public class CanvasSpawner : MonoBehaviour
+public class CanvasSpawner : NetworkBehaviour
 {
     [Header("Prefab")]
-    public GameObject canvasPrefab;
+    public GameObject workspacePrefab;   // ← drag the WORKSPACE root prefab here
     public GameObject paintbrushPrefab;
 
     [Header("VR Camera / Head Transform (CenterEye)")]
@@ -29,15 +30,14 @@ public class CanvasSpawner : MonoBehaviour
 
     public void Create()
     {
-        if (!canvasPrefab)
+        if (!workspacePrefab)
         {
-            Debug.LogError("[CanvasSpawner] canvasPrefab not assigned.");
+            Debug.LogError("[CanvasSpawner] workspacePrefab not assigned.");
             return;
         }
-
         if (!playerHead)
         {
-            Debug.LogError("[CanvasSpawner] playerHead not assigned (XR Camera / CenterEye).");
+            Debug.LogError("[CanvasSpawner] playerHead not assigned.");
             return;
         }
 
@@ -51,7 +51,6 @@ public class CanvasSpawner : MonoBehaviour
         {
             if (!Physics.CheckSphere(pos, checkRadius, overlapMask, QueryTriggerInteraction.Ignore))
                 break;
-
             pos += forwardFlat * pushStep;
         }
 
@@ -69,22 +68,40 @@ public class CanvasSpawner : MonoBehaviour
             rot = Quaternion.LookRotation(forwardFlat, Vector3.up);
         }
 
-        GameObject canvas = Instantiate(canvasPrefab, pos, rot);
+        SpawnWorkspaceServerRpc(pos, rot);
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    private void SpawnWorkspaceServerRpc(Vector3 pos, Quaternion rot)
+    {
+        // Instantiate the full Workspace prefab (root has NetworkObject)
+        GameObject workspace = Instantiate(workspacePrefab, pos, rot);
+        NetworkObject netObj = workspace.GetComponent<NetworkObject>();
+
+        if (netObj == null)
+        {
+            Debug.LogError("[CanvasSpawner] NetworkObject not found on workspacePrefab root! Make sure it is on the Workspace root, not a child.");
+            return;
+        }
+
+        netObj.Spawn();
 
         if (paintbrushPrefab != null)
         {
-            CanvasBrushSpawner brushSpawner = canvas.GetComponent<CanvasBrushSpawner>();
+            // Use GetComponentInChildren in case CanvasBrushSpawner is not on the root
+            CanvasBrushSpawner brushSpawner = workspace.GetComponentInChildren<CanvasBrushSpawner>();
+
             if (brushSpawner == null)
-                brushSpawner = canvas.AddComponent<CanvasBrushSpawner>();
+            {
+                Debug.LogWarning("[CanvasSpawner] CanvasBrushSpawner not found in workspace hierarchy.");
+                return;
+            }
 
             brushSpawner.paintbrushPrefab = paintbrushPrefab;
-            brushSpawner.canvasTransform = canvas.transform;
+            brushSpawner.canvasTransform = workspace.transform;
             brushSpawner.brushOffset = brushOffset;
             brushSpawner.brushRotationEuler = brushRotationEuler;
             brushSpawner.SpawnBrush();
         }
-
-        // var display = canvas.GetComponentInChildren<PaintingDisplay>(true);
-        // if (display && testTexture) display.SetTexture(testTexture);
     }
 }
