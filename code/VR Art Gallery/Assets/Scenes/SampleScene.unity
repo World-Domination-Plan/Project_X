@@ -1933,6 +1933,10 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.y
       value: -106.5
       objectReference: {fileID: 0}
+    - target: {fileID: 6522251071193715576, guid: e385e155969dc274691335562166cbfb, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_CallState
+      value: 2
+      objectReference: {fileID: 0}
     - target: {fileID: 6597711618610856624, guid: e385e155969dc274691335562166cbfb, type: 3}
       propertyPath: m_LoginUI
       value: 
@@ -5849,7 +5853,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ff74d21d1203698438f37d8fe84fdb76, type: 3}
   m_Name: 
   m_EditorClassIdentifier: VRMP::HUDSpawner
-  spawnButton: {fileID: 4546399164687744209, guid: da2b439d1a2de5c46a4f428f8cf4fe19, type: 3}
+  spawnButton: {fileID: 7488629184665783403, guid: da2b439d1a2de5c46a4f428f8cf4fe19, type: 3}
   prefabToSpawn: {fileID: 804689613}
   headCamera: {fileID: 4607428429233221385}
   spawnDistance: 1.5

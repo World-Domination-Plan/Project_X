@@ -5,6 +5,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using VRGallery.Authentication;
+using VRGallery.Cloud;
 
 public class CreateGalleryUI : MonoBehaviour
 {
@@ -23,10 +24,17 @@ public class CreateGalleryUI : MonoBehaviour
     [SerializeField] private bool enableDebugLogs = true;
 
     private IGalleryRepository m_GalleryRepository;
+    private IArtistRepository m_ArtistRepository;
 
     private async void Start()
     {
-        // Initialize repository once
+        // Initialize Supabase client if needed
+        if (!SupabaseClientManager.IsInitialized)
+            await SupabaseClientManager.InitializeAsync();
+
+        // Initialize repositories
+        var supabaseClientWrapper = new SupabaseClientWrapper(SupabaseClientManager.Instance);
+        m_ArtistRepository = new SupabaseArtistRepository(supabaseClientWrapper);
         m_GalleryRepository = await SupabaseGalleryRepository.CreateAsync();
 
         // Hook up button listeners
@@ -51,10 +59,23 @@ public class CreateGalleryUI : MonoBehaviour
 
         LogDebug($"Panel reference: {m_CreateGalleryPanel}");
         LogDebug($"Panel active before: {m_CreateGalleryPanel.activeSelf}");
+        LogDebug($"Panel activeInHierarchy before: {m_CreateGalleryPanel.activeInHierarchy}");
+
+        if (m_CreateGalleryPanel.transform.parent != null && !m_CreateGalleryPanel.transform.parent.gameObject.activeSelf)
+        {
+            LogDebug($"Parent was inactive, activating parent: {m_CreateGalleryPanel.transform.parent.name}");
+            m_CreateGalleryPanel.transform.parent.gameObject.SetActive(true);
+        }
 
         m_CreateGalleryPanel.SetActive(true);
 
         LogDebug($"Panel active after: {m_CreateGalleryPanel.activeSelf}");
+        LogDebug($"Panel activeInHierarchy after: {m_CreateGalleryPanel.activeInHierarchy}");
+
+        if (m_CreateGalleryPanel.transform.parent != null)
+        {
+            LogDebug($"Panel parent: {m_CreateGalleryPanel.transform.parent.name}, parent active: {m_CreateGalleryPanel.transform.parent.gameObject.activeSelf}");
+        }
 
         m_NameInputField.text = "";
         m_ErrorText.text = "";
@@ -115,22 +136,27 @@ public class CreateGalleryUI : MonoBehaviour
             LogDebug("Starting gallery creation...");
 
             // Get currently authenticated user
-            if (!AuthenticationManager.Instance.IsAuthenticated)
+            string authUserId = AuthenticationManager.Instance.CurrentUser.Id;
+            LogDebug($"Auth User ID: {authUserId}");
+
+            // Look up artist profile to get the user_id
+            ArtistProfile profile = await m_ArtistRepository.GetArtistProfileAsync(authUserId);
+            if (profile == null)
             {
-                throw new InvalidOperationException("User not authenticated.");
+                throw new InvalidOperationException("Artist profile not found for user.");
             }
 
-            string ownerId = AuthenticationManager.Instance.CurrentUser.Id;
+            LogDebug($"Artist Profile ID: {profile.user_id}, Auth User ID from profile: {profile.auth_user_id}");
 
             var newGallery = new GalleryData
             {
                 name = m_NameInputField.text.Trim(),
-                owner_id = ownerId,
+                owner_id = profile.user_id, 
                 artwork_ids = new List<int>(),
                 artwork_map = new Dictionary<int, int>()
             };
 
-            LogDebug($"Creating gallery: {newGallery.name} for user {ownerId}");
+            LogDebug($"Creating gallery: {newGallery.name} with owner_id: {newGallery.owner_id}");
 
             var createdGallery = await m_GalleryRepository.CreateGalleryAsync(newGallery);
 
