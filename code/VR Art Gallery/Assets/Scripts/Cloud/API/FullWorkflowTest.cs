@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using VRGallery.Cloud;
 
@@ -15,39 +16,51 @@ public class FullWorkflowTest : MonoBehaviour
     [SerializeField] private int numArtworksToCreate = 1;
     [SerializeField] private Texture2D testWorkflowTexture;
     [SerializeField] private string workflowStorageBucket = "artworks";
+    [SerializeField] private bool getThumbnailsInWorkflow = false;
+    [SerializeField] private bool inviteUserAfterWorkflow = false;
+    [SerializeField] private string inviteeUsername = "nm";
+    [SerializeField] private bool deleteAfterWorkflow = true;
 
     [Header("Status (Read Only)")]
     [SerializeField] private int fetchedOwnerId = 0;
     [SerializeField] private List<int> createdArtworkIds = new List<int>();
     [SerializeField] private int createdGalleryId = 0;
+    [SerializeField] private int fetchedInviteeId = 0;
 
     private SupabaseGalleryRepository _galleryRepo;
     private SupabaseArtistRepository _artistRepo;
     private SupabaseArtworkRepository _artworkRepo;
 
-    public async Task FetchArtistIdByName()
+    public async Task<int> FetchArtistIdByUsername(string username)
     {
-        Debug.Log($"[FullWorkflowTest] Fetching artist ID for: {artistSearchUsername}");
+        Debug.Log($"[FullWorkflowTest] Fetching artist ID for: {username}");
         try
         {
             _artistRepo ??= await SupabaseArtistRepository.CreateAsync();
             var artists = await _artistRepo.GetAllArtistsAsync();
-            var artist = artists.Find(a => a.username.Equals(artistSearchUsername, System.StringComparison.OrdinalIgnoreCase));
+            var artist = artists.Find(a => a.username.Equals(username, System.StringComparison.OrdinalIgnoreCase));
 
             if (artist != null)
             {
-                fetchedOwnerId = artist.user_id;
-                Debug.Log($"[FullWorkflowTest] Found Artist: {artist.username}, ID: {fetchedOwnerId}");
+                Debug.Log($"[FullWorkflowTest] Found Artist: {artist.username}, ID: {artist.user_id}");
+                return artist.user_id;
             }
             else
             {
-                Debug.LogWarning($"[FullWorkflowTest] Artist not found: {artistSearchUsername}");
+                Debug.LogWarning($"[FullWorkflowTest] Artist not found: {username}");
+                return 0;
             }
         }
         catch (System.Exception ex)
         {
-            Debug.LogError($"[FullWorkflowTest] FetchArtistIdByName FAILED: {ex.Message}");
+            Debug.LogError($"[FullWorkflowTest] FetchArtistIdByUsername FAILED: {ex.Message}");
+            return 0;
         }
+    }
+
+    public async Task FetchArtistIdByName()
+    {
+        fetchedOwnerId = await FetchArtistIdByUsername(artistSearchUsername);
     }
 
     public async void RunWorkflowTest()
@@ -122,7 +135,118 @@ public class FullWorkflowTest : MonoBehaviour
             // Final update to persist map changes if any manual mapping was done (PlaceArtworkInSlot is local)
             await _galleryRepo.UpdateGalleryAsync(updatedGallery);
 
-            Debug.Log($"[FullWorkflowTest] Workflow SUCCESS! Gallery {createdGalleryId} finalized with {updatedGallery.artwork_ids.Count} artworks.");
+            // 6. Return Bucket Paths
+            Debug.Log("[FullWorkflowTest] Step 4: Retrieving Artwork Bucket Paths...");
+            var artworkPaths = await _galleryRepo.GetArtworkPaths(createdGalleryId, -1, getThumbnailsInWorkflow);
+            Debug.Log($"  - Retieved {artworkPaths.Count} paths:");
+            foreach (var entry in artworkPaths)
+            {
+                (string imageUrl, string thumbUrl) = entry.Value;
+                Debug.Log($"    - Slot {entry.Key}: Image={imageUrl}, Thumb={thumbUrl ?? "N/A"}");
+            }
+
+            // 7. Optional Invitation
+            if (inviteUserAfterWorkflow)
+            {
+                Debug.Log($"[FullWorkflowTest] Step 5: Inviting User '{inviteeUsername}'...");
+                fetchedInviteeId = await FetchArtistIdByUsername(inviteeUsername);
+                if (fetchedInviteeId > 0)
+                {
+                    var allArtists = await _artistRepo.GetAllArtistsAsync();
+                    var invitee = allArtists.Find(a => a.user_id == fetchedInviteeId);
+                    if (invitee != null)
+                    {
+                        var accessList = new List<string>();
+                        if (invitee.gallery_access != null) accessList.AddRange(invitee.gallery_access);
+                        
+                        string gidStr = createdGalleryId.ToString();
+                        if (!accessList.Contains(gidStr))
+                        {
+                            accessList.Add(gidStr);
+                            invitee.gallery_access = accessList.ToArray();
+                            await _artistRepo.UpdateArtistProfileAsync(invitee);
+                            Debug.Log($"  - User '{inviteeUsername}' (ID: {fetchedInviteeId}) invited successfully.");
+                        }
+                        else
+                        {
+                            Debug.Log($"  - User '{inviteeUsername}' already has access.");
+                        }
+                    }
+                }
+                else
+                {
+                    Debug.LogWarning($"  - Could not find invitee '{inviteeUsername}', skipping invitation.");
+                }
+            }
+
+            // 8. Optional Deletion
+            if (deleteAfterWorkflow)
+            {
+                Debug.Log("[FullWorkflowTest] Step 6: Cleaning up (Deleting Gallery and Artworks)...");
+                
+                // A. Cleanup Invitee Access
+                if (fetchedInviteeId > 0)
+                {
+                    var allArtists = await _artistRepo.GetAllArtistsAsync();
+                    var invitee = allArtists.Find(a => a.user_id == fetchedInviteeId);
+                    if (invitee != null && invitee.gallery_access != null)
+                    {
+                        var accessList = invitee.gallery_access.ToList();
+                        if (accessList.Remove(createdGalleryId.ToString()))
+                        {
+                            invitee.gallery_access = accessList.ToArray();
+                            await _artistRepo.UpdateArtistProfileAsync(invitee);
+                            Debug.Log("  - Removed gallery from invitee access.");
+                        }
+                    }
+                }
+
+                // B. Cleanup Owner Managed Gallery
+                if (fetchedOwnerId > 0)
+                {
+                    var allArtists = await _artistRepo.GetAllArtistsAsync();
+                    var owner = allArtists.Find(a => a.user_id == fetchedOwnerId);
+                    if (owner != null && owner.managed_gallery != null)
+                    {
+                        var managedList = owner.managed_gallery.ToList();
+                        if (managedList.Remove(createdGalleryId.ToString()))
+                        {
+                            owner.managed_gallery = managedList.ToArray();
+                            await _artistRepo.UpdateArtistProfileAsync(owner);
+                            Debug.Log("  - Removed gallery from owner managed list.");
+                        }
+                    }
+                }
+
+                // C. Delete Artworks (Storage + DB)
+                foreach (int artworkId in createdArtworkIds)
+                {
+                    var artwork = await _artworkRepo.GetArtworkAsync(artworkId);
+                    if (artwork != null)
+                    {
+                        // Delete storage files
+                        try {
+                            if (!string.IsNullOrEmpty(artwork.image_url))
+                                await _artworkRepo.DeleteObjectAsync(workflowStorageBucket, artwork.image_url);
+                            if (!string.IsNullOrEmpty(artwork.thumbnail_url))
+                                await _artworkRepo.DeleteObjectAsync(workflowStorageBucket, artwork.thumbnail_url);
+                            Debug.Log($"  - Deleted storage files for Artwork {artworkId}.");
+                        } catch (System.Exception ex) {
+                            Debug.LogWarning($"  - Failed to delete storage for Artwork {artworkId}: {ex.Message}");
+                        }
+
+                        // Delete DB record
+                        await _artworkRepo.SupabaseClientInstance.From<ArtworkData>().Where(x => x.id == artworkId).Delete();
+                        Debug.Log($"  - Deleted DB record for Artwork {artworkId}.");
+                    }
+                }
+
+                // D. Delete Gallery
+                await _galleryRepo.DeleteGalleryAsync(createdGalleryId);
+                Debug.Log($"  - Deleted Gallery {createdGalleryId}.");
+            }
+
+            Debug.Log($"[FullWorkflowTest] Workflow SUCCESS! Gallery {createdGalleryId} finalized.");
         }
         catch (System.Exception ex)
         {

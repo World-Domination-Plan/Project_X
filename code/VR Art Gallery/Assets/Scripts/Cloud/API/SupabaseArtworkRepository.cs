@@ -117,8 +117,30 @@ public class SupabaseArtworkRepository : IArtworkRepository
             throw new InvalidOperationException("SUPABASE_URL/SUPABASE_KEY missing.");
 
         var originalExtension = extension.TrimStart('.');
-        var originalObjectPath = $"{artwork.owner_id}/{Guid.NewGuid():N}.{originalExtension}";
-        var thumbnailObjectPath = $"{artwork.owner_id}/thumb_{Guid.NewGuid():N}.{originalExtension}";
+        
+        // 1. Fetch Username from ArtistProfile
+        string username = "guest";
+        try
+        {
+            var artist = await SupabaseClientInstance
+                .From<ArtistProfile>()
+                .Where(x => x.user_id == artwork.owner_id)
+                .Single();
+            if (artist != null && !string.IsNullOrEmpty(artist.username))
+                username = artist.username;
+        }
+        catch (Exception ex)
+        {
+            UnityEngine.Debug.LogWarning($"[SupabaseArtworkRepository] Could not fetch username for owner_id {artwork.owner_id}: {ex.Message}");
+        }
+
+        // 2. Generate shared ISO 8601 timestamp (filesystem safe)
+        var timestamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
+        var baseFileName = $"{username}_{timestamp}";
+
+        // 3. Construct Paths
+        var originalObjectPath = $"{artwork.owner_id}/{baseFileName}.{originalExtension}";
+        var thumbnailObjectPath = $"{artwork.owner_id}/thumb_{baseFileName}.{originalExtension}";
 
         if (thumbnailBytes == null || thumbnailBytes.Length == 0)
         {
