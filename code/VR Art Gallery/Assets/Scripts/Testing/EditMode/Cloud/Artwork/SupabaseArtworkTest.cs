@@ -268,7 +268,7 @@ public class SupabaseArtworkTest
                 .Where(x => x.auth_user_id == userId)
                 .Single();
 
-            return Convert.ToInt32(profile.id);
+            return Convert.ToInt32(profile.user_id);
         }
         catch { }
 
@@ -281,7 +281,7 @@ public class SupabaseArtworkTest
             .Where(x => x.auth_user_id == userId)
             .Single();
 
-        return Convert.ToInt32(created.id);
+        return Convert.ToInt32(created.user_id);
     }
 
     private async Task<ArtworkData> InsertArtworkAsync(Client client, int ownerId)
