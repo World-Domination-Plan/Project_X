@@ -17484,10 +17484,30 @@ PrefabInstance:
       propertyPath: m_CreateGalleryButtonContainer
       value: 
       objectReference: {fileID: 1123596109035293748}
-    m_RemovedComponents: []
+    - target: {fileID: 7676401575876560632, guid: 894fca3a34b814af98853914576f561c, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 1937.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 7676401575876560632, guid: 894fca3a34b814af98853914576f561c, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 614
+      objectReference: {fileID: 0}
+    - target: {fileID: 7676401575876560632, guid: 894fca3a34b814af98853914576f561c, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: -20.7
+      objectReference: {fileID: 0}
+    - target: {fileID: 7676401575876560632, guid: 894fca3a34b814af98853914576f561c, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 0.2
+      objectReference: {fileID: 0}
+    m_RemovedComponents:
+    - {fileID: 4958614426005858453, guid: 894fca3a34b814af98853914576f561c, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 2010696159896503707, guid: 894fca3a34b814af98853914576f561c, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 4422127295404337792}
   m_SourcePrefab: {fileID: 100100000, guid: 894fca3a34b814af98853914576f561c, type: 3}
 --- !u!114 &582717308396501755 stripped
 MonoBehaviour:
@@ -17510,6 +17530,35 @@ RectTransform:
   m_CorrespondingSourceObject: {fileID: 3244489123626923167, guid: 894fca3a34b814af98853914576f561c, type: 3}
   m_PrefabInstance: {fileID: 4499533046581020229}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &2708599575111287774 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 2010696159896503707, guid: 894fca3a34b814af98853914576f561c, type: 3}
+  m_PrefabInstance: {fileID: 4499533046581020229}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &4422127295404337792
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2708599575111287774}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8a8695521f0d02e499659fee002a26c2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.GridLayoutGroup
+  m_Padding:
+    m_Left: 0
+    m_Right: 0
+    m_Top: 0
+    m_Bottom: 0
+  m_ChildAlignment: 0
+  m_StartCorner: 0
+  m_StartAxis: 0
+  m_CellSize: {x: 380, y: 280}
+  m_Spacing: {x: 50, y: 50}
+  m_Constraint: 1
+  m_ConstraintCount: 3
 --- !u!114 &3109997986956023904 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 1538370451659972133, guid: 894fca3a34b814af98853914576f561c, type: 3}

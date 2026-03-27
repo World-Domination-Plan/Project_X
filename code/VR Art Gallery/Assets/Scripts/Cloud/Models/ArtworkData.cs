@@ -20,7 +20,7 @@ public class ArtworkData : BaseModel
     public string thumbnail_url { get; set; }    // Small preview (512x512)
     
     // Metadata
-    public long filesize_bytes { get; set; }
+    public long? filesize_bytes { get; set; }
     
     // Timestamps
     public DateTime created_at { get; set; }
