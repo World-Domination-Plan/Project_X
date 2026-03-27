@@ -214,6 +214,17 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_ResetTransform: {fileID: 620865077}
+--- !u!114 &35530114 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 5315492229689925912, guid: 0d392c3fa508f4e1797723fa0f0503c5, type: 3}
+  m_PrefabInstance: {fileID: 1261946424}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &79965968
 GameObject:
   m_ObjectHideFlags: 0
@@ -2021,6 +2032,17 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 3009486139092683200, guid: 6d66f0e6bfdc7b0419e63c09e70aaaa5, type: 3}
   m_PrefabInstance: {fileID: 850744850}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &234476482 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 4418232731322796623, guid: 0d392c3fa508f4e1797723fa0f0503c5, type: 3}
+  m_PrefabInstance: {fileID: 1261946424}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &238601781
 GameObject:
   m_ObjectHideFlags: 0
@@ -3823,6 +3845,14 @@ PrefabInstance:
       propertyPath: registerPanel
       value: 
       objectReference: {fileID: 664074646}
+    - target: {fileID: 8770654213433017322, guid: 6d66f0e6bfdc7b0419e63c09e70aaaa5, type: 3}
+      propertyPath: registerButton
+      value: 
+      objectReference: {fileID: 35530114}
+    - target: {fileID: 8770654213433017322, guid: 6d66f0e6bfdc7b0419e63c09e70aaaa5, type: 3}
+      propertyPath: showLoginButton
+      value: 
+      objectReference: {fileID: 234476482}
     - target: {fileID: 8940002035656410775, guid: 6d66f0e6bfdc7b0419e63c09e70aaaa5, type: 3}
       propertyPath: m_Name
       value: PassInput
