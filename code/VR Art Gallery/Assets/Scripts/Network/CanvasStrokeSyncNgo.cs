@@ -21,12 +21,20 @@ public class CanvasStrokeSyncNgo : NetworkBehaviour
     readonly ConcurrentQueue<PaintOperation> _paintQueue = new();
 
     ulong _localStrokeCounter;
+    bool _isNetworkReady = false;
 
     public PaintableSurfaceRT Surface => surface;
 
     void Awake()
     {
         if (!surface) surface = GetComponent<PaintableSurfaceRT>();
+        Debug.Log($"[StrokeSync] Awake — surface: {surface}, IsSpawned: {IsSpawned}");
+    }
+
+    public override void OnNetworkSpawn()
+    {
+        _isNetworkReady = true;
+        Debug.Log("[StrokeSync] OnNetworkSpawn — now ready to sync strokes");
     }
 
     void Update()
@@ -52,8 +60,12 @@ public class CanvasStrokeSyncNgo : NetworkBehaviour
         _localStrokes.Add(strokeId);
         _activeStrokes[strokeId] = brush;
 
-        if (IsSpawned)
+        Debug.Log($"[StrokeSync] LocalStrokeBegin — IsSpawned: {IsSpawned}, _isNetworkReady: {_isNetworkReady}");
+
+        if (_isNetworkReady)
             StrokeBeginServerRpc(strokeId, brush, GetLocalClientId());
+        else
+            Debug.LogWarning("[StrokeSync] NOT ready — ServerRpc not sent, strokes won't sync!");
     }
 
     public void LocalStrokePoints(ulong strokeId, ushort[] uvPoints)
@@ -63,7 +75,7 @@ public class CanvasStrokeSyncNgo : NetworkBehaviour
 
         EnqueuePaintOperations(uvPoints, brush);
 
-        if (IsSpawned)
+        if (_isNetworkReady)
             StrokePointsServerRpc(strokeId, uvPoints);
     }
 
@@ -72,7 +84,7 @@ public class CanvasStrokeSyncNgo : NetworkBehaviour
         _activeStrokes.Remove(strokeId);
         _localStrokes.Remove(strokeId);
 
-        if (IsSpawned)
+        if (_isNetworkReady)
             StrokeEndServerRpc(strokeId);
     }
 
