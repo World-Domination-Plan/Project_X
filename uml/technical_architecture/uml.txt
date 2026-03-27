@@ -62,10 +62,10 @@ package "II. Network Layer" {
 
 package "III. Server Layer (Cloud)" {
     cloud "CLOUD PLATFORM:\nSupabase" as CloudPlatform
-    component "Cloud Storage:\n(S3-compatible)" as CloudStorage
+    component "Cloud Storage:\n Supabase Bucket Storage" as CloudStorage
     component "Database:\n(PostgreSQL)" as Database
     component "Unity Cloud Dashboard\nSupabase Logging" as Monitoring
-    component "CI/CD:\nGitHub Actions / GitLab CI" as CI_CD
+    component "CI/CD:\nGitHub Actions" as CI_CD
     
     note right of CloudPlatform
         SPECIFIED: Supabase is the primary BaaS provider.
