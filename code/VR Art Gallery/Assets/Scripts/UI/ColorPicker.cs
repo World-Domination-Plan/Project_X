@@ -56,10 +56,8 @@ public class ColorPicker : MonoBehaviour
 
         if (panelRoot == null)
         {
-            if (transform.parent != null)
-                panelRoot = transform.parent.gameObject;
-            else
-                panelRoot = gameObject;
+            Debug.LogWarning("[ColorPicker] panelRoot is not assigned. Assign the SAME top-level root used by BucketColorPaletteOpener.colorPickerUI.");
+            panelRoot = gameObject;
         }
     }
 
@@ -67,6 +65,12 @@ public class ColorPicker : MonoBehaviour
     {
         if (panelRoot != null)
             panelRoot.SetActive(false);
+    }
+
+    private void OnDestroy()
+    {
+        if (instance == this)
+            instance = null;
     }
 
     /// <summary>
@@ -107,6 +111,16 @@ public class ColorPicker : MonoBehaviour
         );
     }
 
+    private static Text FindTextByName(Transform root, string name)
+    {
+        foreach (Transform t in root.GetComponentsInChildren<Transform>(true))
+        {
+            if (t.name == name)
+                return t.GetComponent<Text>();
+        }
+        return null;
+    }
+
     /// <summary>
     /// Original static create API kept for compatibility.
     /// </summary>
@@ -123,6 +137,12 @@ public class ColorPicker : MonoBehaviour
             return false;
         }
 
+        if (instance.panelRoot == null)
+        {
+            Debug.LogError("[ColorPicker] panelRoot is null.");
+            return false;
+        }
+
         if (!done)
         {
             Done();
@@ -136,18 +156,14 @@ public class ColorPicker : MonoBehaviour
         onCS = onColorSelected;
         useA = useAlpha;
 
-        if (instance.panelRoot != null)
-            instance.panelRoot.SetActive(true);
-        else
-            instance.gameObject.SetActive(true);
+        instance.panelRoot.SetActive(true);
+        instance.gameObject.SetActive(true);
 
-        // Title text: ColorPicker_UI -> Title
-        Transform title = instance.transform.Find("Title");
-        if (title != null)
-        {
-            Text txt = title.GetComponent<Text>();
-            if (txt != null) txt.text = message;
-        }
+        Canvas.ForceUpdateCanvases();
+
+        Text titleText = FindTextByName(instance.panelRoot.transform, "Title");
+        if (titleText != null)
+            titleText.text = message;
 
         if (instance.aComponent != null)
             instance.aComponent.gameObject.SetActive(useAlpha);
@@ -161,6 +177,7 @@ public class ColorPicker : MonoBehaviour
             instance.colorComponent == null)
         {
             Debug.LogError("[ColorPicker] Missing core UI references.");
+            instance.panelRoot.SetActive(false);
             return false;
         }
 
