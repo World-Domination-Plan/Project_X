@@ -52,7 +52,7 @@ namespace VRGallery.UI
         private void Awake()
         {
             SetupButtonListeners();
-            ShowLoadingPanel();
+            //ShowLoadingPanel();
         }
 
         private void Start()
@@ -126,6 +126,12 @@ namespace VRGallery.UI
 
         private void ShowLoginPanel()
         {
+            if (!loginPanel)
+            {
+                Debug.LogError("[AuthUI] Login panel is not assigned.");
+                return;
+            }
+
             ShowPanel(loginPanel);
             if (doorObject) doorObject.SetActive(true);
             ClearInputFields();
@@ -133,6 +139,12 @@ namespace VRGallery.UI
 
         private void ShowRegisterPanel()
         {
+            if (!registerPanel)
+            {
+                Debug.LogError("[AuthUI] Register panel is not assigned.");
+                return;
+            }
+
             ShowPanel(registerPanel);
             ClearInputFields();
         }
