@@ -1,0 +1,45 @@
+@startuml
+
+
+title Sequence Diagram: GPU-Based Painting Flow (Blit Ping-Pong)
+actor User
+participant "XR Controller" as Controller
+participant "XRPainterRayInput" as RayInput
+participant "BrushToolState" as BrushState
+participant "PaintableSurfaceRT" as Surface
+participant "Graphics (GPU)" as GPU
+participant "BrushBlit.shader" as Shader
+
+== Stroke Start ==
+User -> Controller: Pull Trigger
+Controller -> RayInput: Action Triggered
+RayInput -> RayInput: Physics.Raycast()
+RayInput -> Surface: GetComponent<PaintableSurfaceRT>()
+RayInput -> Surface: TryPaintAt(uv)
+
+== Drawing Loop (Every Frame) ==
+loop while Trigger Held
+    User -> Controller: Move Position/Rotation
+    RayInput -> RayInput: Calculate Intersecting UV
+    RayInput -> BrushState: Get Current Brush (Color, Radius, Hardness)
+    RayInput -> Surface: PaintAt(uv, brushState)
+    
+    Surface -> Shader: Set Params (_BrushTex, _BrushColor, _BrushParams)
+    Surface -> GPU: Graphics.Blit(Buffer_A, Buffer_B, brushBlitMaterial)
+    
+    note right of GPU
+        Shader reads Buffer_A,
+        applies brush at UV,
+        outputs to Buffer_B.
+    end note
+    
+    GPU -> Surface: Blit Complete
+    Surface -> Surface: Swap Buffers (Buffer_A, Buffer_B)
+    Surface -> Surface: ApplyToRenderer(Buffer_A)
+    Surface -> GPU: Update Material _MainTex/_BaseMap
+end
+
+== Stroke End ==
+User -> Controller: Release Trigger
+RayInput -> RayInput: EndStroke()
+@enduml

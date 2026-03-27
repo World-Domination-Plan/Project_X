@@ -1,0 +1,40 @@
+@startuml
+
+
+title Sequence Diagram: User Authentication & Role Management
+
+actor User
+participant "AuthenticationUIController" as UI
+participant "AuthenticationManager" as AuthManager
+participant "SupabaseClientManager" as ClientManager
+participant "SupabaseArtistRepository" as ArtistRepo
+participant "Supabase.Client (SDK)" as SupabaseSDK
+database "Supabase Auth" as AuthDB
+database "Supabase Database" as DB
+
+== Initialization ==
+AuthManager -> ClientManager: InitializeAsync()
+ClientManager -> SupabaseSDK: Create Instance
+AuthManager -> ArtistRepo: Create(SupabaseClientWrapper)
+
+== Login Flow ==
+User -> UI: Enter Credentials & Click Login
+UI -> AuthManager: LoginUser(email, password)
+AuthManager -> SupabaseSDK: client.Auth.SignIn(email, password)
+SupabaseSDK -> AuthDB: Authenticate
+AuthDB -> SupabaseSDK: Return Session
+SupabaseSDK -> AuthManager: Return Session
+AuthManager -> UI: Invoke OnUserLoggedIn
+
+== Role Fetching ==
+AuthManager -> ArtistRepo: GetArtistProfileAsync(userId)
+ArtistRepo -> SupabaseSDK: client.From<ArtistProfile>().Where(auth_user_id == userId).Single()
+SupabaseSDK -> DB: Query Profile
+DB -> SupabaseSDK: Profile Data
+SupabaseSDK -> ArtistRepo: Return Profile
+ArtistRepo -> AuthManager: Return Profile
+AuthManager -> AuthManager: Determine Role (e.g. Artist)
+AuthManager -> UI: Invoke OnUserRoleChanged(role)
+UI -> User: Display Success & User Role
+
+@enduml
