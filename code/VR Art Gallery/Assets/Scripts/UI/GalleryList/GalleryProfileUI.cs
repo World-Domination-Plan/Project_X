@@ -12,6 +12,7 @@ public class GalleryProfileUI : MonoBehaviour
     [SerializeField] GameObject m_GalleryItemPrefab;  // Prefab with GalleryItemUI script
     [SerializeField] TMP_Text m_LoadingText;
     [SerializeField] GameObject m_CreateGalleryButtonContainer;  // Empty state container
+    [SerializeField] private GalleryManager m_GalleryManager;
 
     private IArtistRepository m_ArtistRepository;
     private IGalleryRepository m_GalleryRepository;
@@ -137,10 +138,18 @@ public class GalleryProfileUI : MonoBehaviour
 
     // ── Callback methods for action buttons ────────────────────────────────────
 
-    public void ViewGallery(GalleryData gallery)
+    public async void ViewGallery(GalleryData gallery)
     {
-        LogDebug($"Viewing gallery: {gallery.name}");
-        // TODO: Load the VR space with this gallery
+        LogDebug($"Viewing gallery: {gallery.name} (ID: {gallery.id})");
+
+        if (m_GalleryManager != null)
+        {
+            await m_GalleryManager.LoadGalleryAsync(gallery.id);
+        }
+        else
+        {
+            LogError("GalleryManager not assigned in Inspector!");
+        }
     }
 
     public void EditGallery(GalleryData gallery)
