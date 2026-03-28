@@ -13,7 +13,7 @@ public class SupabaseGalleryTest : MonoBehaviour
     [SerializeField] private string testGalleryName = "Test Gallery";
     [SerializeField] private string secondGalleryName = "Test Gallery 2";
     [SerializeField] private string testGalleryDescription = "A test gallery created by SupabaseGalleryTest";
-    [SerializeField] private int testOwnerId = 1;
+    [SerializeField] private long testOwnerId = 1;
     [SerializeField] private bool alsoDeleteFirstGallery = true;
 
     private SupabaseGalleryRepository _repository;

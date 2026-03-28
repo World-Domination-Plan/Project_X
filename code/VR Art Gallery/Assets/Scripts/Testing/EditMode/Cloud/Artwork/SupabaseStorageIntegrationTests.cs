@@ -17,9 +17,9 @@ public class SupabaseStorageIntegrationTests
         if (!File.Exists(imagePath))
             Assert.Fail($"Fixed test image missing: {imagePath}");
 
-        var ownerId = 1;
+        long ownerId = 1;
         var ownerIdEnv = Environment.GetEnvironmentVariable("TEST_OWNER_ID");
-        if (!string.IsNullOrWhiteSpace(ownerIdEnv) && int.TryParse(ownerIdEnv, out var parsedOwnerId))
+        if (!string.IsNullOrWhiteSpace(ownerIdEnv) && long.TryParse(ownerIdEnv, out var parsedOwnerId))
             ownerId = parsedOwnerId;
 
         var repository = await SupabaseArtworkRepository.CreateAsync();
