@@ -31,16 +31,16 @@ public class FullWorkflowTest : MonoBehaviour
     [SerializeField] private bool deleteUserWork = true;
 
     [Header("Status (Read Only)")]
-    [SerializeField] private int fetchedOwnerId = 0;
+    [SerializeField] private long fetchedOwnerId = 0;
     [SerializeField] private List<int> createdArtworkIds = new List<int>();
     [SerializeField] private int createdGalleryId = 0;
-    [SerializeField] private int fetchedInviteeId = 0;
+    [SerializeField] private long fetchedInviteeId = 0;
 
     private SupabaseGalleryRepository _galleryRepo;
     private SupabaseArtistRepository _artistRepo;
     private SupabaseArtworkRepository _artworkRepo;
 
-    public async Task<int> FetchArtistIdByUsername(string username)
+    public async Task<long> FetchArtistIdByUsername(string username)
     {
         Debug.Log($"[FullWorkflowTest] Fetching artist ID for: {username}");
         try
