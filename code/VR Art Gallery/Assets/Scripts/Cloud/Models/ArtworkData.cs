@@ -16,7 +16,7 @@ public class ArtworkData : BaseModel
     public string title { get; set; }
 
     [Column("owner_id")]
-    public int owner_id { get; set; }
+    public long owner_id { get; set; }
   
     // Image storage
     [Column("image_url")]
