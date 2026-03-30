@@ -98,13 +98,15 @@ namespace VRGallery.Cloud
             }
         }
 
-        public async Task<bool> DeleteArtistProfileAsync(int userId)
+        public async Task<bool> DeleteArtistProfileAsync(long userId)
         {
             try
             {
+                if (userId <= 0) return false;
+                
                 var client = supabaseClient.GetClient();
                 await client.From<ArtistProfile>()
-                    .Where(x => x.user_id == userId)
+                    .Where(x => x.id == userId)
                     .Delete();
                 return true;
             }
