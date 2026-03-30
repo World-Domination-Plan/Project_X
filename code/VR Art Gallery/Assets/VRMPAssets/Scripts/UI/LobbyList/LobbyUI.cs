@@ -19,7 +19,7 @@ namespace XRMultiplayer
         [SerializeField] GameObject m_LobbyListPrefab;
         [SerializeField] Button m_RefreshButton;
         [SerializeField] Image m_CooldownImage;
-        [SerializeField] float m_AutoRefreshTime = 5.0f;
+        [SerializeField] float m_AutoRefreshTime = 120.0f;
         [SerializeField] float m_RefreshCooldownTime = .5f;
 
         [Header("Login UI Positioning")]
