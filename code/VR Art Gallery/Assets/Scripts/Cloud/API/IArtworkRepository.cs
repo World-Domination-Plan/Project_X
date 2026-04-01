@@ -1,14 +1,16 @@
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 public interface IArtworkRepository
 {
     Task<ArtworkData> CreateArtworkAsync(ArtworkData artwork);
     Task<ArtworkData> GetArtworkAsync(int id);
+    Task<List<ArtworkData>> GetAllArtworksAsync();
     Task<ArtworkData> CreateArtworkWithUploadAsync(
         ArtworkData artwork,
         byte[] imageBytes,
         byte[] thumbnailBytes = null,
-        string bucketName = "artwork-images",
+        string bucketName = "artworks",
         string extension = "png",
         string contentType = "image/png");
     Task<string> CreateSignedUrlAsync(string bucketName, string objectPath, int expiresInSeconds = 600);

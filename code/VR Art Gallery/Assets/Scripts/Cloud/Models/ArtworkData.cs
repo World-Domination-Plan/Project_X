@@ -12,18 +12,28 @@ public class ArtworkData : BaseModel
     [PrimaryKey("id")]
     public int id { get; set; }
     
+    [Column("title")]
     public string title { get; set; }
-    public int owner_id { get; set; }
+
+    [Column("owner_id")]
+    public long owner_id { get; set; }
   
     // Image storage
+    [Column("image_url")]
     public string image_url { get; set; }        // Full resolution artwork
+
+    [Column("thumbnail_url")]
     public string thumbnail_url { get; set; }    // Small preview (512x512)
     
     // Metadata
+    [Column("filesize_bytes")]
     public long filesize_bytes { get; set; }
     
     // Timestamps
+    [Column("created_at")]
     public DateTime created_at { get; set; }
+
+    [Column("updated_at")]
     public DateTime updated_at { get; set; }
     
     public ArtworkData()

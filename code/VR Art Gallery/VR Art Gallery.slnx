@@ -4,9 +4,9 @@
   <Project Path="Unity.XR.Interaction.Toolkit.Samples.StarterAssets.csproj" />
   <Project Path="Scripts.csproj" />
   <Project Path="Unity.XR.Interaction.Toolkit.Samples.Hands.csproj" />
-  <Project Path="Unity.XR.Interaction.Toolkit.Samples.SpatialKeyboard.csproj" />
   <Project Path="Assembly-CSharp.csproj" />
   <Project Path="EditMode.csproj" />
+  <Project Path="Unity.XR.Interaction.Toolkit.Samples.SpatialKeyboard.csproj" />
   <Project Path="Logging.csproj" />
   <Project Path="Assembly-CSharp-Editor.csproj" />
   <Project Path="PlayMode.csproj" />

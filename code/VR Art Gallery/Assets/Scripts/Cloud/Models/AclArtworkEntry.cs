@@ -10,6 +10,6 @@ public class AclArtworkEntry : BaseModel
     public long id { get; set; }
 
     public int artwork_id { get; set; }
-    public int artist_id { get; set; }
+    public long artist_id { get; set; }
     public string status { get; set; }
 }

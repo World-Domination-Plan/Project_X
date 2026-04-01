@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Supabase;
 
@@ -15,6 +16,13 @@ namespace VRGallery.Cloud
         public SupabaseArtistRepository(ISupabaseClient client)
         {
             supabaseClient = client ?? throw new ArgumentNullException(nameof(client));
+        }
+
+        public static async Task<SupabaseArtistRepository> CreateAsync()
+        {
+            if (!SupabaseClientManager.IsInitialized)
+                await SupabaseClientManager.InitializeAsync();
+            return new SupabaseArtistRepository(new SupabaseClientWrapper(SupabaseClientManager.Instance));
         }
 
         public async Task<bool> CreateArtistProfileAsync(string userId, string username)
@@ -56,6 +64,22 @@ namespace VRGallery.Cloud
             }
         }
 
+        public async Task<List<ArtistProfile>> GetAllArtistsAsync()
+        {
+            try
+            {
+                var client = supabaseClient.GetClient();
+                var response = await client.From<ArtistProfile>()
+                    .Get();
+                return response.Models;
+            }
+            catch (Exception ex)
+            {
+                UnityEngine.Debug.LogError($"[SupabaseArtistRepository] Error getting all artists: {ex.Message}");
+                throw;
+            }
+        }
+
         public async Task<bool> UpdateArtistProfileAsync(ArtistProfile profile)
         {
             try
@@ -70,6 +94,25 @@ namespace VRGallery.Cloud
             catch (Exception ex)
             {
                 UnityEngine.Debug.LogError($"[SupabaseArtistRepository] Error updating profile: {ex.Message}");
+                return false;
+            }
+        }
+
+        public async Task<bool> DeleteArtistProfileAsync(long userId)
+        {
+            try
+            {
+                if (userId <= 0) return false;
+                
+                var client = supabaseClient.GetClient(); 
+                await client.From<ArtistProfile>()
+                    .Where(x => x.user_id == userId)
+                    .Delete();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                UnityEngine.Debug.LogError($"[SupabaseArtistRepository] Error deleting profile: {ex.Message}");
                 return false;
             }
         }
