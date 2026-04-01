@@ -25,10 +25,11 @@ The system is structured across three principal layers: a **Unity VR Client** ru
 |---|---|---|
 | **VR Engine** | ![Unity](https://img.shields.io/badge/Unity-6.x-black?logo=unity) | Game engine and scene management |
 | **Language** | ![C#](https://img.shields.io/badge/C%23-239120?logo=csharp&logoColor=white) | All runtime scripts |
-| **VR SDKs** | ![OpenXR](https://img.shields.io/badge/OpenXR-1.x-blueviolet) ![Meta XR](https://img.shields.io/badge/Meta%20XR%20SDK-81.x-blue) | Hardware abstraction, hand/controller tracking |
-| **Database** | ![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ECF8E?logo=supabase&logoColor=white) | User profiles, artwork records, ACL entries |
+| **VR SDKs** | ![Meta XR SDK](https://img.shields.io/badge/Meta%20XR%20SDK-81.x-blue) ![OpenXR](https://img.shields.io/badge/OpenXR-secondary-blueviolet) | Hardware abstraction, hand/controller tracking (Meta XR primary; OpenXR/SteamVR planned) |
+| **Backend as a Service** | ![Supabase](https://img.shields.io/badge/Supabase-BaaS-3ECF8E?logo=supabase&logoColor=white) | Primary cloud provider |
+| **Database** | ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-via%20Supabase-336791?logo=postgresql&logoColor=white) | User profiles, artwork records, gallery data, ACL entries |
 | **Auth** | ![Supabase Auth](https://img.shields.io/badge/Supabase%20Auth-JWT-3ECF8E?logo=supabase) | Sign-up, sign-in, session management |
-| **Storage** | ![Supabase Storage](https://img.shields.io/badge/Supabase%20Storage-S3--compatible-3ECF8E?logo=supabase) | Artwork image and thumbnail upload/download |
+| **Storage** | ![Supabase Storage](https://img.shields.io/badge/Supabase%20Storage-Bucket-3ECF8E?logo=supabase) | Artwork image and thumbnail upload/download |
 | **Multiplayer** | ![Netcode for GameObjects](https://img.shields.io/badge/Netcode%20for%20GameObjects-Unity-black?logo=unity) | Real-time collaborative canvas sync via Server/Client RPCs |
 | **CI/CD** | ![GitHub Actions](https://img.shields.io/badge/GitHub%20Actions-CI-2088FF?logo=githubactions&logoColor=white) | Automated Unity test runner on every push |
 
@@ -56,14 +57,28 @@ Project_X/
 │           └── Scripts/
 │               ├── Authentication/   # AuthenticationManager, UserProfile, UserRole
 │               ├── Cloud/
-│               │   ├── API/          # SupabaseArtworkRepository, SupabaseAuthService, ACL
-│               │   └── Database/     # SupabaseClient singleton
+│               │   ├── API/          # SupabaseArtworkRepository, SupabaseGalleryRepository,
+│               │   │                 # SupabaseArtistRepository, SupabaseAuthService,
+│               │   │                 # SupabaseArtworkAccessService, IGalleryRepository,
+│               │   │                 # IArtworkRepository, IArtistRepository
+│               │   ├── Database/     # SupabaseClient singleton
+│               │   └── Models/       # ArtworkData, GalleryData, ArtistProfile, AclArtworkEntry
 │               ├── Core/             # GameManager (singleton, scene routing)
+│               ├── Logging/          # CloudLogger, ICloudCodeClient, UnityCloudCodeClient
 │               ├── Network/          # CanvasStrokeSyncNgo (NGO RPCs), NgoArtworkJoinGate
 │               ├── UI/               # AuthenticationUIController, UserStatusDisplay
 │               └── Testing/
-│                   ├── EditMode/     # NUnit tests (no Play Mode required)
+│                   ├── EditMode/
+│                   │   ├── Cloud/
+│                   │   │   ├── Artist/   # ArtistRepositoryTest
+│                   │   │   ├── Artwork/  # ArtworkRepositoryTests, MockArtworkTests,
+│                   │   │   │             # SupabaseStorageIntegrationTests
+│                   │   │   └── Gallery/  # GalleryRepositoryTestAndPopulate
+│                   │   └── AnG/          # SaveArtTest, LoadArtTest
 │                   └── PlayMode/     # Integration tests
+│               # Root-level brush scripts:
+│               # BrushToolState, BrushGrabState, BrushRespawnOnGrab,
+│               # BrushVrColorCycleInput, BucketColorPaletteOpener, CanvasBrushSpawner
 ├── backend/
 │   └── SupabaseAuth/            # Standalone C# console app for backend auth testing
 ├── uml/
@@ -95,10 +110,18 @@ Tests run automatically via **GitHub Actions** (`.github/workflows/run-tests.yam
 
 ### Test coverage
 
-| Assembly | Type | Tests include |
-|---|---|---|
-| `EditMode` | NUnit (no runtime) | `AuthenticationUI_EditModeTests` — panel visibility, field clearing, input validation, error display; `CloudLoggerTests` — cloud logging correctness |
-| `PlayMode` | Unity Test Runner | Sample integration tests; extended as features ship |
+| Assembly | Tests |
+|---|---|
+| `EditMode` — Auth UI | `AuthenticationUI_EditModeTests` — panel visibility, field clearing, input validation, error display |
+| `EditMode` — Cloud logging | `CloudLoggerTests` — cloud logging correctness |
+| `EditMode` — Auth service | `SupabaseAuthTest` — sign-up, sign-in, sign-out, session refresh flows |
+| `EditMode` — Artwork CRUD | `SupabaseArtworkTest`, `ArtworkRepositoryTests`, `MockArtworkTests`, `SupabaseStorageIntegrationTests` — artwork creation, storage upload/download |
+| `EditMode` — Gallery CRUD | `SupabaseGalleryTest`, `GalleryRepositoryTestAndPopulate`, `SupabaseArtworkGalleryTest` — gallery creation, artwork assignment, slot mapping |
+| `EditMode` — Artist  | `ArtistRepositoryTest` — artist profile creation and retrieval |
+| `EditMode` — Full workflow | `FullWorkflowTest` — end-to-end: sign-in → create artwork → upload → submit to gallery |
+| `EditMode` — Invites | `InviteTest` — ACL collaboration invite flow |
+| `EditMode` — Art I/O | `SaveArtTest`, `LoadArtTest` — canvas PNG save and reload |
+| `PlayMode` | Sample integration tests; extended as features ship |
 
 ---
 
@@ -115,18 +138,19 @@ The user launches the application on their VR headset or PC. An in-headset UI pa
 
 ### 2. Open a Canvas and Paint
 
-In the workspace the user faces a paintable quad.
+In the workspace the user faces a paintable quad. Physical brush props are spawned by `CanvasBrushSpawner`; grabbing one triggers `BrushGrabState`, which attaches the brush to the controller and registers it with the canvas.
 
 1. The `PaintableSurfaceRT` component initialises two ping-pong `RenderTexture` buffers (`_a`, `_b`) at 1024 × 1024.
-2. The user squeezes the **right controller trigger** — `XRPainterRayInput` detects the press via `IsDrawing()`, casts a physics ray, and resolves the hit UV coordinate from `TryGetStrokeTarget`.
-3. `BeginStroke` calls `CanvasStrokeSyncNgo.LocalStrokeBegin`, which registers the stroke locally and fires a `StrokeBeginServerRpc` so every other connected client is notified.
-4. As the controller moves, `AddStrokeSample` interpolates intermediate UV points and batches them. When the batch reaches `flushPointThreshold`, `FlushBatch` calls `CanvasStrokeSyncNgo.LocalStrokePoints` → `StrokePointsServerRpc` → `StrokePointsClientRpc` to replicate the stroke on all peers.
-5. Each `PaintAt(uv, brush)` call GPU-blits the brush mask onto the current `RenderTexture` buffer.
-6. Releasing the trigger calls `EndStroke` → `CanvasStrokeSyncNgo.LocalStrokeEnd` → `StrokeEndServerRpc`.
+2. `BrushToolState` holds the active paint settings (color, radius, hardness) and exposes `CurrentBrushState` to the rest of the system. Color can be changed via `SetColor`, `NextPresetColor` / `PreviousPresetColor`, or the `BrushVrColorCycleInput` component which maps controller button presses to color cycling. The `BucketColorPaletteOpener` spawns a hand-held palette for freeform color selection.
+3. The user squeezes the **right controller trigger** — `XRPainterRayInput` detects the press via `IsDrawing()`, casts a physics ray, and resolves the hit UV coordinate from `TryGetStrokeTarget`.
+4. `BeginStroke` calls `CanvasStrokeSyncNgo.LocalStrokeBegin`, which registers the stroke locally and fires a `StrokeBeginServerRpc` so every other connected client is notified.
+5. As the controller moves, `AddStrokeSample` interpolates intermediate UV points and batches them. When the batch reaches `flushPointThreshold`, `FlushBatch` calls `CanvasStrokeSyncNgo.LocalStrokePoints` → `StrokePointsServerRpc` → `StrokePointsClientRpc` to replicate the stroke on all peers.
+6. Each `PaintAt(uv, brush)` call GPU-blits the brush mask onto the current `RenderTexture` buffer.
+7. Releasing the trigger calls `EndStroke` → `CanvasStrokeSyncNgo.LocalStrokeEnd` → `StrokeEndServerRpc`.
 
 **Autosave:** Every 10 seconds (configurable in the Inspector), `PaintableSurfaceRT.SaveCanvasToPNG` writes a timestamped PNG to the device's `Application.persistentDataPath/Paintings/` directory.
 
-**Color & brush controls** are exposed through `PaintableSurfaceRT.GetCurrentBrushState` / `SetMode`, giving artists full control over `brushColor`, `radius`, and `hardness`.
+**Canvas modes** are controlled via `PaintableSurfaceRT.SetMode`: `DrawOnBlank` starts from a clear canvas, `DrawOverImage` seeds the canvas from an existing texture, and `DisplayOnly` locks it for viewing.
 
 ### 3. Collaborate with Another Artist
 
@@ -139,10 +163,10 @@ When the painting is ready:
 1. The user opens the HUD and selects **Submit Artwork**.
 2. `SupabaseArtworkRepository.CreateArtworkWithUploadAsync` is called with the PNG byte array. It:
    - Generates a half-size thumbnail via `GenerateHalfSizePng`.
-   - Uploads the full image and thumbnail to the `artwork-images` Supabase Storage bucket at paths scoped to the artist's `owner_id`.
-   - Inserts an `ArtworkData` record into the `artwork` PostgreSQL table (title, description, `image_url`, `thumbnail_url`, `filesize_bytes`, timestamps).
-3. A list of available galleries is fetched and displayed in the HUD. The user selects the target gallery and confirms.
-4. The artwork record is linked to the selected gallery; gallery curators with the appropriate role can review and approve the submission.
+   - Uploads both images to the `artwork-images` Supabase Storage bucket at paths scoped to the artist's `owner_id`.
+   - Inserts an `ArtworkData` record into the `artwork` PostgreSQL table (`image_url`, `thumbnail_url`, `filesize_bytes`, timestamps).
+3. Available galleries are fetched via `SupabaseGalleryRepository.GetAllGalleriesAsync` and displayed in the HUD. The user selects a target gallery.
+4. `SupabaseGalleryRepository.AddArtworkToGalleryAsync` adds the artwork ID to the gallery's `artwork_ids` list and persists the updated `GalleryData` record. Gallery owners can then use `PlaceArtworkInSlot` to assign the piece to a specific display position in the physical gallery space.
 
 ### 5. Browse the Gallery
 
