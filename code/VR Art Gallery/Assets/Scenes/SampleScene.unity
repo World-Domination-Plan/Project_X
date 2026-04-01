@@ -320,6 +320,17 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_ResetTransform: {fileID: 620865077}
+--- !u!114 &84487845 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 8686035046095680772, guid: 0d392c3fa508f4e1797723fa0f0503c5, type: 3}
+  m_PrefabInstance: {fileID: 1261946424}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2da0c512f12947e489f739169773d7ca, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1001 &100674573
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -3003,7 +3014,6 @@ MonoBehaviour:
   registerEmailField: {fileID: 0}
   registerPasswordField: {fileID: 0}
   registerUsernameField: {fileID: 0}
-  confirmPasswordField: {fileID: 0}
   registerButton: {fileID: 0}
   showLoginButton: {fileID: 0}
   welcomeText: {fileID: 0}
@@ -3853,6 +3863,18 @@ PrefabInstance:
       propertyPath: showLoginButton
       value: 
       objectReference: {fileID: 234476482}
+    - target: {fileID: 8770654213433017322, guid: 6d66f0e6bfdc7b0419e63c09e70aaaa5, type: 3}
+      propertyPath: registerEmailField
+      value: 
+      objectReference: {fileID: 1271438561}
+    - target: {fileID: 8770654213433017322, guid: 6d66f0e6bfdc7b0419e63c09e70aaaa5, type: 3}
+      propertyPath: registerPasswordField
+      value: 
+      objectReference: {fileID: 84487845}
+    - target: {fileID: 8770654213433017322, guid: 6d66f0e6bfdc7b0419e63c09e70aaaa5, type: 3}
+      propertyPath: registerUsernameField
+      value: 
+      objectReference: {fileID: 1772320324}
     - target: {fileID: 8940002035656410775, guid: 6d66f0e6bfdc7b0419e63c09e70aaaa5, type: 3}
       propertyPath: m_Name
       value: PassInput
@@ -4774,11 +4796,23 @@ PrefabInstance:
       propertyPath: m_Enabled
       value: 0
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 5534216529819189902, guid: 0d392c3fa508f4e1797723fa0f0503c5, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 0d392c3fa508f4e1797723fa0f0503c5, type: 3}
+--- !u!114 &1271438561 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 2119207157966101392, guid: 0d392c3fa508f4e1797723fa0f0503c5, type: 3}
+  m_PrefabInstance: {fileID: 1261946424}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2da0c512f12947e489f739169773d7ca, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1271945687
 GameObject:
   m_ObjectHideFlags: 0
@@ -5394,6 +5428,17 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 8134302614855669011, guid: c4a645c929982ea41a52b5037ee7d94d, type: 3}
   m_PrefabInstance: {fileID: 1744998813}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1772320324 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 8057727638921251661, guid: 0d392c3fa508f4e1797723fa0f0503c5, type: 3}
+  m_PrefabInstance: {fileID: 1261946424}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2da0c512f12947e489f739169773d7ca, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!23 &1785242249 stripped
 MeshRenderer:
   m_CorrespondingSourceObject: {fileID: 4395696707165843879, guid: e9e8956bce235e54db09fa2f44c06b9d, type: 3}
@@ -6120,7 +6165,6 @@ MonoBehaviour:
   registerEmailField: {fileID: 0}
   registerPasswordField: {fileID: 0}
   registerUsernameField: {fileID: 0}
-  confirmPasswordField: {fileID: 0}
   registerButton: {fileID: 0}
   showLoginButton: {fileID: 0}
   welcomeText: {fileID: 0}

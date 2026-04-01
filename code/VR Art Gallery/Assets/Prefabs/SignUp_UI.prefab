@@ -189,7 +189,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0.00000885874, y: -134.55664}
+  m_AnchoredPosition: {x: 0.00000885874, y: -102.05664}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!20 &813121693605214323
@@ -445,7 +445,6 @@ MonoBehaviour:
   registerEmailField: {fileID: 0}
   registerPasswordField: {fileID: 0}
   registerUsernameField: {fileID: 0}
-  confirmPasswordField: {fileID: 0}
   registerButton: {fileID: 0}
   showLoginButton: {fileID: 0}
   welcomeText: {fileID: 0}
@@ -2500,6 +2499,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 6040550674243685304, guid: fce5d703064a3e147ae724820b0529e8, type: 3}
+      propertyPath: m_CharacterLimit
+      value: 30
+      objectReference: {fileID: 0}
     - target: {fileID: 6744689878326008409, guid: fce5d703064a3e147ae724820b0529e8, type: 3}
       propertyPath: 'm_ActiveFontFeatures.Array.data[0]'
       value: 1801810542
@@ -2618,6 +2621,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 6040550674243685304, guid: fce5d703064a3e147ae724820b0529e8, type: 3}
+      propertyPath: m_CharacterLimit
+      value: 30
+      objectReference: {fileID: 0}
     - target: {fileID: 6744689878326008409, guid: fce5d703064a3e147ae724820b0529e8, type: 3}
       propertyPath: 'm_ActiveFontFeatures.Array.data[0]'
       value: 1801810542
@@ -2735,6 +2742,10 @@ PrefabInstance:
     - target: {fileID: 3017286529771264452, guid: fce5d703064a3e147ae724820b0529e8, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6040550674243685304, guid: fce5d703064a3e147ae724820b0529e8, type: 3}
+      propertyPath: m_CharacterLimit
+      value: 30
       objectReference: {fileID: 0}
     - target: {fileID: 6744689878326008409, guid: fce5d703064a3e147ae724820b0529e8, type: 3}
       propertyPath: 'm_ActiveFontFeatures.Array.data[0]'
