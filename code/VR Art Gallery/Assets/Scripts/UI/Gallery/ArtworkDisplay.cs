@@ -40,8 +40,7 @@ public class ArtworkDisplay : MonoBehaviour
     /// </summary>
     public void Clear()
     {
-        {
+        if (dynamicMaterial != null)
             dynamicMaterial.mainTexture = null;
-        }
     }
 }
