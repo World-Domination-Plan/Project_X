@@ -10,7 +10,7 @@ public interface IArtworkRepository
         ArtworkData artwork,
         byte[] imageBytes,
         byte[] thumbnailBytes = null,
-        string bucketName = "artwork-images",
+        string bucketName = "artworks",
         string extension = "png",
         string contentType = "image/png");
     Task<string> CreateSignedUrlAsync(string bucketName, string objectPath, int expiresInSeconds = 600);

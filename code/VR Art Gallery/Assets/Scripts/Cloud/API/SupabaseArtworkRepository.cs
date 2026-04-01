@@ -103,7 +103,7 @@ public class SupabaseArtworkRepository : IArtworkRepository
         ArtworkData artwork,
         byte[] imageBytes,
         byte[] thumbnailBytes = null,
-        string bucketName = "artwork-images",
+        string bucketName = "artworks",
         string extension = "png",
         string contentType = "image/png")
     {

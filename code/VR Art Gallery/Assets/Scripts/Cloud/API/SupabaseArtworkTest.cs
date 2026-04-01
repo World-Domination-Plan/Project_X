@@ -11,7 +11,7 @@ public class SupabaseArtworkTest : MonoBehaviour
     [SerializeField] private bool testOnStart = false;
     [SerializeField] private string testArtworkTitle = "Test Artwork";
     [SerializeField] private string secondArtworkTitle = "Test Artwork 2";
-    [SerializeField] private int testOwnerUserId = 1;
+    [SerializeField] private long testOwnerUserId = 1;
     [SerializeField] private Texture2D testTexture;
     [SerializeField] private string storageBucket = "artworks";
     [SerializeField] private int signedUrlExpirySeconds = 300;
