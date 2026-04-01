@@ -50,7 +50,18 @@ public class SupabaseArtworkRepository : IArtworkRepository
             artwork.updated_at = DateTime.UtcNow;
             
             // Insert into Supabase
-           
+            if (SupabaseClientInstance.Auth.CurrentSession != null)
+            {
+                Debug.Log($"[SupabaseArtworkRepository] Inserting artwork as authenticated user: {SupabaseClientInstance.Auth.CurrentSession.User?.Id}");
+            }
+            else
+            {
+                Debug.LogWarning("[SupabaseArtworkRepository] Inserting artwork as ANON user (No session detected)");
+            }
+
+            string json = Newtonsoft.Json.JsonConvert.SerializeObject(artwork);
+            Debug.Log($"[SupabaseArtworkRepository] Insert Payload: {json}");
+
             var result = await SupabaseClientInstance
                 .From<ArtworkData>()
                 .Insert(artwork);
@@ -117,22 +128,61 @@ public class SupabaseArtworkRepository : IArtworkRepository
             throw new InvalidOperationException("SUPABASE_URL/SUPABASE_KEY missing.");
 
         var originalExtension = extension.TrimStart('.');
-        var originalObjectPath = $"{artwork.owner_id}/{Guid.NewGuid():N}.{originalExtension}";
-        var thumbnailObjectPath = $"{artwork.owner_id}/thumb_{Guid.NewGuid():N}.{originalExtension}";
+        
+        // 1. Fetch Username from ArtistProfile
+        string username = "guest";
+        try
+        {
+            var artist = await SupabaseClientInstance
+                .From<ArtistProfile>()
+                .Where(x => x.user_id == artwork.owner_id)
+                .Single();
+            if (artist != null && !string.IsNullOrEmpty(artist.username))
+                username = artist.username;
+        }
+        catch (Exception ex)
+        {
+            UnityEngine.Debug.LogWarning($"[SupabaseArtworkRepository] Could not fetch username for owner_id {artwork.owner_id}: {ex.Message}");
+        }
+
+        // 2. Generate shared ISO 8601 timestamp (filesystem safe)
+        var timestamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
+        var baseFileName = $"{username}_{timestamp}";
+
+        // 3. Construct Paths
+        var originalObjectPath = $"{artwork.owner_id}/{baseFileName}.{originalExtension}";
+        var thumbnailObjectPath = $"{artwork.owner_id}/thumb_{baseFileName}.{originalExtension}";
 
         if (thumbnailBytes == null || thumbnailBytes.Length == 0)
         {
             thumbnailBytes = GenerateHalfSizePng(imageBytes);
         }
 
-        await UploadObjectAsync(supabaseUrl, supabaseKey, bucketName, originalObjectPath, imageBytes, contentType);
-        await UploadObjectAsync(supabaseUrl, supabaseKey, bucketName, thumbnailObjectPath, thumbnailBytes, contentType);
-
+        // 4. Set paths in artwork model BEFORE insert
         artwork.image_url = originalObjectPath;
         artwork.thumbnail_url = thumbnailObjectPath;
         artwork.filesize_bytes = imageBytes.LongLength;
 
-        return await CreateArtworkAsync(artwork);
+        Debug.Log($"[SupabaseArtworkRepository] Step 1: Creating DB record for '{artwork.title}'...");
+        // INSERT into DB first to satisfy Storage RLS 'EXISTS' check
+        var createdArtwork = await CreateArtworkAsync(artwork);
+
+        try
+        {
+            Debug.Log($"[SupabaseArtworkRepository] Step 2: Uploading files for ID {createdArtwork.id}...");
+            await UploadObjectAsync(supabaseUrl, supabaseKey, bucketName, originalObjectPath, imageBytes, contentType);
+            await UploadObjectAsync(supabaseUrl, supabaseKey, bucketName, thumbnailObjectPath, thumbnailBytes, contentType);
+            Debug.Log("[SupabaseArtworkRepository] Upload successful.");
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError($"[SupabaseArtworkRepository] Upload failed, cleaning up DB record {createdArtwork.id}: {ex.Message}");
+            // Cleanup DB record if upload fails
+            await SupabaseClientInstance.From<ArtworkData>().Where(x => x.id == createdArtwork.id).Delete();
+            throw;
+        }
+
+        return createdArtwork;
     }
 
     public async Task<string> CreateSignedUrlAsync(string bucketName, string objectPath, int expiresInSeconds = 600)
@@ -149,9 +199,11 @@ public class SupabaseArtworkRepository : IArtworkRepository
         var signUrl = $"{supabaseUrl}/storage/v1/object/sign/{bucketName}/{objectPath}";
         var body = JsonUtility.ToJson(new SignedUrlRequest { expiresIn = expiresInSeconds });
 
+        var token = SupabaseClientManager.Instance.Auth.CurrentSession?.AccessToken ?? supabaseKey;
+
         using var req = new HttpRequestMessage(HttpMethod.Post, signUrl);
         req.Headers.Add("apikey", supabaseKey);
-        req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", supabaseKey);
+        req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
         req.Content = new StringContent(body, Encoding.UTF8, "application/json");
 
         using var resp = await Http.SendAsync(req);
@@ -214,10 +266,11 @@ public class SupabaseArtworkRepository : IArtworkRepository
             throw new InvalidOperationException("SUPABASE_URL/SUPABASE_KEY missing.");
 
         var deleteUrl = $"{supabaseUrl}/storage/v1/object/{bucketName}/{objectPath}";
+        var token = SupabaseClientManager.Instance.Auth.CurrentSession?.AccessToken ?? supabaseKey;
 
         using var req = new HttpRequestMessage(HttpMethod.Delete, deleteUrl);
         req.Headers.Add("apikey", supabaseKey);
-        req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", supabaseKey);
+        req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         using var resp = await Http.SendAsync(req);
         if (!resp.IsSuccessStatusCode)
@@ -236,10 +289,11 @@ public class SupabaseArtworkRepository : IArtworkRepository
         string contentType)
     {
         var uploadUrl = $"{supabaseUrl}/storage/v1/object/{bucketName}/{objectPath}";
+        var token = SupabaseClientManager.Instance.Auth.CurrentSession?.AccessToken ?? supabaseKey;
 
         using var req = new HttpRequestMessage(HttpMethod.Post, uploadUrl);
         req.Headers.Add("apikey", supabaseKey);
-        req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", supabaseKey);
+        req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
         req.Headers.Add("x-upsert", "true");
         req.Content = new ByteArrayContent(bytes);
         req.Content.Headers.ContentType = new MediaTypeHeaderValue(contentType);
