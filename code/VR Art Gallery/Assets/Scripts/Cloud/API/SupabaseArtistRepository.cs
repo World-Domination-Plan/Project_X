@@ -104,9 +104,9 @@ namespace VRGallery.Cloud
             {
                 if (userId <= 0) return false;
                 
-                var client = supabaseClient.GetClient();
+                var client = supabaseClient.GetClient(); 
                 await client.From<ArtistProfile>()
-                    .Where(x => x.id == userId)
+                    .Where(x => x.user_id == userId)
                     .Delete();
                 return true;
             }
