@@ -28,7 +28,7 @@ namespace VRGallery.UI
         [SerializeField] private TMP_InputField registerEmailField;
         [SerializeField] private TMP_InputField registerPasswordField;
         [SerializeField] private TMP_InputField registerUsernameField;
-        [SerializeField] private TMP_InputField confirmPasswordField;
+        //[SerializeField] private TMP_InputField confirmPasswordField;
         [SerializeField] private Button registerButton;
         [SerializeField] private Button showLoginButton;
 
@@ -172,7 +172,7 @@ namespace VRGallery.UI
             if (loginPasswordField) loginPasswordField.text = "";
             if (registerEmailField) registerEmailField.text = "";
             if (registerPasswordField) registerPasswordField.text = "";
-            if (confirmPasswordField) confirmPasswordField.text = "";
+            //if (confirmPasswordField) confirmPasswordField.text = "";
             if (registerUsernameField) registerUsernameField.text = "";
         }
 
@@ -264,7 +264,7 @@ namespace VRGallery.UI
         {
             string email = registerEmailField.text.Trim();
             string password = registerPasswordField.text;
-            string confirmPassword = confirmPasswordField.text;
+            //string confirmPassword = confirmPasswordField.text;
 
             if (string.IsNullOrWhiteSpace(email))
             {
@@ -290,11 +290,11 @@ namespace VRGallery.UI
                 return false;
             }
 
-            if (password != confirmPassword)
-            {
-                ShowError("Passwords do not match");
-                return false;
-            }
+            // if (password != confirmPassword)
+            // {
+            //     ShowError("Passwords do not match");
+            //     return false;
+            // }
 
             return true;
         }
