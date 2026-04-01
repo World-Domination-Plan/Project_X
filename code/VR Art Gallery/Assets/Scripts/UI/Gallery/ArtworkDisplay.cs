@@ -5,7 +5,6 @@ public class ArtworkDisplay : MonoBehaviour
 {
     [Header("References")]
     [SerializeField] private Renderer meshRenderer;
-    [SerializeField] private TextMeshProUGUI titleText;
 
     private Material dynamicMaterial;
 
@@ -14,24 +13,14 @@ public class ArtworkDisplay : MonoBehaviour
         // Auto-find if not assigned in Inspector
         if (meshRenderer == null)
             meshRenderer = GetComponent<Renderer>();
-        if (titleText == null)
-            titleText = GetComponentInChildren<TextMeshProUGUI>();
     }
 
     /// <summary>
-    /// Populates the mesh with artwork texture and title.
+    /// Populates the mesh with artwork texture
     /// Creates a unique material instance to avoid affecting other meshes.
-    /// If no title is provided, uses a default title.
     /// </summary>
-    public void Populate(string title, Texture2D texture)
+    public void Populate(Texture2D texture)
     {
-        // Use default title if none provided
-        if (string.IsNullOrWhiteSpace(title))
-            title = "Artwork X";
-
-        if (titleText != null)
-            titleText.text = title;
-
         if (meshRenderer != null && texture != null)
         {
             // Create a unique material instance so we don't change ALL paintings at once
@@ -51,10 +40,6 @@ public class ArtworkDisplay : MonoBehaviour
     /// </summary>
     public void Clear()
     {
-        if (titleText != null)
-            titleText.text = "";
-
-        if (dynamicMaterial != null)
         {
             dynamicMaterial.mainTexture = null;
         }
