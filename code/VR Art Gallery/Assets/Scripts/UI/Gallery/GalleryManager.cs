@@ -86,7 +86,7 @@ public class GalleryManager : MonoBehaviour
                     if (texture != null)
                     {
                         // Use the display's Populate function
-                        artworkDisplays[slotIndex].Populate($"Artwork {slotIndex}", texture);
+                        artworkDisplays[slotIndex].Populate(texture);
                         loadedCount++;
                         LogDebug($"Loaded artwork into slot {slotIndex}");
                     }
@@ -170,7 +170,7 @@ public class GalleryManager : MonoBehaviour
         {
             if (display != null)
             {
-                display.Populate("", null);
+                display.Populate(null);
             }
         }
     }

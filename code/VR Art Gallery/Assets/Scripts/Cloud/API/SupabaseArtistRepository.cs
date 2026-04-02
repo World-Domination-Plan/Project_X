@@ -97,5 +97,24 @@ namespace VRGallery.Cloud
                 return false;
             }
         }
+
+        public async Task<bool> DeleteArtistProfileAsync(long userId)
+        {
+            try
+            {
+                if (userId <= 0) return false;
+                
+                var client = supabaseClient.GetClient(); 
+                await client.From<ArtistProfile>()
+                    .Where(x => x.user_id == userId)
+                    .Delete();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                UnityEngine.Debug.LogError($"[SupabaseArtistRepository] Error deleting profile: {ex.Message}");
+                return false;
+            }
+        }
     }
 }
