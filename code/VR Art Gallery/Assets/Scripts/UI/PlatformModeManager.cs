@@ -54,8 +54,16 @@ public class PlatformModeManager : MonoBehaviour
         {
             foreach (var module in eventSystem.GetComponents<BaseInputModule>())
             {
-                if (module.GetType().Name == "PointableCanvasModule")
-                    module.enabled = isVR;
+                string typeName = module.GetType().Name;
+                
+                if (typeName == "PointableCanvasModule")
+                module.enabled = isVR;
+
+                if (typeName == "XRUIInputModule")
+                module.enabled = isVR;
+
+                if (typeName == "InputSystemUIInputModule")
+                module.enabled = isDesktop;
             }
         }
 
