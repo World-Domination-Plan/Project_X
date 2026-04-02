@@ -5,6 +5,8 @@ using UnityEngine.EventSystems;
 
 public class ColorPicker : MonoBehaviour
 {
+    [SerializeField] private Canvas targetCanvas;
+
     public delegate void ColorEvent(Color c);
 
     private static ColorPicker instance;
@@ -59,6 +61,9 @@ public class ColorPicker : MonoBehaviour
             Debug.LogWarning("[ColorPicker] panelRoot is not assigned. Assign the SAME top-level root used by BucketColorPaletteOpener.colorPickerUI.");
             panelRoot = gameObject;
         }
+
+        if (targetCanvas == null)
+        targetCanvas = GetComponentInChildren<Canvas>(true);
     }
 
     private void Start()
@@ -158,6 +163,7 @@ public class ColorPicker : MonoBehaviour
 
         instance.panelRoot.SetActive(true);
         instance.gameObject.SetActive(true);
+        instance.ApplyCanvasCamera();
 
         Canvas.ForceUpdateCanvases();
 
@@ -283,6 +289,34 @@ public class ColorPicker : MonoBehaviour
                 RecalculateMenu(false);
             }
         }
+    }
+
+    private void ApplyCanvasCamera()
+    {
+        if (targetCanvas == null)
+            return;
+
+        if (targetCanvas.renderMode != RenderMode.WorldSpace)
+            return;
+
+        Camera cam = FindActiveUICamera();
+        if (cam != null)
+            targetCanvas.worldCamera = cam;
+    }
+
+    private Camera FindActiveUICamera()
+    {
+        if (Camera.main != null && Camera.main.isActiveAndEnabled)
+            return Camera.main;
+
+        Camera[] cameras = FindObjectsByType<Camera>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        foreach (var cam in cameras)
+        {
+            if (cam != null && cam.isActiveAndEnabled && cam.gameObject.activeInHierarchy)
+                return cam;
+        }
+
+        return null;
     }
 
     public void SetMain(float value)

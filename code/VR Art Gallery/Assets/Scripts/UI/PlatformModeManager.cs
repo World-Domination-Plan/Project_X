@@ -16,6 +16,15 @@ public class PlatformModeManager : MonoBehaviour
     [Header("Optional")]
     [SerializeField] private EventSystem eventSystem;
 
+    [Header("XR Helpers")]
+    [SerializeField] private GameObject[] disableInDesktop;
+    [SerializeField] private Behaviour[] disableBehavioursInDesktop;
+
+    [Header("Cameras and Canvases")]
+    [SerializeField] private Canvas[] modeDependentCanvases;
+    [SerializeField] private Camera desktopCamera;
+    [SerializeField] private Camera vrCamera;
+
     void Awake()
     {
         if (Instance != null)
@@ -50,20 +59,47 @@ public class PlatformModeManager : MonoBehaviour
         if (desktopRoot != null)
             desktopRoot.SetActive(isDesktop);
 
+        if (disableInDesktop != null)
+        {
+            foreach (var go in disableInDesktop)
+            {
+                if (go != null)
+                    go.SetActive(!isDesktop);
+            }
+        }
+
+        if (disableBehavioursInDesktop != null)
+        {
+            foreach (var b in disableBehavioursInDesktop)
+            {
+                if (b != null)
+                    b.enabled = !isDesktop;
+            }
+        }
+
         if (eventSystem != null)
         {
             foreach (var module in eventSystem.GetComponents<BaseInputModule>())
             {
                 string typeName = module.GetType().Name;
-                
+
                 if (typeName == "PointableCanvasModule")
-                module.enabled = isVR;
+                    module.enabled = isVR;
 
                 if (typeName == "XRUIInputModule")
-                module.enabled = isVR;
+                    module.enabled = isVR;
 
                 if (typeName == "InputSystemUIInputModule")
-                module.enabled = isDesktop;
+                    module.enabled = isDesktop;
+            }
+        }
+
+        if (modeDependentCanvases != null)
+        {
+            foreach (var canvas in modeDependentCanvases)
+            {
+                if (canvas != null && canvas.renderMode == RenderMode.WorldSpace)
+                    canvas.worldCamera = isVR ? vrCamera : desktopCamera;
             }
         }
 
