@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 5099944297354778925}
   - component: {fileID: 3603178611873605398}
   - component: {fileID: 1483130735097857285}
+  - component: {fileID: 2694715444699838286}
   m_Layer: 8
   m_Name: PaintingDisplay0
   m_TagString: Untagged
@@ -3146,6 +3147,19 @@ MonoBehaviour:
   m_SelectedFaces: 
   m_SelectedEdges: []
   m_SelectedVertices: 
+--- !u!114 &2694715444699838286
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 604744373738572695}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 810bdd831b3cc49e4ac2cc89bddbde73, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Scripts::ArtworkDisplay
+  meshRenderer: {fileID: 3603178611873605398}
 --- !u!1 &798754840428577328
 GameObject:
   m_ObjectHideFlags: 0
@@ -3158,6 +3172,7 @@ GameObject:
   - component: {fileID: 4217227459434889317}
   - component: {fileID: 1046440022278137156}
   - component: {fileID: 6952163874469922999}
+  - component: {fileID: 7044884203333263622}
   m_Layer: 8
   m_Name: PaintingDisplay5
   m_TagString: Untagged
@@ -6292,6 +6307,19 @@ MonoBehaviour:
   m_SelectedFaces: 
   m_SelectedEdges: []
   m_SelectedVertices: 
+--- !u!114 &7044884203333263622
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 798754840428577328}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 810bdd831b3cc49e4ac2cc89bddbde73, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Scripts::ArtworkDisplay
+  meshRenderer: {fileID: 1046440022278137156}
 --- !u!1 &985952254330045293
 GameObject:
   m_ObjectHideFlags: 0
@@ -6304,6 +6332,7 @@ GameObject:
   - component: {fileID: 4289494977018493186}
   - component: {fileID: 1621298162900768667}
   - component: {fileID: 6048393405612592340}
+  - component: {fileID: 7008568470934075474}
   m_Layer: 8
   m_Name: PaintingDisplay6
   m_TagString: Untagged
@@ -9438,6 +9467,19 @@ MonoBehaviour:
   m_SelectedFaces: 
   m_SelectedEdges: []
   m_SelectedVertices: 
+--- !u!114 &7008568470934075474
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 985952254330045293}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 810bdd831b3cc49e4ac2cc89bddbde73, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Scripts::ArtworkDisplay
+  meshRenderer: {fileID: 1621298162900768667}
 --- !u!1 &1638598428948104960
 GameObject:
   m_ObjectHideFlags: 0
@@ -9450,6 +9492,7 @@ GameObject:
   - component: {fileID: 5511676757556373831}
   - component: {fileID: 6206726292480006648}
   - component: {fileID: 1064299821467439362}
+  - component: {fileID: 6560246185881752384}
   m_Layer: 8
   m_Name: PaintingDisplay1
   m_TagString: Untagged
@@ -12584,6 +12627,19 @@ MonoBehaviour:
   m_SelectedFaces: 
   m_SelectedEdges: []
   m_SelectedVertices: 
+--- !u!114 &6560246185881752384
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1638598428948104960}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 810bdd831b3cc49e4ac2cc89bddbde73, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Scripts::ArtworkDisplay
+  meshRenderer: {fileID: 6206726292480006648}
 --- !u!1 &2202688274038465694
 GameObject:
   m_ObjectHideFlags: 0
@@ -12596,6 +12652,7 @@ GameObject:
   - component: {fileID: 3154089654637010406}
   - component: {fileID: 353771168463403771}
   - component: {fileID: 6581247370363097020}
+  - component: {fileID: 5292824476275720974}
   m_Layer: 8
   m_Name: PaintingDisplay4
   m_TagString: Untagged
@@ -15730,6 +15787,19 @@ MonoBehaviour:
   m_SelectedFaces: 
   m_SelectedEdges: []
   m_SelectedVertices: 
+--- !u!114 &5292824476275720974
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2202688274038465694}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 810bdd831b3cc49e4ac2cc89bddbde73, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Scripts::ArtworkDisplay
+  meshRenderer: {fileID: 353771168463403771}
 --- !u!1 &2589120494139869319
 GameObject:
   m_ObjectHideFlags: 0
@@ -15742,6 +15812,7 @@ GameObject:
   - component: {fileID: 4756922739630433520}
   - component: {fileID: 4569826870160259236}
   - component: {fileID: 5571460141018296772}
+  - component: {fileID: 3879169538646423472}
   m_Layer: 8
   m_Name: PaintingDisplay8
   m_TagString: Untagged
@@ -18876,6 +18947,19 @@ MonoBehaviour:
   m_SelectedFaces: 
   m_SelectedEdges: []
   m_SelectedVertices: 
+--- !u!114 &3879169538646423472
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2589120494139869319}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 810bdd831b3cc49e4ac2cc89bddbde73, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Scripts::ArtworkDisplay
+  meshRenderer: {fileID: 4569826870160259236}
 --- !u!1 &2692229105428987492
 GameObject:
   m_ObjectHideFlags: 0
@@ -18888,6 +18972,7 @@ GameObject:
   - component: {fileID: 1010058185865445867}
   - component: {fileID: 4565979419746133842}
   - component: {fileID: 1768519991508922988}
+  - component: {fileID: 6425015895739540610}
   m_Layer: 8
   m_Name: PaintingDisplay7
   m_TagString: Untagged
@@ -22022,6 +22107,19 @@ MonoBehaviour:
   m_SelectedFaces: 
   m_SelectedEdges: []
   m_SelectedVertices: 
+--- !u!114 &6425015895739540610
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2692229105428987492}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 810bdd831b3cc49e4ac2cc89bddbde73, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Scripts::ArtworkDisplay
+  meshRenderer: {fileID: 4565979419746133842}
 --- !u!1 &2884647611147949988
 GameObject:
   m_ObjectHideFlags: 0
@@ -22031,6 +22129,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 6328870794237430213}
+  - component: {fileID: 6874872594538595228}
   m_Layer: 0
   m_Name: GalleryArtworksDisplay
   m_TagString: Untagged
@@ -22062,6 +22161,30 @@ Transform:
   - {fileID: 7346400992273343879}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &6874872594538595228
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2884647611147949988}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 999cc81a59e624a9e967076cc2425e81, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Scripts::GalleryManager
+  artworkDisplays:
+  - {fileID: 2694715444699838286}
+  - {fileID: 6560246185881752384}
+  - {fileID: 2662608112712855676}
+  - {fileID: 743019530332365917}
+  - {fileID: 5292824476275720974}
+  - {fileID: 7044884203333263622}
+  - {fileID: 7008568470934075474}
+  - {fileID: 6425015895739540610}
+  - {fileID: 3879169538646423472}
+  maxArtworks: 9
+  enableDebugLogs: 1
 --- !u!1 &3495303340974319491
 GameObject:
   m_ObjectHideFlags: 0
@@ -22074,6 +22197,7 @@ GameObject:
   - component: {fileID: 656325298623954046}
   - component: {fileID: 3555529393989941846}
   - component: {fileID: 78456908770449076}
+  - component: {fileID: 743019530332365917}
   m_Layer: 8
   m_Name: PaintingDisplay3
   m_TagString: Untagged
@@ -25208,6 +25332,19 @@ MonoBehaviour:
   m_SelectedFaces: 
   m_SelectedEdges: []
   m_SelectedVertices: 
+--- !u!114 &743019530332365917
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3495303340974319491}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 810bdd831b3cc49e4ac2cc89bddbde73, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Scripts::ArtworkDisplay
+  meshRenderer: {fileID: 3555529393989941846}
 --- !u!1 &4228925531040997674
 GameObject:
   m_ObjectHideFlags: 0
@@ -25220,6 +25357,7 @@ GameObject:
   - component: {fileID: 2204914157511709046}
   - component: {fileID: 7798153391889432741}
   - component: {fileID: 6823719746086121205}
+  - component: {fileID: 2662608112712855676}
   m_Layer: 8
   m_Name: PaintingDisplay2
   m_TagString: Untagged
@@ -28354,3 +28492,16 @@ MonoBehaviour:
   m_SelectedFaces: 
   m_SelectedEdges: []
   m_SelectedVertices: 
+--- !u!114 &2662608112712855676
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4228925531040997674}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 810bdd831b3cc49e4ac2cc89bddbde73, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Scripts::ArtworkDisplay
+  meshRenderer: {fileID: 7798153391889432741}
