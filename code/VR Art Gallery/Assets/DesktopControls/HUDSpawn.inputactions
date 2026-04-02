@@ -1,0 +1,35 @@
+{
+    "version": 1,
+    "name": "HUDSpawn",
+    "maps": [
+        {
+            "name": "HUDSpawn",
+            "id": "60c5375a-81a0-488e-8220-3936af627ece",
+            "actions": [
+                {
+                    "name": "OpenHUD",
+                    "type": "Button",
+                    "id": "9a523baf-c92e-4785-9435-06ae53c474b3",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                }
+            ],
+            "bindings": [
+                {
+                    "name": "",
+                    "id": "50f13445-6ef0-4218-b884-af20f779a671",
+                    "path": "<Keyboard>/slash",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "OpenHUD",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                }
+            ]
+        }
+    ],
+    "controlSchemes": []
+}

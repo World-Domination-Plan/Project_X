@@ -48,8 +48,6 @@ GameObject:
   - component: {fileID: 30504701357570817}
   - component: {fileID: 2712933426389813818}
   - component: {fileID: -6004120384233621424}
-  - component: {fileID: 1890869196156796260}
-  - component: {fileID: 1355494865185633037}
   - component: {fileID: 6216115408836842209}
   - component: {fileID: 3080599111873017156}
   - component: {fileID: 9015454874910204485}
@@ -368,30 +366,6 @@ MonoBehaviour:
   AutoObjectParentSync: 1
   SyncOwnerTransformWhenParented: 1
   AllowOwnerToParent: 0
---- !u!114 &1890869196156796260
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6157771925820107923}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2ffe79613a87e4906af9b65769c4eece, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Scripts::BrushGrabState
---- !u!114 &1355494865185633037
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6157771925820107923}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: dc12ff2b24f820d48bf87552663bd2d1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Scripts::PaintbrushTag
 --- !u!114 &6216115408836842209
 MonoBehaviour:
   m_ObjectHideFlags: 0
