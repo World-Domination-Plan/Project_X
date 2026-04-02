@@ -40,7 +40,7 @@ public class SupabaseArtworkRepository : IArtworkRepository
         }
         return new SupabaseArtworkRepository(SupabaseClientManager.Instance);
     }
-    
+
     public async Task<ArtworkData> CreateArtworkAsync(ArtworkData artwork)
     {
         try
@@ -48,7 +48,7 @@ public class SupabaseArtworkRepository : IArtworkRepository
             // Set timestamps
             artwork.created_at = DateTime.UtcNow;
             artwork.updated_at = DateTime.UtcNow;
-            
+
             // Insert into Supabase
             if (SupabaseClientInstance.Auth.CurrentSession != null)
             {
@@ -65,7 +65,7 @@ public class SupabaseArtworkRepository : IArtworkRepository
             var result = await SupabaseClientInstance
                 .From<ArtworkData>()
                 .Insert(artwork);
-            
+
             return result.Model ?? artwork;
         }
         catch (Exception ex)
@@ -74,7 +74,7 @@ public class SupabaseArtworkRepository : IArtworkRepository
             throw;
         }
     }
-    
+
     public async Task<ArtworkData> GetArtworkAsync(int id)
     {
         try
@@ -83,7 +83,7 @@ public class SupabaseArtworkRepository : IArtworkRepository
                 .From<ArtworkData>()
                 .Where(x => x.id == id)
                 .Single();
-            
+
             return result;
         }
         catch (Exception ex)
@@ -100,7 +100,7 @@ public class SupabaseArtworkRepository : IArtworkRepository
             var result = await SupabaseClientInstance
                 .From<ArtworkData>()
                 .Get();
-            
+
             return result.Models;
         }
         catch (Exception ex)
@@ -128,21 +128,41 @@ public class SupabaseArtworkRepository : IArtworkRepository
             throw new InvalidOperationException("SUPABASE_URL/SUPABASE_KEY missing.");
 
         var originalExtension = extension.TrimStart('.');
-        
-        // 1. Fetch Username from ArtistProfile
+
+        // 1. Fetch username from ArtistProfile, creating the profile if it doesn't exist
         string username = "guest";
         try
         {
-            var artist = await SupabaseClientInstance
-                .From<ArtistProfile>()
-                .Where(x => x.user_id == artwork.owner_id)
-                .Single();
+            ArtistProfile artist = null;
+            try
+            {
+                artist = await SupabaseClientInstance
+                    .From<ArtistProfile>()
+                    .Where(x => x.user_id == artwork.owner_id)
+                    .Single();
+            }
+            catch { /* not found — will create below */ }
+
             if (artist != null && !string.IsNullOrEmpty(artist.username))
+            {
                 username = artist.username;
+            }
+            else
+            {
+                var newArtist = new ArtistProfile
+                {
+                    user_id = artwork.owner_id,
+                    username = username,
+                    created_at = DateTime.UtcNow
+                };
+                await SupabaseClientInstance.From<ArtistProfile>().Insert(newArtist);
+                Debug.Log($"[SupabaseArtworkRepository] Created default artist profile for owner_id {artwork.owner_id}");
+            }
         }
         catch (Exception ex)
         {
-            UnityEngine.Debug.LogWarning($"[SupabaseArtworkRepository] Could not fetch username for owner_id {artwork.owner_id}: {ex.Message}");
+            Debug.LogError($"[SupabaseArtworkRepository] Failed to ensure artist profile for owner_id {artwork.owner_id}: {ex.Message}");
+            throw;
         }
 
         // 2. Generate shared ISO 8601 timestamp (filesystem safe)
