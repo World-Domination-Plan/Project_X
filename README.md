@@ -7,7 +7,8 @@
 
 ## Gallery Preview
 
-<!-- ![VR Art Gallery Screenshot](docs/screenshots/gallery_screenshot.png) -->
+![Project Development Plan](docs/ProjectDevPlan.png)
+![Weekly Display](docs/WeeklyDisplay.png)
 
 ---
 
@@ -21,17 +22,17 @@ The system is structured across three principal layers: a **Unity VR Client** ru
 
 ## Technology Stack
 
-| Layer | Technology | Role |
-|---|---|---|
-| **VR Engine** | ![Unity](https://img.shields.io/badge/Unity-6.x-black?logo=unity) | Game engine and scene management |
-| **Language** | ![C#](https://img.shields.io/badge/C%23-239120?logo=csharp&logoColor=white) | All runtime scripts |
-| **VR SDKs** | ![Meta XR SDK](https://img.shields.io/badge/Meta%20XR%20SDK-81.x-blue) ![OpenXR](https://img.shields.io/badge/OpenXR-secondary-blueviolet) | Hardware abstraction, hand/controller tracking (Meta XR primary; OpenXR/SteamVR planned) |
-| **Backend as a Service** | ![Supabase](https://img.shields.io/badge/Supabase-BaaS-3ECF8E?logo=supabase&logoColor=white) | Primary cloud provider |
-| **Database** | ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-via%20Supabase-336791?logo=postgresql&logoColor=white) | User profiles, artwork records, gallery data, ACL entries |
-| **Auth** | ![Supabase Auth](https://img.shields.io/badge/Supabase%20Auth-JWT-3ECF8E?logo=supabase) | Sign-up, sign-in, session management |
-| **Storage** | ![Supabase Storage](https://img.shields.io/badge/Supabase%20Storage-Bucket-3ECF8E?logo=supabase) | Artwork image and thumbnail upload/download |
-| **Multiplayer** | ![Netcode for GameObjects](https://img.shields.io/badge/Netcode%20for%20GameObjects-Unity-black?logo=unity) | Real-time collaborative canvas sync via Server/Client RPCs |
-| **CI/CD** | ![GitHub Actions](https://img.shields.io/badge/GitHub%20Actions-CI-2088FF?logo=githubactions&logoColor=white) | Automated Unity test runner on every push |
+| Layer                    | Technology                                                                                                                                 | Role                                                                                     |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------- |
+| **VR Engine**            | ![Unity](https://img.shields.io/badge/Unity-6.x-black?logo=unity)                                                                          | Game engine and scene management                                                         |
+| **Language**             | ![C#](https://img.shields.io/badge/C%23-239120?logo=csharp&logoColor=white)                                                                | All runtime scripts                                                                      |
+| **VR SDKs**              | ![Meta XR SDK](https://img.shields.io/badge/Meta%20XR%20SDK-81.x-blue) ![OpenXR](https://img.shields.io/badge/OpenXR-secondary-blueviolet) | Hardware abstraction, hand/controller tracking (Meta XR primary; OpenXR/SteamVR planned) |
+| **Backend as a Service** | ![Supabase](https://img.shields.io/badge/Supabase-BaaS-3ECF8E?logo=supabase&logoColor=white)                                               | Primary cloud provider                                                                   |
+| **Database**             | ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-via%20Supabase-336791?logo=postgresql&logoColor=white)                               | User profiles, artwork records, gallery data, ACL entries                                |
+| **Auth**                 | ![Supabase Auth](https://img.shields.io/badge/Supabase%20Auth-JWT-3ECF8E?logo=supabase)                                                    | Sign-up, sign-in, session management                                                     |
+| **Storage**              | ![Supabase Storage](https://img.shields.io/badge/Supabase%20Storage-Bucket-3ECF8E?logo=supabase)                                           | Artwork image and thumbnail upload/download                                              |
+| **Multiplayer**          | ![Netcode for GameObjects](https://img.shields.io/badge/Netcode%20for%20GameObjects-Unity-black?logo=unity)                                | Real-time collaborative canvas sync via Server/Client RPCs                               |
+| **CI/CD**                | ![GitHub Actions](https://img.shields.io/badge/GitHub%20Actions-CI-2088FF?logo=githubactions&logoColor=white)                              | Automated Unity test runner on every push                                                |
 
 ---
 
@@ -43,7 +44,7 @@ The system is structured across three principal layers: a **Unity VR Client** ru
 - **Cloud artwork persistence** — Paintings are saved as PNG files, uploaded to Supabase Storage with auto-generated thumbnails, and indexed in the `artwork` PostgreSQL table.
 - **Ambient spatial audio & audiobook playback** — Spatialized soundscapes and chapter-selectable audiobooks with bookmarking.
 - **ACL-based collaboration** — Artwork owners can grant collaborator access tracked in the `acl_artwork` table and enforced by `SupabaseArtworkAccessService.CanCurrentUserJoinArtworkAsync`.
-- **Automated tests** — Edit Mode and Play Mode Unity test suites run automatically on every push via the [TestMule workflow](#automated-testing).
+- **Automated tests** — Edit Mode and Play Mode Unity test suites run automatically on every push via the [Test workflow](#automated-testing).
 
 ---
 
@@ -96,7 +97,7 @@ Project_X/
 
 ## Automated Testing
 
-Tests run automatically via **GitHub Actions** (`.github/workflows/run-tests.yaml`) on every push or pull request to `main` and `development`.
+Tests run automatically via **GitHub Actions** (`.github/workflows/run-tests.yaml`) on every push or pull request.
 
 ### What the workflow does
 
@@ -110,18 +111,18 @@ Tests run automatically via **GitHub Actions** (`.github/workflows/run-tests.yam
 
 ### Test coverage
 
-| Assembly | Tests |
-|---|---|
-| `EditMode` — Auth UI | `AuthenticationUI_EditModeTests` — panel visibility, field clearing, input validation, error display |
-| `EditMode` — Cloud logging | `CloudLoggerTests` — cloud logging correctness |
-| `EditMode` — Auth service | `SupabaseAuthTest` — sign-up, sign-in, sign-out, session refresh flows |
-| `EditMode` — Artwork CRUD | `SupabaseArtworkTest`, `ArtworkRepositoryTests`, `MockArtworkTests`, `SupabaseStorageIntegrationTests` — artwork creation, storage upload/download |
-| `EditMode` — Gallery CRUD | `SupabaseGalleryTest`, `GalleryRepositoryTestAndPopulate`, `SupabaseArtworkGalleryTest` — gallery creation, artwork assignment, slot mapping |
-| `EditMode` — Artist  | `ArtistRepositoryTest` — artist profile creation and retrieval |
-| `EditMode` — Full workflow | `FullWorkflowTest` — end-to-end: sign-in → create artwork → upload → submit to gallery |
-| `EditMode` — Invites | `InviteTest` — ACL collaboration invite flow |
-| `EditMode` — Art I/O | `SaveArtTest`, `LoadArtTest` — canvas PNG save and reload |
-| `PlayMode` | Sample integration tests; extended as features ship |
+| Assembly                   | Tests                                                                                                                                              |
+| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `EditMode` — Auth UI       | `AuthenticationUI_EditModeTests` — panel visibility, field clearing, input validation, error display                                               |
+| `EditMode` — Cloud logging | `CloudLoggerTests` — cloud logging correctness                                                                                                     |
+| `EditMode` — Auth service  | `SupabaseAuthTest` — sign-up, sign-in, sign-out, session refresh flows                                                                             |
+| `EditMode` — Artwork CRUD  | `SupabaseArtworkTest`, `ArtworkRepositoryTests`, `MockArtworkTests`, `SupabaseStorageIntegrationTests` — artwork creation, storage upload/download |
+| `EditMode` — Gallery CRUD  | `SupabaseGalleryTest`, `GalleryRepositoryTestAndPopulate`, `SupabaseArtworkGalleryTest` — gallery creation, artwork assignment, slot mapping       |
+| `EditMode` — Artist        | `ArtistRepositoryTest` — artist profile creation and retrieval                                                                                     |
+| `EditMode` — Full workflow | `FullWorkflowTest` — end-to-end: sign-in → create artwork → upload → submit to gallery                                                             |
+| `EditMode` — Invites       | `InviteTest` — ACL collaboration invite flow                                                                                                       |
+| `EditMode` — Art I/O       | `SaveArtTest`, `LoadArtTest` — canvas PNG save and reload                                                                                          |
+| `PlayMode`                 | Sample integration tests; extended as features ship                                                                                                |
 
 ---
 
@@ -178,29 +179,29 @@ Any user (including guests) can browse public exhibitions. `GameManager.LoadGall
 
 All sequence diagrams were authored in [PlantUML](https://plantuml.com). The `.txt` source files live alongside their rendered `.png` exports under `uml/sequence diagrams/`.
 
-| Use Case | Diagram |
-|---|---|
-| Sign Up / Sign In | `uml/sequence diagrams/signup/` · `uml/sequence diagrams/Sign_In/` |
-| Create 3D Art | `uml/sequence diagrams/create-3d-art/` |
-| Create GenAI Art | `uml/sequence diagrams/Create_GenAI_Art/` |
-| Work on Artwork | `uml/sequence diagrams/work on artwork/` |
-| Submit an Art Piece | `uml/sequence diagrams/submit_an_art_piece/` |
-| Create an Art Gallery | `uml/sequence diagrams/create_an_art_gallery/` |
-| Browse / Join Gallery | `uml/sequence diagrams/browse_and_join_gallery/` |
-| Customise Gallery | `uml/sequence diagrams/customise_gallery/` |
-| Customise Workspace | `uml/sequence diagrams/customiseWorkspace/` |
-| Interact with an Art Piece | `uml/sequence diagrams/interact_with_an_art_piece/` |
-| Collaborate | `uml/sequence diagrams/collaborate/` |
-| Communicate | `uml/sequence diagrams/communicate/` |
-| Review Submission Request | `uml/sequence diagrams/review_submission_req/` |
-| Delete Account | `uml/sequence diagrams/delete_account/` |
-| Sign Off | `uml/sequence diagrams/signoff/` |
+| Use Case                   | Diagram                                                            |
+| -------------------------- | ------------------------------------------------------------------ |
+| Sign Up / Sign In          | `uml/sequence diagrams/signup/` · `uml/sequence diagrams/Sign_In/` |
+| Create 3D Art              | `uml/sequence diagrams/create-3d-art/`                             |
+| Create GenAI Art           | `uml/sequence diagrams/Create_GenAI_Art/`                          |
+| Work on Artwork            | `uml/sequence diagrams/work on artwork/`                           |
+| Submit an Art Piece        | `uml/sequence diagrams/submit_an_art_piece/`                       |
+| Create an Art Gallery      | `uml/sequence diagrams/create_an_art_gallery/`                     |
+| Browse / Join Gallery      | `uml/sequence diagrams/browse_and_join_gallery/`                   |
+| Customise Gallery          | `uml/sequence diagrams/customise_gallery/`                         |
+| Customise Workspace        | `uml/sequence diagrams/customiseWorkspace/`                        |
+| Interact with an Art Piece | `uml/sequence diagrams/interact_with_an_art_piece/`                |
+| Collaborate                | `uml/sequence diagrams/collaborate/`                               |
+| Communicate                | `uml/sequence diagrams/communicate/`                               |
+| Review Submission Request  | `uml/sequence diagrams/review_submission_req/`                     |
+| Delete Account             | `uml/sequence diagrams/delete_account/`                            |
+| Sign Off                   | `uml/sequence diagrams/signoff/`                                   |
 
 ---
 
 ## Contributing & Branching
 
-- `main` — stable, tagged releases only
+- `master` — stable, tagged releases only
 - `development` — integration branch; all feature branches merge here
 
 Tests must pass (Edit Mode **and** Play Mode) before a PR to either branch can be merged. The GitHub Actions workflow enforces this automatically.
@@ -223,12 +224,14 @@ The repository's `.gitattributes` (inside `code/VR Art Gallery/`) already declar
 This tells git which driver to call, but each developer must register that driver in their local git configuration. Run the following commands once after cloning (adjust the path to match your Unity installation):
 
 **Windows**
+
 ```
 git config --global merge.unityyamlmerge.name "UnityYAMLMerge"
 git config --global merge.unityyamlmerge.driver "C:\Program Files\Unity\Hub\Editor\<version>\Editor\Data\Tools\UnityYAMLMerge.exe merge -p %O %B %A %A"
 ```
 
 **macOS**
+
 ```
 git config --global merge.unityyamlmerge.name "UnityYAMLMerge"
 git config --global merge.unityyamlmerge.driver "/Applications/Unity/Hub/Editor/<version>/Unity.app/Contents/Tools/UnityYAMLMerge merge -p %O %B %A %A"
