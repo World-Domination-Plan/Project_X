@@ -7,7 +7,8 @@
 
 ## Gallery Preview
 
-<!-- ![VR Art Gallery Screenshot](docs/screenshots/gallery_screenshot.png) -->
+![Project Development Plan](docs/ProjectDevPlan.png)
+![Weekly Display](docs/WeeklyDisplay.png)
 
 ---
 
