@@ -17,7 +17,7 @@ public class SupabaseStorageIntegrationTests
         if (!File.Exists(imagePath))
             Assert.Fail($"Fixed test image missing: {imagePath}");
 
-        long ownerId = 1;
+        long ownerId = 50; // Default test owner ID, can be overridden by environment variable for CI flexibility
         var ownerIdEnv = Environment.GetEnvironmentVariable("TEST_OWNER_ID");
         if (!string.IsNullOrWhiteSpace(ownerIdEnv) && long.TryParse(ownerIdEnv, out var parsedOwnerId))
             ownerId = parsedOwnerId;
