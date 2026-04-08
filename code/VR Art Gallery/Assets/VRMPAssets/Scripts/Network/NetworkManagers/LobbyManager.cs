@@ -201,8 +201,12 @@ namespace XRMultiplayer
                 // Creates the Lobby with the specified max players and lobby options. Currently just naming "General Lobby"
                 string lobbyName = string.IsNullOrEmpty(roomName) ? $"{XRINetworkGameManager.LocalPlayerName.Value}'s Room" : $"{roomName}";
 
+                // Unity Lobbies treat invalid/low values poorly for joins (e.g. 0 can yield a 1-capacity room). Clamp and recover.
+                int lobbyMaxPlayers = playerCount < 1 ? XRINetworkGameManager.maxPlayers : playerCount;
+                lobbyMaxPlayers = Mathf.Clamp(lobbyMaxPlayers, 2, XRINetworkGameManager.maxPlayers);
+
                 // RATE LIMIT: 2 request per 6 seconds
-                var lobby = await LobbyService.Instance.CreateLobbyAsync(lobbyName, playerCount, options);
+                var lobby = await LobbyService.Instance.CreateLobbyAsync(lobbyName, lobbyMaxPlayers, options);
                 Utils.Log($"{k_DebugPrepend}Created Lobby with Join Code: {joinCode}, Region: {alloc.Region}, Build ID: {Application.version}, Scene: {SceneManager.GetActiveScene().name}, Editor: {hideEditorFromLobby}");
 
                 // Stop the heartbeat routine if one exists, and starts a new one. This keeps the lobby active for visibility
