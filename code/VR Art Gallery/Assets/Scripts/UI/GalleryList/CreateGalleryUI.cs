@@ -9,6 +9,10 @@ using VRGallery.Cloud;
 
 public class CreateGalleryUI : MonoBehaviour
 {
+    [Header("Gallery State Management")]
+    [SerializeField] GameObject m_CreateGalleryButtonContainer;
+    [SerializeField] GalleryInfoUI m_GalleryInfoUI;
+
     [Header("UI References")]
     [SerializeField] GameObject m_CreateGalleryPanel;
     [SerializeField] TMP_InputField m_NameInputField;
@@ -16,9 +20,6 @@ public class CreateGalleryUI : MonoBehaviour
     [SerializeField] Button m_CancelButton;
     [SerializeField] TMP_Text m_ErrorText;
     [SerializeField] TMP_Text m_LoadingText;
-
-    [Header("Gallery Profile Reference")]
-    [SerializeField] GalleryProfileUI m_GalleryProfile;
 
     [Header("Debug")]
     [SerializeField] private bool enableDebugLogs = true;
@@ -28,11 +29,10 @@ public class CreateGalleryUI : MonoBehaviour
 
     private async void Start()
     {
-        // Initialize Supabase client if needed
+        // Initialize repositories
         if (!SupabaseClientManager.IsInitialized)
             await SupabaseClientManager.InitializeAsync();
 
-        // Initialize repositories
         var supabaseClientWrapper = new SupabaseClientWrapper(SupabaseClientManager.Instance);
         m_ArtistRepository = new SupabaseArtistRepository(supabaseClientWrapper);
         m_GalleryRepository = await SupabaseGalleryRepository.CreateAsync();
@@ -44,7 +44,71 @@ public class CreateGalleryUI : MonoBehaviour
         // Panel starts hidden
         m_CreateGalleryPanel.SetActive(false);
 
+        // Initial fetch
+        await RefreshGalleryStatus();
+
         LogDebug("CreateGalleryUI initialized.");
+    }
+
+    /// <summary>
+    /// Fetches the user's gallery from the cloud and toggles the UI state.
+    /// </summary>
+    public async Task RefreshGalleryStatus()
+    {
+        if (m_LoadingText != null) m_LoadingText.text = "Fetching gallery status...";
+
+        try
+        {
+            if (!AuthenticationManager.Instance.IsAuthenticated)
+            {
+                LogDebug("User not authenticated — skipping status refresh.");
+                return;
+            }
+
+            string userId = AuthenticationManager.Instance.CurrentUser.Id;
+            ArtistProfile profile = await m_ArtistRepository.GetArtistProfileAsync(userId);
+
+            if (profile != null && profile.managed_gallery != null && profile.managed_gallery.Length > 0)
+            {
+                // Fetch the first gallery for 1x1 workflow
+                if (int.TryParse(profile.managed_gallery[0], out int galleryId))
+                {
+                    GalleryData gallery = await m_GalleryRepository.GetGalleryAsync(galleryId);
+                    if (gallery != null)
+                    {
+                        ShowInfoPanel(gallery);
+                        return;
+                    }
+                }
+            }
+
+            // Fallback: No gallery found
+            ShowCreateButton();
+        }
+        catch (Exception ex)
+        {
+            LogError($"RefreshGalleryStatus failed: {ex.Message}");
+            ShowCreateButton(); // Default to create on error
+        }
+    }
+
+    private void ShowCreateButton()
+    {
+        if (m_CreateGalleryButtonContainer != null) m_CreateGalleryButtonContainer.SetActive(true);
+        if (m_GalleryInfoUI != null) m_GalleryInfoUI.gameObject.SetActive(false);
+        if (m_CreateGalleryPanel != null) m_CreateGalleryPanel.SetActive(false);
+    }
+
+    private void ShowInfoPanel(GalleryData gallery)
+    {
+        if (m_CreateGalleryButtonContainer != null) m_CreateGalleryButtonContainer.SetActive(false);
+        if (m_CreateGalleryPanel != null) m_CreateGalleryPanel.SetActive(false);
+        
+        if (m_GalleryInfoUI != null)
+        {
+            m_GalleryInfoUI.gameObject.SetActive(true);
+            m_GalleryInfoUI.InitializeInfo(gallery, this);
+        }
     }
 
     // ── Public API for opening the panel ──────────────────────────────────────
@@ -168,8 +232,8 @@ public class CreateGalleryUI : MonoBehaviour
 
             await Task.Delay(1000); // Brief success feedback
 
-            // Refresh the gallery profile
-            await m_GalleryProfile.RefreshUserGalleries();
+            // Refresh our local state
+            await RefreshGalleryStatus();
 
             ClosePanel();
         }
