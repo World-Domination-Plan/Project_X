@@ -168,6 +168,29 @@ namespace XRMultiplayer
             m_VoicePositionCheckTimer = m_VoicePositionUpdateTime;
         }
 
+        bool TryResolveHeadOrigin()
+        {
+            if (m_HeadOrigin != null)
+                return true;
+
+            if (m_XROrigin == null)
+                m_XROrigin = FindFirstObjectByType<XROrigin>();
+
+            if (m_XROrigin != null && m_XROrigin.Camera != null)
+            {
+                m_HeadOrigin = m_XROrigin.Camera.transform;
+                return true;
+            }
+
+            if (Camera.main != null)
+            {
+                m_HeadOrigin = Camera.main.transform;
+                return true;
+            }
+
+            return false;
+        }
+
         ///<inheritdoc/>
         protected virtual void OnEnable()
         {
@@ -183,37 +206,79 @@ namespace XRMultiplayer
         }
 
         ///<inheritdoc/>
+        // protected virtual void Update()
+        // {
+        //     if (IsOwner && XRINetworkGameManager.Instance.positionalVoiceChat)
+        //     {
+        //         if (Time.time > m_VoicePositionCheckTimer)
+        //         {
+        //             m_VoicePositionCheckTimer += m_VoicePositionUpdateTime;
+
+        //             if (Vector3.Distance(m_PrevHeadPos, m_HeadOrigin.position) > m_VoiceUpdatePosotionDelta)
+        //             {
+        //                 m_PrevHeadPos = m_HeadOrigin.position;
+        //                 if (XRINetworkGameManager.Instance.positionalVoiceChat)
+        //                 {
+        //                     m_VoiceChat.Set3DAudio(m_HeadOrigin);
+        //                 }
+        //             }
+        //         }
+        //     }
+
+        //     m_VoiceAmplitudeCurrent = Mathf.Lerp(m_VoiceAmplitudeCurrent, m_VoiceAmplitudeDestination, Time.deltaTime * k_VoiceAmplitudeSpeed);
+        // }
+
         protected virtual void Update()
         {
-            if (IsOwner && XRINetworkGameManager.Instance.positionalVoiceChat)
+            if (IsOwner && m_VoiceChat != null && XRINetworkGameManager.Instance != null && XRINetworkGameManager.Instance.positionalVoiceChat)
             {
-                if (Time.time > m_VoicePositionCheckTimer)
+                if (TryResolveHeadOrigin() && Time.time > m_VoicePositionCheckTimer)
                 {
                     m_VoicePositionCheckTimer += m_VoicePositionUpdateTime;
 
                     if (Vector3.Distance(m_PrevHeadPos, m_HeadOrigin.position) > m_VoiceUpdatePosotionDelta)
                     {
                         m_PrevHeadPos = m_HeadOrigin.position;
+
                         if (XRINetworkGameManager.Instance.positionalVoiceChat)
-                        {
                             m_VoiceChat.Set3DAudio(m_HeadOrigin);
-                        }
                     }
                 }
             }
 
-            m_VoiceAmplitudeCurrent = Mathf.Lerp(m_VoiceAmplitudeCurrent, m_VoiceAmplitudeDestination, Time.deltaTime * k_VoiceAmplitudeSpeed);
+            m_VoiceAmplitudeCurrent = Mathf.Lerp(
+                m_VoiceAmplitudeCurrent,
+                m_VoiceAmplitudeDestination,
+                Time.deltaTime * k_VoiceAmplitudeSpeed);
         }
 
         ///<inheritdoc/>
+        // protected virtual void LateUpdate()
+        // {
+        //     if (!IsOwner) return;
+
+        //     // Set transforms to be replicated with ClientNetworkTransforms
+        //     leftHand.SetPositionAndRotation(m_LeftHandOrigin.position, m_LeftHandOrigin.rotation);
+        //     rightHand.SetPositionAndRotation(m_RightHandOrigin.position, m_RightHandOrigin.rotation);
+        //     head.SetPositionAndRotation(m_HeadOrigin.position, m_HeadOrigin.rotation);
+        // }
+
         protected virtual void LateUpdate()
         {
-            if (!IsOwner) return;
+            if (!IsOwner)
+                return;
 
-            // Set transforms to be replicated with ClientNetworkTransforms
-            leftHand.SetPositionAndRotation(m_LeftHandOrigin.position, m_LeftHandOrigin.rotation);
-            rightHand.SetPositionAndRotation(m_RightHandOrigin.position, m_RightHandOrigin.rotation);
-            head.SetPositionAndRotation(m_HeadOrigin.position, m_HeadOrigin.rotation);
+            TryResolveHeadOrigin();
+
+            // Hands may not exist in desktop mode, so guard them.
+            if (leftHand != null && m_LeftHandOrigin != null)
+                leftHand.SetPositionAndRotation(m_LeftHandOrigin.position, m_LeftHandOrigin.rotation);
+
+            if (rightHand != null && m_RightHandOrigin != null)
+                rightHand.SetPositionAndRotation(m_RightHandOrigin.position, m_RightHandOrigin.rotation);
+
+            if (head != null && m_HeadOrigin != null)
+                head.SetPositionAndRotation(m_HeadOrigin.position, m_HeadOrigin.rotation);
         }
 
         ///<inheritdoc/>
@@ -249,14 +314,22 @@ namespace XRMultiplayer
                 XRINetworkGameManager.Instance.LocalPlayerConnected(NetworkObject.OwnerClientId);
 
                 // Get Origin and set head.
-                m_XROrigin = FindFirstObjectByType<XROrigin>();
-                if (m_XROrigin != null)
+                // m_XROrigin = FindFirstObjectByType<XROrigin>();
+                // if (m_XROrigin != null)
+                // {
+                //     m_HeadOrigin = m_XROrigin.Camera.transform;
+                // }
+                // else
+                // {
+                //     Utils.Log("No XR Rig Available", 1);
+                // }
+
+                // Resolve head origin.
+                // In VR this will use the XR camera.
+                // In desktop it can fall back to Camera.main.
+                if (!TryResolveHeadOrigin())
                 {
-                    m_HeadOrigin = m_XROrigin.Camera.transform;
-                }
-                else
-                {
-                    Utils.Log("No XR Rig Available", 1);
+                    Utils.Log("No XR rig or main camera available for local player head origin.", 1);
                 }
 
                 SetupLocalPlayer();
@@ -425,7 +498,14 @@ namespace XRMultiplayer
             if (!IsOwner) return;
             m_PlayerVoiceId.Value = new FixedString128Bytes(voiceId);
             SetupVoicePlayer();
-            if (XRINetworkGameManager.Instance.positionalVoiceChat)
+            // if (XRINetworkGameManager.Instance.positionalVoiceChat)
+            // {
+            //     m_VoiceChat.Set3DAudio(m_HeadOrigin);
+            // }
+            if (m_VoiceChat != null &&
+                XRINetworkGameManager.Instance != null &&
+                XRINetworkGameManager.Instance.positionalVoiceChat &&
+                TryResolveHeadOrigin())
             {
                 m_VoiceChat.Set3DAudio(m_HeadOrigin);
             }

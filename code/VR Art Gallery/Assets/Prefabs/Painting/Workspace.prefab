@@ -734,10 +734,6 @@ PrefabInstance:
       propertyPath: panelRoot
       value: 
       objectReference: {fileID: 6030265109231879705}
-    - target: {fileID: 4172294114744197827, guid: 048a90b63788344d7942dc0c3c05c5c3, type: 3}
-      propertyPath: targetCanvas
-      value: 
-      objectReference: {fileID: 7021998135585273908}
     - target: {fileID: 4172294114744197839, guid: 048a90b63788344d7942dc0c3c05c5c3, type: 3}
       propertyPath: m_LocalScale.x
       value: 1
@@ -789,10 +785,6 @@ PrefabInstance:
     - target: {fileID: 6508802897072977956, guid: 048a90b63788344d7942dc0c3c05c5c3, type: 3}
       propertyPath: m_PresetInfoIsWorld
       value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 7515642495869083953, guid: 048a90b63788344d7942dc0c3c05c5c3, type: 3}
-      propertyPath: m_Name
-      value: CanvasRootColorPicker
       objectReference: {fileID: 0}
     - target: {fileID: 8762125199385824395, guid: 048a90b63788344d7942dc0c3c05c5c3, type: 3}
       propertyPath: m_Enabled
@@ -850,11 +842,6 @@ GameObject:
 --- !u!4 &6272855428474165127 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1271450103173732206, guid: 048a90b63788344d7942dc0c3c05c5c3, type: 3}
-  m_PrefabInstance: {fileID: 5091514984720531689}
-  m_PrefabAsset: {fileID: 0}
---- !u!223 &7021998135585273908 stripped
-Canvas:
-  m_CorrespondingSourceObject: {fileID: 2872056307607369949, guid: 048a90b63788344d7942dc0c3c05c5c3, type: 3}
   m_PrefabInstance: {fileID: 5091514984720531689}
   m_PrefabAsset: {fileID: 0}
 --- !u!114 &9173347020370497947 stripped

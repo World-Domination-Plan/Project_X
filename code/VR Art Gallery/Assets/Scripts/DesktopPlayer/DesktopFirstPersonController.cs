@@ -34,6 +34,8 @@ namespace SandboxXRI
 
         void OnEnable()
         {
+            Debug.Log("[DesktopFirstPersonController] Enabled on " + gameObject.name);
+
             if (lockCursor)
             {
                 Cursor.lockState = CursorLockMode.Locked;
@@ -43,6 +45,8 @@ namespace SandboxXRI
 
         void OnDisable()
         {
+            Debug.Log("[DesktopFirstPersonController] Disabled on " + gameObject.name);
+
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
         }

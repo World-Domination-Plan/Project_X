@@ -20,52 +20,49 @@ namespace XRMultiplayer
         [SerializeField] bool m_StartHidden = true;
         [SerializeField] bool m_DisableCanvasGroupObject = false;
 
-#pragma warning disable CS0618 // Type or member is obsolete
+#pragma warning disable CS0618
         FloatTweenableVariable m_FloatFadeTweenableVariable = new FloatTweenableVariable();
-#pragma warning restore CS0618 // Type or member is obsolete
+#pragma warning restore CS0618
+
         bool m_Hidden = false;
         bool m_InRange = false;
 
         Coroutine m_FadeRoutine;
-        // Start is called before the first frame update
+
         void Start()
         {
-            if (m_GazeTransform == null)
-            {
-                m_GazeTransform = Camera.main.transform;
-            }
+            TryResolveGazeTransform();
 
             if (m_CanvasGroup == null)
-            {
                 m_CanvasGroup = GetComponentInChildren<CanvasGroup>();
-            }
 
             if (m_TooltipUI == null)
-            {
                 m_TooltipUI = GetComponentInChildren<TooltipUI>();
-            }
 
             m_FacingThreshold = .98f;
-            m_FacingEntered.AddListener(delegate { ToggleFade(false); });
-            m_FacingExited.AddListener(delegate { ToggleFade(true); });
+            m_FacingEntered.AddListener(OnFacingEntered);
+            m_FacingExited.AddListener(OnFacingExited);
 
             m_FloatFadeTweenableVariable.Subscribe(UpdateFade);
 
             if (m_StartHidden)
-            {
                 ToggleFade(true);
-            }
         }
 
         protected override void Update()
         {
+            if (!TryResolveGazeTransform())
+                return;
+
             base.Update();
 
             float currentDistance = Vector3.Distance(transform.position, m_GazeTransform.position);
 
             if (m_InRange)
             {
-                float perc = (Mathf.Clamp(currentDistance, m_MinMaxThresholdDistance.x, m_MinMaxThresholdDistance.y) - m_MinMaxThresholdDistance.x) / (m_MinMaxThresholdDistance.y - m_MinMaxThresholdDistance.x);
+                float perc = (Mathf.Clamp(currentDistance, m_MinMaxThresholdDistance.x, m_MinMaxThresholdDistance.y) - m_MinMaxThresholdDistance.x)
+                             / (m_MinMaxThresholdDistance.y - m_MinMaxThresholdDistance.x);
+
                 m_FacingThreshold = Mathf.Lerp(m_MinMaxFacingThreshold.x, m_MinMaxFacingThreshold.y, perc);
 
                 if (currentDistance > m_MaxRenderingDistance)
@@ -77,16 +74,38 @@ namespace XRMultiplayer
             else
             {
                 if (currentDistance <= m_MaxRenderingDistance)
-                {
                     m_InRange = true;
-                }
             }
+        }
+
+        bool TryResolveGazeTransform()
+        {
+            if (m_GazeTransform != null)
+                return true;
+
+            if (Camera.main != null)
+            {
+                m_GazeTransform = Camera.main.transform;
+                return true;
+            }
+
+            return false;
+        }
+
+        void OnFacingEntered()
+        {
+            ToggleFade(false);
+        }
+
+        void OnFacingExited()
+        {
+            ToggleFade(true);
         }
 
         private void OnDestroy()
         {
-            m_FacingEntered.RemoveListener(delegate { ToggleFade(false); });
-            m_FacingExited.RemoveListener(delegate { ToggleFade(true); });
+            m_FacingEntered.RemoveListener(OnFacingEntered);
+            m_FacingExited.RemoveListener(OnFacingExited);
         }
 
         [ContextMenu("Get References")]
@@ -97,14 +116,10 @@ namespace XRMultiplayer
             List<TMP_Text> texts = new List<TMP_Text>(GetComponentsInChildren<TMP_Text>());
 
             foreach (Image image in images)
-            {
                 m_ComponentsToToggle.Add(image);
-            }
 
             foreach (TMP_Text text in texts)
-            {
                 m_ComponentsToToggle.Add(text);
-            }
         }
 
         [ContextMenu("Toggle Components")]
@@ -116,13 +131,19 @@ namespace XRMultiplayer
         void ToggleFade(bool toggle)
         {
             m_Hidden = toggle;
-            if (!m_Hidden)
-            {
-                ToggleComponents(true);
-            }
 
-            if (m_FadeRoutine != null) StopCoroutine(m_FadeRoutine);
-            m_FadeRoutine = StartCoroutine(m_FloatFadeTweenableVariable.PlaySequence(m_FloatFadeTweenableVariable.Value, m_Hidden ? 0.0f : 1.0f, m_FadeDuration, CompleteFade));
+            if (!m_Hidden)
+                ToggleComponents(true);
+
+            if (m_FadeRoutine != null)
+                StopCoroutine(m_FadeRoutine);
+
+            m_FadeRoutine = StartCoroutine(
+                m_FloatFadeTweenableVariable.PlaySequence(
+                    m_FloatFadeTweenableVariable.Value,
+                    m_Hidden ? 0.0f : 1.0f,
+                    m_FadeDuration,
+                    CompleteFade));
         }
 
         void ToggleComponents(bool show)
@@ -151,44 +172,28 @@ namespace XRMultiplayer
                     Utils.Log("Component Toggler is missing references", 1);
             }
 
-            if (m_TooltipUI != null)
-            {
-                if (!show)
-                {
-                    if (m_TooltipUI != null)
-                        m_TooltipUI.ResetTooltip();
-                    else
-                        Utils.Log("Component Toggler is missing references", 1);
-                }
-            }
+            if (m_TooltipUI != null && !show)
+                m_TooltipUI.ResetTooltip();
         }
 
         void UpdateFade(float fadeAmount)
         {
             if (m_CanvasGroup != null)
-            {
                 m_CanvasGroup.alpha = fadeAmount;
-            }
         }
 
         void CompleteFade()
         {
             if (m_FloatFadeTweenableVariable.Value <= 0.0f)
-            {
                 ToggleComponents(false);
-            }
         }
 
         public void ToggleShow(bool show)
         {
             if (show)
-            {
                 m_FacingEntered.Invoke();
-            }
             else
-            {
                 CheckPointerExit();
-            }
         }
     }
 }

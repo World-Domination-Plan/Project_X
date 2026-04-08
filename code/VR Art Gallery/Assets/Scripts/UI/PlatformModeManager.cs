@@ -1,6 +1,5 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
-using System.Collections;
 
 public enum PlatformMode { VR, Desktop }
 
@@ -27,7 +26,7 @@ public class PlatformModeManager : MonoBehaviour
 
     void Awake()
     {
-        if (Instance != null)
+        if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
             return;
@@ -37,14 +36,8 @@ public class PlatformModeManager : MonoBehaviour
 
         if (eventSystem == null)
             eventSystem = FindFirstObjectByType<EventSystem>();
-    }
 
-    IEnumerator Start()
-    {
-        yield return null;
-        yield return null;
-
-        Debug.Log($"[PlatformModeManager] Applying mode: {CurrentMode}");
+        Debug.Log($"[PlatformModeManager] Awake -> Applying mode immediately: {CurrentMode}");
         ApplyMode(CurrentMode);
     }
 
