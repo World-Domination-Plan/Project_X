@@ -17,6 +17,7 @@ public class GalleryProfileUI : MonoBehaviour
     private IArtistRepository m_ArtistRepository;
     private IGalleryRepository m_GalleryRepository;
     private List<GalleryItemUI> m_ActiveGalleryItems = new List<GalleryItemUI>();
+    public int m_galleryIdToView;
 
     private async void Start()
     {
@@ -67,6 +68,7 @@ public class GalleryProfileUI : MonoBehaviour
 
             if (profile.managed_gallery != null && profile.managed_gallery.Length > 0)
             {
+                LogDebug($"[GalleryProfileUI]Found {profile.managed_gallery.Length} gallery IDs in profile.managed_gallery.");
                 // Fetch each gallery by ID
                 foreach (var galleryIdStr in profile.managed_gallery)
                 {
@@ -77,6 +79,8 @@ public class GalleryProfileUI : MonoBehaviour
                     {
                         if (int.TryParse(galleryIdStr, out int galleryId))
                         {
+                            m_galleryIdToView = galleryId;
+                            LogDebug($"[GalleryProfileUI]Fetching gallery with ID: {galleryId}");
                             GalleryData gallery = await m_GalleryRepository.GetGalleryAsync(galleryId);
                             if (gallery != null)
                             {

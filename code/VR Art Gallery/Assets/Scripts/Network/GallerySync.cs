@@ -1,16 +1,20 @@
-using Unity.Netcode;
+﻿using Unity.Netcode;
 using Unity.Collections;
 using System.Diagnostics;
 using UnityEngine;
 
 public class GallerySync : NetworkBehaviour
 {
+    [Header("Gallaery Data")]
+    [SerializeField] private GalleryManager galleryManager;
+    [SerializeField] private GalleryProfileUI galleryProfileUI;
     // Only the server can write; all clients can read
     private NetworkVariable<int> galleryId = new NetworkVariable<int>(
         0,
         NetworkVariableReadPermission.Everyone,
         NetworkVariableWritePermission.Server
     );
+    
 
     public override void OnNetworkSpawn()
     {
@@ -19,7 +23,7 @@ public class GallerySync : NetworkBehaviour
         if (IsServer)
         {
             // Player B (host) sets the gallery ID when this object spawns
-            galleryId.Value = 1; // your logic here
+            galleryId.Value = galleryProfileUI.m_galleryIdToView; // your logic here
             UnityEngine.Debug.Log($"[GallerySync] Server set galleryId to {galleryId.Value}");
         }
         else
