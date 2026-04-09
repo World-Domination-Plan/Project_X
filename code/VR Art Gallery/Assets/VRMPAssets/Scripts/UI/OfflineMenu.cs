@@ -6,49 +6,50 @@ namespace XRMultiplayer
 {
     public class OfflineMenu : MonoBehaviour
     {
-        /// <summary>
-        /// Colors to choose from for the player.
-        /// </summary>
-        [SerializeField, Tooltip("Default name for the player")] Color[] m_PlayerColors;
+        [Header("Player Colors")]
+        [SerializeField, Tooltip("Colors to choose from for the player")]
+        private Color[] m_PlayerColors;
 
         [Header("Player Info")]
-        /// <summary>
-        /// Default name for the player.
-        /// </summary>
-        [SerializeField, Tooltip("Default name for the player")] string m_DefaultPlayerName = "Unity Creator";
-        [SerializeField] TMP_Text m_PlayerNameText;
-        [SerializeField] TMP_Text m_PlayerInitialText;
-        [SerializeField] Image[] m_PlayerColorIcons;
-        [SerializeField] Image m_VolumeIndicator;
-        [SerializeField] Image m_MicIcon;
-        [SerializeField] Sprite m_MutedSprite;
-        [SerializeField] Sprite m_UnmutedSprite;
+        [SerializeField, Tooltip("Default name for the player")]
+        private string m_DefaultPlayerName = "Unity Creator";
+        [SerializeField] private TMP_Text m_PlayerNameText;
+        [SerializeField] private TMP_Text m_PlayerInitialText;
+        [SerializeField] private Image[] m_PlayerColorIcons;
+        [SerializeField] private Image m_VolumeIndicator;
+        [SerializeField] private Image m_MicIcon;
+        [SerializeField] private Sprite m_MutedSprite;
+        [SerializeField] private Sprite m_UnmutedSprite;
 
         [Header("Panel Objects")]
-        [SerializeField] GameObject m_CustomizationPanel;
-        [SerializeField] GameObject m_ConnectionPanel;
-        [SerializeField] GameObject m_LoginPanel;
-        [SerializeField] GameObject m_Door;
+        [SerializeField] private GameObject m_CustomizationPanel;
+        [SerializeField] private GameObject m_ConnectionPanel;
+        [SerializeField] private GameObject m_Door;
 
-        VoiceChatManager m_VoiceChatManager;
+        private VoiceChatManager m_VoiceChatManager;
 
         private void Awake()
         {
             XRINetworkGameManager.Connected.Subscribe(OnConnected);
             XRINetworkGameManager.LocalPlayerName.Subscribe(SetPlayerName);
             XRINetworkGameManager.LocalPlayerColor.Subscribe(SetPlayerColor);
-
             OfflinePlayerAvatar.voiceAmp.Subscribe(UpdateMicIcon);
 
             m_VoiceChatManager = FindFirstObjectByType<VoiceChatManager>();
-            m_VoiceChatManager.selfMuted.Subscribe(MutedChanged);
+            if (m_VoiceChatManager != null)
+            {
+                m_VoiceChatManager.selfMuted.Subscribe(MutedChanged);
+            }
+
             SetupPlayerDefaults();
         }
 
         private void Start()
         {
-            ShowCustomization();
-            XRINetworkGameManager.Instance.connectionFailedAction += ConnectionFailed;
+            if (XRINetworkGameManager.Instance != null)
+            {
+                XRINetworkGameManager.Instance.connectionFailedAction += ConnectionFailed;
+            }
         }
 
         private void OnDestroy()
@@ -57,78 +58,106 @@ namespace XRMultiplayer
             XRINetworkGameManager.LocalPlayerName.Unsubscribe(SetPlayerName);
             XRINetworkGameManager.LocalPlayerColor.Unsubscribe(SetPlayerColor);
             OfflinePlayerAvatar.voiceAmp.Unsubscribe(UpdateMicIcon);
-            m_VoiceChatManager.selfMuted.Subscribe(MutedChanged);
 
-            XRINetworkGameManager.Instance.connectionFailedAction -= ConnectionFailed;
+            if (m_VoiceChatManager != null)
+            {
+                m_VoiceChatManager.selfMuted.Unsubscribe(MutedChanged);
+            }
+
+            if (XRINetworkGameManager.Instance != null)
+            {
+                XRINetworkGameManager.Instance.connectionFailedAction -= ConnectionFailed;
+            }
         }
 
-        void SetupPlayerDefaults()
+        private void SetupPlayerDefaults()
         {
             XRINetworkGameManager.LocalPlayerName.Value = m_DefaultPlayerName;
-            XRINetworkGameManager.LocalPlayerColor.Value = m_PlayerColors[Random.Range(0, m_PlayerColors.Length)];
+
+            if (m_PlayerColors != null && m_PlayerColors.Length > 0)
+            {
+                XRINetworkGameManager.LocalPlayerColor.Value =
+                    m_PlayerColors[Random.Range(0, m_PlayerColors.Length)];
+            }
         }
 
-        void SetPlayerName(string name)
+        private void SetPlayerName(string name)
         {
-            if (name == string.Empty)
+            if (string.IsNullOrEmpty(name))
             {
                 SetupPlayerDefaults();
                 return;
             }
 
-            m_PlayerNameText.text = name;
-            m_PlayerInitialText.text = name.Substring(0, 1);
-            m_PlayerNameText.rectTransform.sizeDelta = new Vector2(m_PlayerNameText.preferredWidth * .25f, m_PlayerNameText.rectTransform.sizeDelta.y);
-        }
-
-        void SetPlayerColor(Color color)
-        {
-            foreach (var c in m_PlayerColorIcons)
+            if (m_PlayerNameText != null)
             {
-                c.color = color;
+                m_PlayerNameText.text = name;
+                m_PlayerNameText.rectTransform.sizeDelta = new Vector2(
+                    m_PlayerNameText.preferredWidth * 0.25f,
+                    m_PlayerNameText.rectTransform.sizeDelta.y
+                );
+            }
+
+            if (m_PlayerInitialText != null)
+            {
+                m_PlayerInitialText.text = name.Substring(0, 1);
             }
         }
 
-        void UpdateMicIcon(float amp)
+        private void SetPlayerColor(Color color)
         {
-            m_VolumeIndicator.fillAmount = amp;
+            if (m_PlayerColorIcons == null) return;
+
+            foreach (var icon in m_PlayerColorIcons)
+            {
+                if (icon != null)
+                    icon.color = color;
+            }
         }
 
-        void ShowCustomization()
+        private void UpdateMicIcon(float amp)
         {
-            m_CustomizationPanel.SetActive(true);
-            m_LoginPanel.SetActive(false);
-            m_ConnectionPanel.SetActive(false);
+            if (m_VolumeIndicator != null)
+                m_VolumeIndicator.fillAmount = amp;
+        }
+
+        private void MutedChanged(bool muted)
+        {
+            if (m_MicIcon != null)
+                m_MicIcon.sprite = muted ? m_MutedSprite : m_UnmutedSprite;
         }
 
         public void CompleteCustomization()
         {
-            m_CustomizationPanel.SetActive(false);
-            m_LoginPanel.SetActive(true);
+            if (m_CustomizationPanel != null)
+                m_CustomizationPanel.SetActive(false);
         }
 
-        void OnConnected(bool connected)
+        private void OnConnected(bool connected)
         {
             if (connected)
             {
-                m_CustomizationPanel.SetActive(false);
-                m_LoginPanel.SetActive(false);
+                if (m_CustomizationPanel != null)
+                    m_CustomizationPanel.SetActive(false);
+
+                if (m_ConnectionPanel != null)
+                    m_ConnectionPanel.SetActive(false);
+
+                if (m_Door != null)
+                    m_Door.SetActive(false);
             }
             else
             {
                 gameObject.SetActive(true);
-                ShowCustomization();
             }
         }
 
-        void MutedChanged(bool muted)
+        private void ConnectionFailed(string reason)
         {
-            m_MicIcon.sprite = muted ? m_MutedSprite : m_UnmutedSprite;
-        }
+            Debug.LogWarning($"[OfflineMenu] Connection failed: {reason}");
 
-        void ConnectionFailed(string reason)
-        {
-            CompleteCustomization();
+            if (m_ConnectionPanel != null)
+                m_ConnectionPanel.SetActive(false);
         }
     }
 }

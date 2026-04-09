@@ -61,7 +61,12 @@ namespace XRMultiplayer
         Coroutine m_CooldownFillRoutine;
 
         bool m_Private = false;
-        int m_PlayerCount;
+
+        /// <summary>
+        /// Max players passed to <see cref="XRINetworkGameManager.CreateNewLobby"/>; kept in sync by UI (e.g. IntButtonUI) via <see cref="UpdatePlayerCount"/>.
+        /// Defaults to <see cref="XRINetworkGameManager.maxPlayers"/> so capacity is valid before any UI runs and is not overwritten in <c>Start</c>.
+        /// </summary>
+        int m_PlayerCount = XRINetworkGameManager.maxPlayers;
 
         private void Awake()
         {
@@ -72,8 +77,6 @@ namespace XRMultiplayer
 
         private void Start()
         {
-            m_PlayerCount = XRINetworkGameManager.maxPlayers / 2;
-
             XRINetworkGameManager.Instance.connectionFailedAction += FailedToConnect;
             XRINetworkGameManager.Instance.connectionUpdated += ConnectedUpdated;
 

@@ -19,6 +19,9 @@ public class IntButtonUI : MonoBehaviour
         m_IncrementButton.onClick.AddListener(() => UpdateValue(true));
         m_DecrementButton.onClick.AddListener(() => UpdateValue(false));
 
+        // Clamp the current value to the valid range, ensuring we use the inspector-set value if valid
+        m_CurrentValue = Mathf.Clamp(m_CurrentValue, m_MinMaxValue.x, m_MinMaxValue.y);
+
         m_CurrentValueText.text = m_CurrentValue.ToString();
         m_ValueUpdated.Invoke(m_CurrentValue);
     }
