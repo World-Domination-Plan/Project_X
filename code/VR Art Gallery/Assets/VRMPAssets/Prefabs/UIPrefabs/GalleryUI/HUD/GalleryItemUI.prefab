@@ -378,7 +378,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 1461869709558170325}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4cf7380e6cdd24078a7e549aa676396c, type: 3}
+  m_Script: {fileID: 11500000, guid: 3bd7428f3bb1b4fd2bef34ef7f9d1773, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Scripts::GalleryItemUI
   m_GalleryNameText: {fileID: 8943190096695510897}
