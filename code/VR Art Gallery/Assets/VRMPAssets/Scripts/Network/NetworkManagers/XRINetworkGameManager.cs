@@ -261,7 +261,11 @@ namespace XRMultiplayer
             }
 
             // Shutdown lobby if owner, remove from lobby if not owner.
+            if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening){
+                NetworkManager.Singleton.Shutdown();
+            }
             await m_LobbyManager.RemovePlayerFromLobby(AuthenicationId);
+            
         }
 
         public async Task<bool> Authenticate()
@@ -651,7 +655,10 @@ namespace XRMultiplayer
         {
             bool fullyDisconnected = await m_LobbyManager.RemovePlayerFromLobby(AuthenicationId);
             m_Connected.Value = false;
-            NetworkManager.Shutdown();
+            // Must call on Singleton — static NetworkManager.Shutdown() is a no-op
+            if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
+                NetworkManager.Singleton.Shutdown();
+
             if (IsAuthenticated())
             {
                 m_ConnectionState.Value = ConnectionState.Authenticated;

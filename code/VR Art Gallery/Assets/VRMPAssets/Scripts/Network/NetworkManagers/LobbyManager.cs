@@ -74,6 +74,9 @@ namespace XRMultiplayer
                 hideEditorFromLobby = false;
             }
             s_HideEditorInLobbies = hideEditorFromLobby;
+
+            Unity.Netcode.NetworkManager.Singleton.OnClientStarted += () => Debug.LogError("[DEBUG] StartClient called from: " + StackTraceUtility.ExtractStackTrace());
+            Unity.Netcode.NetworkManager.Singleton.OnServerStarted += () => Debug.LogError("[DEBUG] StartHost called from: " + StackTraceUtility.ExtractStackTrace());
         }
 
         /// <summary>
@@ -158,14 +161,16 @@ namespace XRMultiplayer
         {
             try
             {
-                m_Status.Value = "Creating Relay";
-                // Creates a new Allocation based on the defined max players above
+                                // REPLACE WITH:
+                m_Status.Value = "Creating Relay Allocation";
                 var alloc = await RelayService.Instance.CreateAllocationAsync(XRINetworkGameManager.maxPlayers);
 
                 m_Status.Value = "Creating Join Code";
-                // Get a join code based on the Allocation
+                // Always call GetJoinCodeAsync fresh — never cache the join code across sessions
                 var joinCode = await RelayService.Instance.GetJoinCodeAsync(alloc.AllocationId);
 
+                if (string.IsNullOrEmpty(joinCode))
+                    throw new Exception("Relay returned an empty join code. Allocation may have expired.");
                 // Creates Lobby Options Dictionary for other clients to find and join
                 var options = new CreateLobbyOptions
                 {
@@ -228,15 +233,21 @@ namespace XRMultiplayer
         async Task SetupRelay(Lobby lobby)
         {
             m_Status.Value = "Connecting To Relay";
-            // Get the Join Allocation for the lobby based on the key
-            var alloc = await RelayService.Instance.JoinAllocationAsync(lobby.Data[k_JoinCodeKeyIdentifier].Value);
-            // Set the transport client data (IP, port, etc..)
-            m_Transport.SetClientRelayData
-            (
+
+            if (lobby.Data == null || !lobby.Data.ContainsKey(k_JoinCodeKeyIdentifier))
+                throw new Exception("Lobby is missing join code data. The allocation may have expired.");
+
+            string joinCode = lobby.Data[k_JoinCodeKeyIdentifier].Value;
+            if (string.IsNullOrEmpty(joinCode))
+                throw new Exception("Join code is empty. Relay allocation likely expired.");
+
+            var alloc = await RelayService.Instance.JoinAllocationAsync(joinCode);
+
+            // THIS LINE IS CRITICAL - was missing after your edits
+            m_Transport.SetClientRelayData(
                 alloc.RelayServer.IpV4, (ushort)alloc.RelayServer.Port,
                 alloc.AllocationIdBytes, alloc.Key, alloc.ConnectionData, alloc.HostConnectionData
             );
-            return;
         }
 
         QuickJoinLobbyOptions GetQuickJoinFilterOptions()
@@ -290,6 +301,19 @@ namespace XRMultiplayer
                 // RATE LIMIT: 1 request per 10 seconds
                 Utils.Log($"{k_DebugPrepend} Getting lobby via Quick Join");
                 return await LobbyService.Instance.QuickJoinLobbyAsync(GetQuickJoinFilterOptions());
+            }
+        }
+
+        private void OnDestroy()
+        {
+            if (m_HeartBeatRoutine != null) 
+                StopCoroutine(m_HeartBeatRoutine);
+
+            var nm = Unity.Netcode.NetworkManager.Singleton;
+            if (nm != null && nm.IsListening)
+            {
+                nm.Shutdown();
+                Utils.Log($"{k_DebugPrepend}NetworkManager shutdown on LobbyManager destroy.");
             }
         }
 
@@ -386,10 +410,19 @@ namespace XRMultiplayer
         /// </summary>
         /// <param name="playerId"></param>
         /// <returns></returns>
+        // REPLACE WITH:
         public async Task<bool> RemovePlayerFromLobby(string playerId)
         {
-            // Stop heartbeat if active (only runs on host)
             if (m_HeartBeatRoutine != null) StopCoroutine(m_HeartBeatRoutine);
+
+            // Shutdown NetworkManager FIRST before removing from lobby
+            // This stops the Relay receive job from polling a dead allocation (fixes ALLOC_TEMP_TLS leak)
+            var nm = Unity.Netcode.NetworkManager.Singleton;
+            if (nm != null && nm.IsListening)
+            {
+                nm.Shutdown();
+                Utils.Log($"{k_DebugPrepend}NetworkManager shutdown before lobby removal.");
+            }
 
             try
             {

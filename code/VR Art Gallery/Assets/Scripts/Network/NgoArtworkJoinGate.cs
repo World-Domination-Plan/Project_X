@@ -45,10 +45,23 @@ public class NgoArtworkJoinGate : MonoBehaviour
         if (!canJoin)
             return BlockJoin("You do not have access to this artwork session.");
 
+        // AFTER
         onJoinAuthorized?.Invoke();
 
-        if (startClientWhenAuthorized && networkManager != null && !networkManager.IsListening)
-            networkManager.StartClient();
+        if (startClientWhenAuthorized && networkManager != null)
+        {
+            if (networkManager.IsListening)
+            {
+                // Already connected — don't start again, stale relay would fire here
+                Debug.LogWarning("[NgoArtworkJoinGate] NetworkManager already listening, skipping StartClient.");
+            }
+            else
+            {
+                // Relay data MUST be set before this point by your RelayManager
+                // If not set, this is what causes the allocation ID not found error
+                networkManager.StartClient();
+            }
+        }
 
         return true;
     }
@@ -76,6 +89,15 @@ public class NgoArtworkJoinGate : MonoBehaviour
         {
             Debug.LogError($"[NgoArtworkJoinGate] Supabase initialization failed: {ex.Message}");
             return null;
+        }
+    }
+
+    private void OnDisable()
+    {
+        if (networkManager != null && networkManager.IsListening)
+        {
+            networkManager.Shutdown();
+            Debug.Log("[NgoArtworkJoinGate] Shutdown NetworkManager on disable.");
         }
     }
 }
