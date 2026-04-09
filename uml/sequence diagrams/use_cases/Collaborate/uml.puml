@@ -1,0 +1,94 @@
+@startuml
+title Sequence Diagram: Collaborate
+
+actor User
+participant "ControllerInput Manager" as Input
+participant "HUD" as HUD
+participant "Collaboration Manager" as Colab
+participant "Security Manager" as Auth
+participant "Network Manager" as Network
+participant "Room Manager" as Room
+participant "CanvasSpawner" as Spawner
+participant "CanvasBrushSpawner" as BrushSpawner
+participant "Art Tools (BrushToolState)" as Tools
+participant "Canvas (PaintableSurfaceRT)" as Canvas
+participant "CanvasStrokeSyncNgo" as StrokeSync
+participant "Event Logger" as Logger
+
+== User Joins a Shared Workspace ==
+User -> Input: Selects "Join a workspace"
+Logger -> Logger: Log SelectsJoinWorkspace
+Input -> HUD: Display code textbox
+User -> Input: Inputs code
+Input -> HUD: Submits code
+Logger -> Logger: Log code
+HUD -> Colab: Validates code
+Colab -> Auth: Sends user info
+Auth --> Colab: Authenticates user
+Colab -> Network: Load workspace instance
+Logger -> Logger: Log workspace info
+Network -> Room: Load workspace layout
+Room -> Canvas: Load artworks (SetBackground → Graphics.Blit to RenderTexture)
+
+== Brush & Canvas Spawn (on workspace load) ==
+Room -> Spawner: SpawnWorkspaceServerRpc(pos, rot)
+activate Spawner
+Spawner -> Spawner: Instantiate workspace prefab
+Spawner -> Spawner: NetworkObject.Spawn()
+Spawner -> BrushSpawner: SpawnBrush()
+BrushSpawner -> BrushSpawner: Instantiate paintbrush prefab at canvas offset
+BrushSpawner -> Network: NetworkObject.Spawn() — brush visible to all clients
+deactivate Spawner
+
+== User Collaborates on a Painting ==
+User -> Input: Selects canvas (walks up / ray points)
+Logger -> Logger: Log canvas selected
+Input -> Canvas: Zoom in (enter draw mode)
+
+User -> Input: Picks up brush (XR grab)
+Input -> Tools: BrushGrabState.OnGrabbed()
+Tools -> BrushSpawner: RequestReplacementBrushServerRpc() — spawn replacement for others
+Tools -> HUD: Show current brush color/radius
+
+loop While trigger held (every frame)
+    User -> Input: Pull trigger, move controller
+    Input -> Input: Physics.Raycast() → hit.textureCoord (UV)
+    Input -> Tools: GetHeldBrushToolState() → BrushState (color, radius, hardness)
+    Input -> StrokeSync: LocalStrokeBegin(strokeId, brushState) [first frame]
+    Input -> Canvas: TryPaintAt(uv, brushState)
+    Canvas -> Canvas: Graphics.Blit(BufferA → BufferB, brushBlitMaterial)
+    Canvas -> Canvas: Swap buffers (ping-pong)
+    Canvas -> Canvas: ApplyToRenderer(BufferA)
+    Input -> StrokeSync: LocalStrokePoints(strokeId, encodedUVs)
+    StrokeSync -> Network: BroadcastStroke RPC to all clients
+    Network --> Canvas: Remote clients paint same stroke
+end
+
+User -> Input: Release trigger
+Input -> StrokeSync: LocalStrokeEnd(strokeId)
+StrokeSync -> Network: Finalise stroke sync
+
+== User Saves Artwork ==
+User -> HUD: Click Save Artwork
+HUD -> Canvas: SaveCanvasToPNG(fileName)
+Canvas -> Canvas: Texture2D.ReadPixels(RenderTexture)
+Canvas -> Canvas: tex.EncodeToPNG()
+Canvas --> HUD: Return localPath
+
+note over StrokeSync, Network
+    CanvasStrokeSyncNgo handles all NGO RPCs.
+    No per-stroke auth call — auth happens at join time.
+    BrushRespawnOnGrab auto-despawns idle brushes after timeout.
+end note
+
+== User Messages Another User ==
+User -> Input: Selects chat
+Logger -> Logger: Log Chat selected
+Input -> HUD: Display chat
+User -> Input: Enters message
+Input -> HUD: Saves message
+Logger -> Logger: Log Message
+HUD -> Colab: Send message
+Colab -> Network: Broadcast to room
+
+@enduml

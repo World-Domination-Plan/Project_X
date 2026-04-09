@@ -1,0 +1,41 @@
+@startuml
+
+
+title Sequence Diagram: Artwork Persistence Flow& Storage Sync
+
+actor User
+
+participant "PaintableSurfaceRT" as Surface
+participant "UI / Save Menu" as UI
+participant "SupabaseArtworkRepository" as ArtworkRepo
+participant "Supabase.Client (SDK)" as SupabaseSDK
+database "Local Disk" as Disk
+database "Supabase Storage" as Storage
+database "Supabase Database" as DB
+
+== Serialization ==
+User -> UI: Click Save Artwork
+UI -> Surface: SaveCanvasToPNG(fileName)
+Surface -> Surface: Texture2D.ReadPixels(RenderTexture)
+Surface -> Surface: tex.EncodeToPNG()
+Surface -> Disk: File.WriteAllBytes(path)
+Surface -> UI: Return localPath
+
+== Cloud Upload ==
+UI -> ArtworkRepo: CreateArtworkWithUploadAsync(artworkData, bytes)
+ArtworkRepo -> ArtworkRepo: Generate Thumbnail (GenerateHalfSizePng)
+ArtworkRepo -> SupabaseSDK: UploadObjectAsync(original)
+SupabaseSDK -> Storage: POST /storage/v1/object/artwork-images
+ArtworkRepo -> SupabaseSDK: UploadObjectAsync(thumbnail)
+SupabaseSDK -> Storage: POST /storage/v1/object/artwork-images
+
+== Metadata Sync ==
+ArtworkRepo -> ArtworkRepo: Set image_url & thumbnail_url
+ArtworkRepo -> SupabaseSDK: client.From<ArtworkData>().Insert(artwork)
+SupabaseSDK -> DB: INSERT INTO artwork
+DB -> SupabaseSDK: OK / Created Model
+SupabaseSDK -> ArtworkRepo: Return Model
+ArtworkRepo -> UI: Return Success
+UI -> User: Display "Saved Selection"
+
+@enduml

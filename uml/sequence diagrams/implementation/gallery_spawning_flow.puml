@@ -1,0 +1,43 @@
+@startuml
+
+
+title Sequence Diagram: Data-Driven Gallery Spawning
+
+actor User
+participant "GameManager" as GM
+participant "SupabaseGalleryRepository" as GalleryRepo
+participant "Supabase.Client (SDK)" as SupabaseSDK
+participant "CanvasSpawner" as Spawner
+participant "PaintableSurfaceRT" as Surface
+database "Supabase Database" as DB
+
+== Gallery Data Fetch ==
+User -> GM: Entry to Gallery Scene
+GM -> GM: LoadScene("Gallery")
+GM -> GalleryRepo: GetGalleryAsync(galleryId)
+GalleryRepo -> SupabaseSDK: client.From<Gallery>().Where(id == gid).Single()
+SupabaseSDK -> DB: SELECT * FROM gallery
+DB -> SupabaseSDK: Gallery Data (including artwork_ids)
+SupabaseSDK -> GalleryRepo: Return Gallery Model
+GalleryRepo -> GM: Return GalleryData
+
+== Artwork Path Fetch and Canvas Initialization ==
+GM -> GalleryRepo : GetArtworkPaths(galleryId)
+activate GalleryRepo
+GalleryRepo -> SupabaseSDK : Query artworks for gallery
+SupabaseSDK -->> GalleryRepo : List of path metadata
+GalleryRepo -->> GM : Dictionary<int, (image_url, thumb_url)>
+deactivate GalleryRepo
+
+loop for each slot in dictionary
+    GM -> SupabaseSDK : Download texture (image_url)
+    SupabaseSDK -->> GM : Byte array / Texture2D
+    GM -> Surface : SetBackground(texture)
+    activate Surface
+    Surface -> Surface : Graphics.Blit to RenderTexture
+    Surface -->> GM : Success
+    deactivate Surface
+end
+
+GM -> GM: Notify "Gallery Ready"
+@enduml

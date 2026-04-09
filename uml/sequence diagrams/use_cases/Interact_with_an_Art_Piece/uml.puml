@@ -1,0 +1,82 @@
+@startuml
+title Sequence Diagram: Interact with an Art Piece
+
+actor User
+participant "ControllerInput Manager" as Input
+participant "HUD" as HUD
+participant "Room Manager" as Room
+participant "Canvas (PaintableSurfaceRT)" as Canvas
+participant "SupabaseArtworkRepository" as ArtworkRepo
+participant "Supabase SDK" as SDK
+participant "Network Manager" as Network
+participant "Event Logger" as Logger
+
+database "Supabase Storage" as Storage
+database "Supabase Database" as DB
+
+== Proximity Detection ==
+User -> Input: Walks up to an art piece (threshold reached)
+Input -> Room: Notifies proximity event
+Room -> HUD: Highlight nearby art piece
+HUD -> User: Art piece highlighted — interaction mode available
+
+== Art Piece Selection ==
+User -> Input: Selects the highlighted art piece
+Input -> Room: Confirm art piece selection
+Room -> ArtworkRepo: GetArtworkPaths(artworkId)
+activate ArtworkRepo
+ArtworkRepo -> SDK: Query artworks WHERE id = artworkId
+SDK -> DB: SELECT image_url, thumbnail_url FROM artwork
+DB --> SDK: Artwork metadata
+SDK --> ArtworkRepo: Return path metadata
+ArtworkRepo --> Room: Return (image_url, thumbnail_url)
+deactivate ArtworkRepo
+
+Room -> SDK: Download texture (image_url)
+SDK -> Storage: GET /storage/v1/object/artwork-images
+Storage --> SDK: Byte array
+SDK --> Room: Texture2D
+
+Room -> Canvas: SetBackground(texture)
+activate Canvas
+Canvas -> Canvas: Graphics.Blit(texture → RenderTexture, ping-pong)
+Canvas --> Room: Success
+deactivate Canvas
+
+Canvas -> HUD: Display interaction options (zoom, rotate, info, etc.)
+HUD -> User: Shows interaction options
+
+== Interaction ==
+User -> Input: Selects an interaction option (e.g. zoom / rotate / show info)
+Input -> Canvas: Send chosen command
+Canvas -> Room: Update art display according to user action
+Room -> HUD: Render visual change or playback multimedia
+HUD -> User: Updated art interaction view
+Canvas -> Logger: Log user interaction
+
+alt Selection via Controller
+    User -> Input: Uses controller pointer to select art piece
+    Input -> Room: Confirm art piece selection
+    Room -> HUD: Highlight and enter interaction mode
+end
+
+alt Network / Storage Failure
+    SDK --> Room: Error / timeout
+    Room -> HUD: Show error notification "Unable to load art details"
+    HUD -> Logger: Log network error
+end
+
+alt Exit Interaction Mode
+    User -> Input: Exits interaction mode
+    Input -> Room: Notify exit event
+    Room -> HUD: Revert to free-move mode
+    HUD -> User: Normal navigation restored
+    Room -> Logger: Log exit interaction
+end
+
+note over ArtworkRepo, Storage
+    Artwork textures are fetched from Supabase Storage
+    and seeded into PaintableSurfaceRT via Graphics.Blit.
+    DisplayOnly mode — painting is disabled during viewing.
+end note
+@enduml

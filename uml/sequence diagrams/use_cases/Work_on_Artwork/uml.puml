@@ -1,0 +1,45 @@
+@startuml
+actor User
+participant "Controller/Input Manager" as Input
+participant "HUD" as HUD
+participant "Network Manager" as Net
+participant "Art Tools" as Tools
+participant "Canvas" as Canvas
+participant "Security Manager" as Auth
+participant "Event Logger" as Logger
+
+== Session Entry ==
+Canvas -> Auth : requests authentication
+Auth -> Canvas : authenticates session
+
+== Canvas Selection ==
+User -> Input : selects canvas
+Input -> Canvas : zooms in
+Logger -> Logger : Log: Canvas selected
+
+== Brush Pickup (Physical/Networked) ==
+User -> Input : physically grabs brush (XR grab)
+Input -> Net : RequestReplacementBrush (ServerRpc)
+Net -> Tools : spawns replacement brush for all clients
+Logger -> Logger : Log: Brush grabbed
+
+== Painting (Stroke-Synced) ==
+User -> Input : draws on canvas
+Input -> Tools : begin stroke (LocalStrokeBegin)
+Tools -> Net : sync stroke points (LocalStrokePoints)
+Net -> Canvas : updates canvas for all clients
+Logger -> Logger : Log: Canvas updated
+
+== Color Selection (Optional) ==
+alt User changes brush color
+    User -> Input : grabs color bucket / cycles presets
+    Input -> Tools : updates BrushToolState color
+    Tools -> Canvas : next stroke uses new color
+end
+
+== Exit ==
+User -> Input : clicks exit
+Logger -> Logger : Log: Canvas exited
+Input -> HUD : exits canvas
+Input -> Canvas : unzooms
+@enduml

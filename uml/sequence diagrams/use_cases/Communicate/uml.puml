@@ -1,0 +1,64 @@
+@startuml
+title Sequence Diagram: Communicate
+
+actor UserA
+actor UserB
+participant "ControllerInput Manager" as CIM
+participant "HUD" as HUD
+participant "CollaborationCommunication Manager" as CCM
+participant "VoiceChatManager" as VoiceChat
+participant "Network Manager" as NM
+participant "Event Logger" as EL
+
+== Proximity Voice Chat (Vivox Positional Audio) ==
+UserA -> VoiceChat: Connect to Vivox channel (on spawn)
+VoiceChat -> NM: Set3DAudio(headTransform)
+NM -> VoiceChat: Positional audio active
+
+UserA -> NM: Moves closer to UserB
+NM -> VoiceChat: UpdateVoicePosition(headOrigin)
+VoiceChat -> VoiceChat: Adjust volume based on 3D distance
+UserA -> CIM: Speaks (voice input)
+CIM -> VoiceChat: Capture audio
+VoiceChat -> NM: Broadcast positional voice to UserB
+NM -> UserB: Deliver voice (distance-attenuated)
+
+alt UserA leaves UserB's range
+    UserA -> NM: Moves away from UserB
+    NM -> VoiceChat: UpdateVoicePosition(headOrigin)
+    VoiceChat -> VoiceChat: Volume decreases with distance
+    CCM -> EL: Log proximity/volume event
+    EL -> EL: Log Mute Action
+end
+
+== Self-Mute ==
+UserA -> CIM: Toggle mute
+CIM -> VoiceChat: ToggleSelfMute(true/false)
+VoiceChat -> NM: selfMuted.Value = true/false (NetworkVariable)
+NM -> UserB: Sync mute state (all clients)
+
+== Public ChatBox Flow (Text) ==
+UserA -> HUD: Opens HUD
+HUD -> CCM: Selects public chat
+CCM -> NM: Get message history
+NM --> CCM: Returns messages
+CCM -> HUD: Shows history
+UserA -> CIM: Types message, clicks send
+CIM -> CCM: Forwards message
+CCM -> NM: Broadcasts to all users in room
+CCM -> EL: Log message event
+EL -> EL: Log Message
+
+== Private ChatBox Flow (Text) ==
+UserA -> HUD: Selects UserB for private chat
+UserA -> CIM: Points at UserB, selects chat option
+CIM -> CCM: Initiate private chat
+CCM -> NM: Opens private chat channel
+NM -> UserB: Deliver private message
+
+note over VoiceChat, NM
+    Vivox positional audio (XRINetworkPlayer.SetVoiceId)
+    drives 3D attenuation via VivoxParticipant.
+    selfMuted is a NetworkVariable synced to all clients.
+end note
+@enduml
