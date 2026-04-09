@@ -1,13 +1,37 @@
 @startuml
-actor user
-participant "controller/input manager" as input
-participant "hud" as hud
-participant "Security Manager" as auth
-participant "Even Logger" as log
+title Sign Off
 
-user -> input : user opens hud
-input -> hud : user selects sign off
-log -> log : logs the sign off activity.
-hud -> auth : triggers the action to log off
-auth -> user : Sends a message and logs off
+actor User as User
+participant "Controller/Input Manager" as Input
+participant "HUD" as HUD
+participant "AuthenticationUI" as AuthUI
+participant "AuthenticationManager" as AuthMgr
+participant "SupabaseClient\n(via SupabaseClientManager)" as Supa
+participant "Event Logger" as Log
+
+User -> Input : Opens HUD
+Input -> HUD : Show HUD
+HUD -> AuthUI : Display authenticated panel
+AuthUI -> User : Show "Logout" button
+
+User -> AuthUI : Clicks Logout
+AuthUI -> AuthUI : ShowLoadingPanel()
+AuthUI -> AuthMgr : LogoutUser()
+Log -> Log : Log sign-off activity
+
+AuthMgr -> Supa : Auth.SignOut()
+
+alt Sign out failed
+    Supa --> AuthMgr : Exception
+    AuthMgr -> AuthMgr : OnAuthenticationError?.Invoke("Logout failed")
+    AuthUI -> AuthUI : HandleAuthenticationError()
+    AuthUI -> User : Show error message
+else Sign out succeeded
+    Supa --> AuthMgr : OK
+    AuthMgr -> AuthMgr : CurrentSession = null\nOnUserLoggedOut?.Invoke()
+    Log -> Log : Log user signed out
+    AuthUI -> AuthUI : HandleUserLoggedOut()
+    AuthUI -> AuthUI : ShowLoginPanel()\n[shows door object if configured]
+    AuthUI -> User : Display Login panel
+end
 @enduml
