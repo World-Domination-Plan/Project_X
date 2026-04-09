@@ -203,7 +203,7 @@ namespace XRMultiplayer
 
                 // Unity Lobbies treat invalid/low values poorly for joins (e.g. 0 can yield a 1-capacity room). Clamp and recover.
                 int lobbyMaxPlayers = playerCount < 1 ? XRINetworkGameManager.maxPlayers : playerCount;
-                lobbyMaxPlayers = Mathf.Clamp(lobbyMaxPlayers, 2, XRINetworkGameManager.maxPlayers);
+                lobbyMaxPlayers = Mathf.Clamp(lobbyMaxPlayers, 15, XRINetworkGameManager.maxPlayers);
 
                 // RATE LIMIT: 2 request per 6 seconds
                 var lobby = await LobbyService.Instance.CreateLobbyAsync(lobbyName, lobbyMaxPlayers, options);
