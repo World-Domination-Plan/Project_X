@@ -19,7 +19,7 @@ namespace XRMultiplayer
         [SerializeField] GameObject m_LobbyListPrefab;
         [SerializeField] Button m_RefreshButton;
         [SerializeField] Image m_CooldownImage;
-        [SerializeField] float m_AutoRefreshTime = 5.0f;
+        [SerializeField] float m_AutoRefreshTime = 120.0f;
         [SerializeField] float m_RefreshCooldownTime = .5f;
 
         [Header("Login UI Positioning")]
@@ -61,7 +61,12 @@ namespace XRMultiplayer
         Coroutine m_CooldownFillRoutine;
 
         bool m_Private = false;
-        int m_PlayerCount;
+
+        /// <summary>
+        /// Max players passed to <see cref="XRINetworkGameManager.CreateNewLobby"/>; kept in sync by UI (e.g. IntButtonUI) via <see cref="UpdatePlayerCount"/>.
+        /// Defaults to <see cref="XRINetworkGameManager.maxPlayers"/> so capacity is valid before any UI runs and is not overwritten in <c>Start</c>.
+        /// </summary>
+        int m_PlayerCount = XRINetworkGameManager.maxPlayers;
 
         private void Awake()
         {
@@ -72,8 +77,6 @@ namespace XRMultiplayer
 
         private void Start()
         {
-            m_PlayerCount = XRINetworkGameManager.maxPlayers / 2;
-
             XRINetworkGameManager.Instance.connectionFailedAction += FailedToConnect;
             XRINetworkGameManager.Instance.connectionUpdated += ConnectedUpdated;
 

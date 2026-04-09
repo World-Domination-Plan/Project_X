@@ -4836,8 +4836,7 @@ MonoBehaviour:
   paintMask:
     serializedVersion: 2
     m_Bits: 256
-  flushPointThreshold: 12
-  maxInterpolationSteps: 64
+  rightHandInteractor: {fileID: 0}
   drawAction:
     m_UseReference: 0
     m_Action:
@@ -4867,6 +4866,7 @@ MonoBehaviour:
       m_Flags: 0
     m_Reference: {fileID: 0}
   mouseFallback: 1
+  pressThreshold: 0.1
 --- !u!114 &1270315244746559373 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 7847385525345954920, guid: d6878e1999eb4b44a9f5a263af86c185, type: 3}

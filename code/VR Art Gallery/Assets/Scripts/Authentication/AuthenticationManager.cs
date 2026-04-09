@@ -177,7 +177,9 @@ namespace VRGallery.Authentication
             }
             catch (Exception ex)
             {
-                LogError($"Failed to initialize Supabase: {ex.Message}");
+                //LogError($"Failed to initialize Supabase: {ex.Message}");
+                LogError($"Failed to initialize Supabase: {ex}");
+
                 OnAuthenticationError?.Invoke($"Initialization failed: {ex.Message}");
 
                 _supabaseInitFailed = true;
@@ -195,7 +197,35 @@ namespace VRGallery.Authentication
             {
                 LogDebug($"Attempting to register user: {email}");
 
-                // Validate inputs
+                await WaitForSupabaseInitAsync();
+
+                if (_supabaseInitFailed)
+                {
+                    OnAuthenticationError?.Invoke("Supabase initialization failed");
+                    return false;
+                }
+
+                if (SupabaseClientInstance == null)
+                {
+                    LogError("Register failed: SupabaseClientInstance is null");
+                    OnAuthenticationError?.Invoke("Authentication system not ready");
+                    return false;
+                }
+
+                if (SupabaseClientInstance.Auth == null)
+                {
+                    LogError("Register failed: SupabaseClientInstance.Auth is null");
+                    OnAuthenticationError?.Invoke("Authentication service is unavailable");
+                    return false;
+                }
+
+                if (artistRepository == null)
+                {
+                    LogError("Register failed: artistRepository is null");
+                    OnAuthenticationError?.Invoke("Profile service is unavailable");
+                    return false;
+                }
+
                 if (string.IsNullOrWhiteSpace(email) ||
                     string.IsNullOrWhiteSpace(password) ||
                     string.IsNullOrWhiteSpace(username))
@@ -204,14 +234,12 @@ namespace VRGallery.Authentication
                     return false;
                 }
 
-                // Sign up user with Supabase Auth
                 var response = await SupabaseClientInstance.Auth.SignUp(email, password);
 
                 if (response?.User != null)
                 {
                     LogDebug($"User registered successfully: {response.User.Id}");
 
-                    // Create artist profile with username
                     bool profileCreated = await artistRepository.CreateArtistProfileAsync(
                         response.User.Id,
                         username
@@ -234,7 +262,7 @@ namespace VRGallery.Authentication
             }
             catch (Exception ex)
             {
-                LogError($"Registration error: {ex.Message}");
+                LogError($"Registration error: {ex}");
                 OnAuthenticationError?.Invoke($"Registration failed: {ex.Message}");
                 return false;
             }
@@ -249,6 +277,34 @@ namespace VRGallery.Authentication
             {
                 LogDebug($"Attempting to login user: {email}");
 
+                await WaitForSupabaseInitAsync();
+
+                if (_supabaseInitFailed)
+                {
+                    OnAuthenticationError?.Invoke("Supabase initialization failed");
+                    return false;
+                }
+
+                if (SupabaseClientInstance == null)
+                {
+                    LogError("Login failed: SupabaseClientInstance is null");
+                    OnAuthenticationError?.Invoke("Authentication system not ready");
+                    return false;
+                }
+
+                if (SupabaseClientInstance.Auth == null)
+                {
+                    LogError("Login failed: SupabaseClientInstance.Auth is null");
+                    OnAuthenticationError?.Invoke("Authentication service is unavailable");
+                    return false;
+                }
+
+                if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
+                {
+                    OnAuthenticationError?.Invoke("Email and password are required");
+                    return false;
+                }
+
                 var response = await SupabaseClientInstance.Auth.SignIn(email, password);
 
                 if (response?.User != null)
@@ -257,7 +313,6 @@ namespace VRGallery.Authentication
                     OnUserLoggedIn?.Invoke(response.User);
                     LogDebug($"User logged in successfully: {response.User.Id}");
 
-                    // Get and notify of user role
                     var role = await GetUserRole(response.User.Id);
                     OnUserRoleChanged?.Invoke(role);
 
@@ -272,7 +327,7 @@ namespace VRGallery.Authentication
             }
             catch (Exception ex)
             {
-                LogError($"Login error: {ex.Message}");
+                LogError($"Login error: {ex}");
                 OnAuthenticationError?.Invoke($"Login failed: {ex.Message}");
                 return false;
             }
@@ -285,6 +340,14 @@ namespace VRGallery.Authentication
         {
             try
             {
+                await WaitForSupabaseInitAsync();
+
+                if (_supabaseInitFailed || SupabaseClientInstance == null || SupabaseClientInstance.Auth == null)
+                {
+                    OnAuthenticationError?.Invoke("Authentication system not ready");
+                    return false;
+                }
+
                 await SupabaseClientInstance.Auth.SignOut();
                 CurrentSession = null;
                 OnUserLoggedOut?.Invoke();
@@ -293,7 +356,7 @@ namespace VRGallery.Authentication
             }
             catch (Exception ex)
             {
-                LogError($"Logout error: {ex.Message}");
+                LogError($"Logout error: {ex}");
                 OnAuthenticationError?.Invoke($"Logout failed: {ex.Message}");
                 return false;
             }
@@ -310,6 +373,12 @@ namespace VRGallery.Authentication
         {
             try
             {
+                if (artistRepository == null)
+                {
+                    LogError("GetUserRole failed: artistRepository is null");
+                    return UserRole.Guest;
+                }
+
                 LogDebug($"Getting role for user: {userId}");
 
                 var profile = await artistRepository.GetArtistProfileAsync(userId);
@@ -320,9 +389,6 @@ namespace VRGallery.Authentication
                     return UserRole.Guest;
                 }
 
-                // Determine role based on profile data
-                // Check if user is an admin (you may need to add an is_admin field to your profile)
-                // For now, users with profiles are Artists, others are Guests
                 UserRole role = UserRole.Artist;
 
                 LogDebug($"Retrieved role {role} for user: {userId}");
@@ -330,7 +396,7 @@ namespace VRGallery.Authentication
             }
             catch (Exception ex)
             {
-                LogError($"Error getting role for user {userId}: {ex.Message}");
+                LogError($"Error getting role for user {userId}: {ex}");
                 return UserRole.Guest;
             }
         }
@@ -347,7 +413,8 @@ namespace VRGallery.Authentication
             }
             catch (Exception ex)
             {
-                LogError($"Error getting username for user {userId}: {ex.Message}");
+                //LogError($"Error getting username for user {userId}: {ex.Message}");
+                LogError($"Error getting username for user {userId}: {ex}");
                 return "User";
             }
         }
