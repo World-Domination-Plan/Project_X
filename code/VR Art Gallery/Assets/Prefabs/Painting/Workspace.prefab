@@ -214,7 +214,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 0
+  GlobalObjectIdHash: 1902360318
   InScenePlacedSourceGlobalObjectIdHash: 0
   DeferredDespawnTick: 0
   Ownership: 1
@@ -576,6 +576,10 @@ PrefabInstance:
       propertyPath: m_ConstrainProportionsScale
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 3929296768846025282, guid: 370bdc0574e664c8185d5c500fd90f64, type: 3}
+      propertyPath: brushBlitMaterial
+      value: 
+      objectReference: {fileID: 2100000, guid: 52fc0c9fe60fd43628067f4b46afee94, type: 2}
     - target: {fileID: 6675986418902653827, guid: 370bdc0574e664c8185d5c500fd90f64, type: 3}
       propertyPath: m_Name
       value: canvasPrefab
