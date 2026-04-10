@@ -1,6 +1,9 @@
 using UnityEngine;
 using System.IO;
 using System.Collections;
+using System.Threading.Tasks;
+using VRGallery.Cloud;
+using VRGallery.Authentication;
 [DisallowMultipleComponent]
 [RequireComponent(typeof(Renderer))]
 public class PaintableSurfaceRT : MonoBehaviour
@@ -56,6 +59,16 @@ public class PaintableSurfaceRT : MonoBehaviour
 
     float _autoSaveTimer;
 
+    [Header("Cloud Sync")]
+    public bool enableCloudSync = true;
+    private IArtworkRepository _artworkRepo;
+    private IArtistRepository _artistRepo;
+    private IGalleryRepository _galleryRepo;
+    private long _ownerId = 49;//WorkflowArtist, just in case
+    private int _currentGalleryId = 141;//WorkflowArtist's gallery, just in case
+    private ArtworkData _currentCloudArtwork = null;
+    private bool _isSavingCloud = false;
+
     void Update()
     {
         if (!enableAutoSave || _a == null) return;
@@ -64,8 +77,15 @@ public class PaintableSurfaceRT : MonoBehaviour
         if (_autoSaveTimer >= autoSaveInterval)
         {
             _autoSaveTimer = 0.0f;
-            string fileName = $"painting_{System.DateTime.Now:yyyyMMdd_HHmmss}.png";
-            SaveCanvasToPNG(fileName);
+            if (enableCloudSync && _ownerId > 0 && !_isSavingCloud)
+            {
+                CloudAutoSave();
+            }
+            else if (!enableCloudSync)
+            {
+                string fileName = $"painting_{System.DateTime.Now:yyyyMMdd_HHmmss}.png";
+                SaveCanvasToPNG(fileName);
+            }
         }
     }
 
@@ -98,6 +118,11 @@ public class PaintableSurfaceRT : MonoBehaviour
     
     void Start()
     {
+        if (enableCloudSync)
+        {
+            InitializeCloudSync();
+        }
+
         var mf = GetComponent<MeshFilter>();
         if (mf && mf.sharedMesh)
         {
@@ -114,6 +139,96 @@ public class PaintableSurfaceRT : MonoBehaviour
             }
             
             Debug.Log($"[PaintableSurfaceRT] UV range: min={min}, max={max}", this);
+        }
+    }
+
+    private async void InitializeCloudSync()
+    {
+        try
+        {
+            if (!SupabaseClientManager.IsInitialized)
+                await SupabaseClientManager.InitializeAsync();
+
+            _artworkRepo = await SupabaseArtworkRepository.CreateAsync();
+            _artistRepo = await SupabaseArtistRepository.CreateAsync();
+
+            var authUser = AuthenticationManager.Instance?.CurrentUser;
+            if (authUser != null)
+            {
+                var profile = await _artistRepo.GetArtistProfileAsync(authUser.Id);
+                if (profile != null)
+                {
+                    _ownerId = profile.user_id;
+
+                    if (profile.managed_gallery != null && profile.managed_gallery.Length > 0)
+                    {
+                        if (int.TryParse(profile.managed_gallery[0], out int galId))
+                        {
+                            _currentGalleryId = galId;
+                        }
+                    }
+                }
+            }
+            Debug.Log($"[PaintableSurfaceRT] Cloud Sync initialized. OwnerId: {_ownerId}, GalleryId: {_currentGalleryId}");
+        }
+        catch (System.Exception ex)
+        {
+            Debug.LogError($"[PaintableSurfaceRT] Cloud Sync init failed: {ex.Message}");
+        }
+    }
+
+    private async void CloudAutoSave()
+    {
+        _isSavingCloud = true;
+        try
+        {
+            RenderTexture currentRT = _a;
+            RenderTexture previous = RenderTexture.active;
+            RenderTexture.active = currentRT;
+
+            Texture2D tex = new Texture2D(currentRT.width, currentRT.height, TextureFormat.RGBA32, false);
+            tex.ReadPixels(new Rect(0, 0, currentRT.width, currentRT.height), 0, 0);
+            tex.Apply(false, false);
+            RenderTexture.active = previous;
+
+            byte[] pngBytes = tex.EncodeToPNG();
+            DestroyImmediate(tex);
+
+            if (_currentCloudArtwork == null)
+            {
+                // First save
+                var artworkData = new ArtworkData
+                {
+                    title = $"Artwork - {System.DateTime.Now:MM/dd/yy HH:mm}",
+                    owner_id = _ownerId,
+                    image_url = string.Empty,
+                    thumbnail_url = string.Empty
+                };
+
+                _currentCloudArtwork = await _artworkRepo.CreateArtworkWithUploadAsync(artworkData, pngBytes);
+                Debug.Log($"[PaintableSurfaceRT] Created cloud artwork ID: {_currentCloudArtwork.id}");
+
+                if (_currentGalleryId > 0)
+                {
+                    if (_galleryRepo == null) _galleryRepo = await SupabaseGalleryRepository.CreateAsync();
+                    await _galleryRepo.AddArtworkToGalleryAsync(_currentGalleryId, _currentCloudArtwork.id);
+                    Debug.Log($"[PaintableSurfaceRT] Linked artwork {_currentCloudArtwork.id} to gallery {_currentGalleryId}");
+                }
+            }
+            else
+            {
+                // Subsequent saves
+                _currentCloudArtwork = await _artworkRepo.UpdateArtworkWithUploadAsync(_currentCloudArtwork, pngBytes);
+                Debug.Log($"[PaintableSurfaceRT] Updated cloud artwork ID: {_currentCloudArtwork.id}");
+            }
+        }
+        catch (System.Exception ex)
+        {
+            Debug.LogError($"[PaintableSurfaceRT] CloudAutoSave failed: {ex.Message}");
+        }
+        finally
+        {
+            _isSavingCloud = false;
         }
     }
 

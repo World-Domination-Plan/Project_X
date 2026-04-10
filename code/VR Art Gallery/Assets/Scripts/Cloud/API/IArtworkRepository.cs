@@ -13,6 +13,13 @@ public interface IArtworkRepository
         string bucketName = "artworks",
         string extension = "png",
         string contentType = "image/png");
+    Task<ArtworkData> UpdateArtworkWithUploadAsync(
+        ArtworkData artwork,
+        byte[] imageBytes,
+        byte[] thumbnailBytes = null,
+        string bucketName = "artworks",
+        string extension = "png",
+        string contentType = "image/png");
     Task<string> CreateSignedUrlAsync(string bucketName, string objectPath, int expiresInSeconds = 600);
     Task<byte[]> DownloadWithSignedUrlAsync(string signedUrl);
     Task DeleteObjectAsync(string bucketName, string objectPath);
