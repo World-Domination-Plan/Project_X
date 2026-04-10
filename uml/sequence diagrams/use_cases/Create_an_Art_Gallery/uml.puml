@@ -1,49 +1,38 @@
+
 @startuml
 actor User
 participant "Input Manager" as Input
 participant "HUD Manager" as HUD
 participant "Room Manager" as Room
-participant "Supabase" as DB
-participant "Event Logger" as Logger
+participant "Auth Manager" as SM
+/'participant "Event Logger" as Logger'/
 
-title Create an Art Gallery
+title Create an art room
 
 == Basic Flow ==
 
 User -> Input: clicks on HUD icon
-Input -> Logger: log user event
+/'Input -> Logger: log user event'/
 Input -> HUD: requests HUD
-User -> Input: clicks on create art gallery
-Input -> Logger: log user event
+User -> Input: clicks on create new room
+/'Input -> Logger: log user event'/
+Input -> HUD: validates and sends event information to HUD 
+/'Input -> Logger: log user event'/
+HUD -> User: modal with options (room name, privacy type) is opened
+User -> Input: Enters room's name and privacy type (public or private)
+/'Input -> Logger: log user event'/
 Input -> HUD: validates and sends event information to HUD
-Input -> Logger: log user event
-HUD -> User: modal with options (gallery name, privacy type) is opened
-User -> Input: enters gallery name and privacy type (public or private)
-Input -> Logger: log user event
-Input -> HUD: validates and sends event information to HUD
-HUD -> Room: requests gallery creation with user information
+HUD -> Room: requests a room with user information
+ 
+== Alternative Flow 1 – Private Room ==
 
-== Gallery Creation ==
+Room -> SM: creates a room and requests a security layer.
+SM -> Room: encrypts the room to make it private
+Room -> User: notifies creation of private room.
 
-Room -> DB: insert GalleryData row\n(name, ownerid, isPrivate, timestamps)
-DB --> Room: created GalleryData (with id)
-Room -> DB: fetch ArtistProfile by ownerid
-DB --> Room: ArtistProfile
-Room -> DB: update ArtistProfile.managedgallery\n(append new gallery id)
-DB --> Room: profile updated OK
-Room -> HUD: gallery created successfully
-HUD -> User: notifies creation of gallery\n(public or private)
 
-== Alternative Flow – Creation Failure (Profile Update Fails) ==
+== Alternative Flow 2 – Public Room ==
 
-Room -> DB: insert GalleryData row
-DB --> Room: created GalleryData (with id)
-Room -> DB: fetch ArtistProfile by ownerid
-DB --> Room: ArtistProfile
-Room -> DB: update ArtistProfile.managedgallery
-DB --> Room: update failed
-Room -> DB: delete GalleryData row (rollback)
-Room -> HUD: surface error – gallery creation failed
-HUD -> User: notifies failure, please try again
+Room -> User: notifies creation of public room
 
 @enduml
