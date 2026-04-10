@@ -24,6 +24,9 @@ namespace XRMultiplayer
         public const string k_BuildIdKeyIdentifier = "b";
         public const string k_SceneKeyIdentifier = "s";
         public const string k_EditorKeyIdentifier = "e";
+        public const string k_HostAuthUserIdKeyIdentifier = "ha";
+        public const string k_HostOwnerIdKeyIdentifier = "ho";
+        public const string k_HostGalleryIdKeyIdentifier = "hg";
 
         static bool s_HideEditorInLobbies;
 
@@ -166,33 +169,53 @@ namespace XRMultiplayer
                 // Get a join code based on the Allocation
                 var joinCode = await RelayService.Instance.GetJoinCodeAsync(alloc.AllocationId);
 
+                TryGetHostGalleryContext(out string hostSupabaseAuthUserId, out long hostOwnerId, out int hostGalleryId);
+
+                var lobbyData = new Dictionary<string, DataObject>
+                {
+                    {
+                        // Set Join Code Key
+                        k_JoinCodeKeyIdentifier, new DataObject(DataObject.VisibilityOptions.Public, joinCode)
+                    },
+                    {
+                        // Set Region Key
+                        k_RegionKeyIdentifier, new DataObject(DataObject.VisibilityOptions.Public, alloc.Region)
+                    },
+                    {
+                        // Set Build ID Key
+                        k_BuildIdKeyIdentifier, new DataObject(DataObject.VisibilityOptions.Public, Application.version, DataObject.IndexOptions.S1)
+                    },
+                    {
+                        // Set Scene Key
+                        k_SceneKeyIdentifier, new DataObject(DataObject.VisibilityOptions.Public, SceneManager.GetActiveScene().name, DataObject.IndexOptions.S2)
+                    },
+                    {
+                        // Set Editor Key
+                        k_EditorKeyIdentifier, new DataObject(DataObject.VisibilityOptions.Public, hideEditorFromLobby.ToString(), DataObject.IndexOptions.S3)
+                    },
+                };
+
+                if (!string.IsNullOrWhiteSpace(hostSupabaseAuthUserId))
+                {
+                    // This allows joining clients to resolve and load the host's gallery.
+                    lobbyData[k_HostAuthUserIdKeyIdentifier] = new DataObject(DataObject.VisibilityOptions.Public, hostSupabaseAuthUserId);
+                }
+
+                if (hostOwnerId > 0)
+                {
+                    lobbyData[k_HostOwnerIdKeyIdentifier] = new DataObject(DataObject.VisibilityOptions.Public, hostOwnerId.ToString());
+                }
+
+                if (hostGalleryId > 0)
+                {
+                    lobbyData[k_HostGalleryIdKeyIdentifier] = new DataObject(DataObject.VisibilityOptions.Public, hostGalleryId.ToString());
+                }
+
                 // Creates Lobby Options Dictionary for other clients to find and join
                 var options = new CreateLobbyOptions
                 {
                     // Set the Data to be used for lobby filtering
-                    Data = new Dictionary<string, DataObject>
-                    {
-                        {
-                            // Set Join Code Key
-                            k_JoinCodeKeyIdentifier, new DataObject(DataObject.VisibilityOptions.Public, joinCode)
-                        },
-                        {
-                            // Set Region Key
-                            k_RegionKeyIdentifier, new DataObject(DataObject.VisibilityOptions.Public, alloc.Region)
-                        },
-                        {
-                            // Set Build ID Key
-                            k_BuildIdKeyIdentifier, new DataObject(DataObject.VisibilityOptions.Public, Application.version, DataObject.IndexOptions.S1)
-                        },
-                        {
-                            // Set Scene Key
-                            k_SceneKeyIdentifier, new DataObject(DataObject.VisibilityOptions.Public, SceneManager.GetActiveScene().name, DataObject.IndexOptions.S2)
-                        },
-                        {
-                            // Set Editor Key
-                            k_EditorKeyIdentifier, new DataObject(DataObject.VisibilityOptions.Public, hideEditorFromLobby.ToString(), DataObject.IndexOptions.S3)
-                        },
-                    },
+                    Data = lobbyData,
                     IsPrivate = isPrivate,
                 };
 
@@ -227,6 +250,94 @@ namespace XRMultiplayer
                 OnLobbyFailed?.Invoke(failureMessage);
                 return null;
             }
+        }
+
+        public async Task UpdateHostGalleryContext(string hostAuthUserId, long hostOwnerId, int hostGalleryId)
+        {
+            if (m_ConnectedLobby == null)
+                return;
+
+            var data = new Dictionary<string, DataObject>();
+
+            if (!string.IsNullOrWhiteSpace(hostAuthUserId))
+                data[k_HostAuthUserIdKeyIdentifier] = new DataObject(DataObject.VisibilityOptions.Public, hostAuthUserId);
+
+            if (hostOwnerId > 0)
+                data[k_HostOwnerIdKeyIdentifier] = new DataObject(DataObject.VisibilityOptions.Public, hostOwnerId.ToString());
+
+            if (hostGalleryId > 0)
+                data[k_HostGalleryIdKeyIdentifier] = new DataObject(DataObject.VisibilityOptions.Public, hostGalleryId.ToString());
+
+            if (data.Count == 0)
+                return;
+
+            try
+            {
+                await LobbyService.Instance.UpdateLobbyAsync(m_ConnectedLobby.Id, new UpdateLobbyOptions
+                {
+                    Data = data
+                });
+            }
+            catch (Exception e)
+            {
+                Utils.Log($"{k_DebugPrepend}Failed to update host gallery context: {e.Message}", 1);
+            }
+        }
+
+        static void TryGetHostGalleryContext(out string hostAuthUserId, out long hostOwnerId, out int hostGalleryId)
+        {
+            hostAuthUserId = null;
+            hostOwnerId = 0;
+            hostGalleryId = 0;
+
+            try
+            {
+                var authManagerType = TryFindTypeInAppDomain("VRGallery.Authentication.AuthenticationManager");
+                if (authManagerType != null)
+                {
+                    var instance = authManagerType.GetProperty("Instance")?.GetValue(null);
+                    var currentUser = authManagerType.GetProperty("CurrentUser")?.GetValue(instance);
+                    hostAuthUserId = currentUser?.GetType().GetProperty("Id")?.GetValue(currentUser) as string;
+                }
+
+                var behaviours = FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None);
+                foreach (var behaviour in behaviours)
+                {
+                    if (behaviour == null || behaviour.GetType().Name != "GalleryManager")
+                        continue;
+
+                    object ownerValue = behaviour.GetType().GetProperty("CurrentOwnerId")?.GetValue(behaviour);
+                    if (ownerValue != null)
+                        hostOwnerId = Convert.ToInt64(ownerValue);
+
+                    object galleryValue = behaviour.GetType().GetProperty("CurrentGalleryId")?.GetValue(behaviour);
+                    if (galleryValue != null)
+                        hostGalleryId = Convert.ToInt32(galleryValue);
+
+                    if (string.IsNullOrWhiteSpace(hostAuthUserId))
+                    {
+                        hostAuthUserId = behaviour.GetType().GetMethod("GetCurrentAuthUserId")?.Invoke(behaviour, null) as string;
+                    }
+
+                    break;
+                }
+            }
+            catch (Exception e)
+            {
+                Utils.Log($"{k_DebugPrepend}Failed to resolve host gallery context: {e.Message}", 1);
+            }
+        }
+
+        static Type TryFindTypeInAppDomain(string fullTypeName)
+        {
+            foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
+            {
+                var type = assembly.GetType(fullTypeName, false);
+                if (type != null)
+                    return type;
+            }
+
+            return null;
         }
 
         async Task SetupRelay(Lobby lobby)

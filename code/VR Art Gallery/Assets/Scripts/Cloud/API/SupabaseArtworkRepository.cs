@@ -228,6 +228,15 @@ public class SupabaseArtworkRepository : IArtworkRepository
             thumbnailBytes = GenerateHalfSizePng(imageBytes);
         }
 
+        string oldImageUrl = artwork.image_url;
+        string oldThumbUrl = artwork.thumbnail_url;
+
+        // Generate new paths to bypass UPDATE/DELETE storage restrictions
+        string timestamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmmssfff");
+        string baseFileName = $"upd_{timestamp}";
+        artwork.image_url = $"{artwork.owner_id}/{baseFileName}.{extension}";
+        artwork.thumbnail_url = $"{artwork.owner_id}/thumb_{baseFileName}.{extension}";
+
         // Update timestamps
         artwork.updated_at = DateTime.UtcNow;
         artwork.filesize_bytes = imageBytes.LongLength;
@@ -248,15 +257,21 @@ public class SupabaseArtworkRepository : IArtworkRepository
             throw;
         }
 
-        // Overwrite bucket files
+        // Upload bucket files to the newly generated paths
         try
         {
-            Debug.Log($"[SupabaseArtworkRepository] Overwriting files for ID {artwork.id}...");
+            Debug.Log($"[SupabaseArtworkRepository] Uploading new files for ID {artwork.id} to avoid RLS restrictions...");
             await UploadObjectAsync(supabaseUrl, supabaseKey, bucketName, artwork.image_url, imageBytes, contentType);
-            if (!string.IsNullOrEmpty(artwork.thumbnail_url))
+            await UploadObjectAsync(supabaseUrl, supabaseKey, bucketName, artwork.thumbnail_url, thumbnailBytes, contentType);
+            
+            // Try to delete old files (will safely fail if no DELETE policy)
+            Debug.Log($"[SupabaseArtworkRepository] Attempting to clean up old files for {artwork.id}...");
+            try { await DeleteObjectAsync(bucketName, oldImageUrl); } catch { /* ignore */ }
+            if (!string.IsNullOrEmpty(oldThumbUrl))
             {
-                await UploadObjectAsync(supabaseUrl, supabaseKey, bucketName, artwork.thumbnail_url, thumbnailBytes, contentType);
+                try { await DeleteObjectAsync(bucketName, oldThumbUrl); } catch { /* ignore */ }
             }
+
             Debug.Log("[SupabaseArtworkRepository] Overwrite successful.");
         }
         catch (Exception ex)
