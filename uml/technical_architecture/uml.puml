@@ -1,0 +1,94 @@
+@startuml
+!theme mars
+
+title Technical Architecture: VR Art Gallery
+
+package "I. Client Layer" {
+    cloud "VR Headset\n(Meta Horizon OS)" as VR_Headset
+    cloud "PC\n(Windows)" as PC
+
+    rectangle "Frontend Services" {
+        component "HUD" as HUD
+        component "Gallery Manager" as GalleryViewer
+        component "Canvas" as ArtInteraction
+        component "Collaboration / Communication Manager" as UserInteraction
+        component "Controller Input Manager" as UserInputManager
+        
+        component "Authentication Manager" as AuthManager
+    }
+    
+    note right of AuthManager
+        NEW: Manager added to handle 
+        direct Supabase integration.
+    end note
+
+    note top of "Frontend Services"
+      VR ENGINE: Unity
+      DEVELOPMENT LANGUAGE: C#
+      VR SDKs: Meta XR SDK, XRI (Primary), OpenXR, SteamVR (Secondary/Planned)
+    end note
+    
+    package "Backend Services" {
+        cloud "Backend Layer" as BL
+        component "Art Submission Service" as ArtSubmission
+        component "Authentication:\n(Supabase)" as Auth
+        component "Logging" as Logging
+        
+        note right of Auth
+            REPLACED: Supabase used instead of Auth0.
+        end note
+        
+        
+        BL-->ArtSubmission
+
+        BL-->Auth
+        BL-->Logging
+    
+    }
+    
+    VR_Headset --> HUD
+    PC --> HUD
+    HUD -- GalleryViewer
+    GalleryViewer -- ArtInteraction
+    ArtInteraction -- UserInteraction
+    UserInteraction -- UserInputManager
+    UserInputManager --> AuthManager
+    
+}
+
+package "II. Network Layer" {
+    component "PROTOCOLS: TCP/IP, WebSockets, HTTPS\nDATA TRANSFER: REST APIs/PostgREST, Messaging Queues\n" as Network
+}
+
+package "III. Server Layer (Cloud)" {
+    cloud "CLOUD PLATFORM:\nSupabase" as CloudPlatform
+    component "Cloud Storage:\n Supabase Bucket Storage" as CloudStorage
+    component "Database:\n(PostgreSQL)" as Database
+    component "Unity Cloud Dashboard\nSupabase Logging" as Monitoring
+    component "CI/CD:\nGitHub Actions" as CI_CD
+    
+    note right of CloudPlatform
+        SPECIFIED: Supabase is the primary BaaS provider.
+    end note
+    
+    note right of Database
+        SPECIFIED: PostgreSQL (via Supabase).
+    end note
+
+    note right of Monitoring
+        ACTUAL: Using Unity Cloud and 
+        Supabase built-in logging.
+    end note
+
+    CloudPlatform --> CloudStorage
+    CloudPlatform --> Database
+    CloudPlatform --> CI_CD
+    CloudPlatform --> Monitoring
+}
+
+AuthManager --> BL
+ArtSubmission --> Network
+Auth --> Network
+Logging --> Network
+Network --> CloudPlatform
+@enduml

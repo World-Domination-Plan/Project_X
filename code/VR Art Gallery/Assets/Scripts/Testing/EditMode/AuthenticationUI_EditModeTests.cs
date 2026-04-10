@@ -227,7 +227,7 @@ public class AuthenticationUI_EditModeTests
 
         SetPrivateField(ui, "registerEmailField", regEmail);
         SetPrivateField(ui, "registerPasswordField", regPass);
-        SetPrivateField(ui, "confirmPasswordField", confirm);
+        //SetPrivateField(ui, "confirmPasswordField", confirm);
 
         regEmail.text = "not-an-email";
         regPass.text = "123456";
