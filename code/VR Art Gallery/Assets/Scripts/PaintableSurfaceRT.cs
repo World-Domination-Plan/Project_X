@@ -158,14 +158,23 @@ public class PaintableSurfaceRT : MonoBehaviour
                 var profile = await _artistRepo.GetArtistProfileAsync(authUser.Id);
                 if (profile != null)
                 {
-                    _ownerId = profile.user_id;
-
+                    bool hasValidGallery = false;
                     if (profile.managed_gallery != null && profile.managed_gallery.Length > 0)
                     {
                         if (int.TryParse(profile.managed_gallery[0], out int galId))
                         {
                             _currentGalleryId = galId;
+                            _ownerId = profile.user_id;
+                            hasValidGallery = true;
                         }
+                    }
+
+                    if (!hasValidGallery)
+                    {
+                        // Fallback to match hardcoded gallery/owner pairs
+                        _ownerId = 49;
+                        _currentGalleryId = 141;
+                        Debug.LogWarning("[PaintableSurfaceRT] Valid gallery not found for user. Falling back to hardcoded IDs (49 / 141).");
                     }
                 }
             }
