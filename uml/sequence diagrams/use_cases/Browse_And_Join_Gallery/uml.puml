@@ -1,129 +1,63 @@
 @startuml
-title Browse/Join Galleries - Full Flow
+title Browse/Join Rooms
 
 ' ============== ACTORS & COMPONENTS ==============
 actor "User" as User
 participant "Controller/Input Manager" as Ctrl
 participant "HUD" as HUD
-participant "Security Manager" as Sec
-participant "Profile Manager" as Prof
-participant "Network Manager\n(XRINetworkGameManager\n+ LobbyManager)" as Net
-participant "Room Manager" as Room
-participant "Canvas" as Canvas
-participant "Voice Chat\n(VoiceChatManager/Vivox)" as Voice
-participant "Event Logger" as Log
+participant "Network Manager" as Net
+participant "Voice Chat" as Voice
 
 ' ============== TRIGGER ==============
-User ->> Ctrl : Presses Join
-Ctrl ->> HUD : Open "Join a Gallery"
-HUD ->> Sec : Check authentication state
-Sec --> HUD : Session status (signed-in / guest)
-Log ->> Log : Log: HUD.OpenJoin
+User ->> Ctrl : Opens Join Room
+Ctrl ->> HUD : Open "Join a Room"
 
-' ============== LISTING / DIRECTORY ==============
-alt Signed-in
-  HUD ->> Prof : Fetch managedgallery[] + galleryaccess[]\n(ArtistProfile from Supabase)
-  Prof --> HUD : Personal gallery IDs + workspace access list
+' ============== LISTING ==============
+HUD ->> Net : Poll live public rooms
+Net --> HUD : Live room list
 
-  HUD ->> Net : GetAllGalleriesAsync()\n(SupabaseGalleryRepository → Supabase DB)
-  Net --> HUD : Public GalleryData[] list
-else Guest
-  HUD ->> Net : GetAllGalleriesAsync()
-  Net --> HUD : Public GalleryData[] list
-end
-
-HUD --> User : Show: public list + "Enter Code"\n(+ personal/workspace panels if signed-in)
+HUD --> User : Show: live public room list\n+ "Enter Code" input\n+ "Create Room" button
 
 User ->> Ctrl : Selects option
-Ctrl ->> HUD : Selection made\n(Public / Personal Workspace / Enter Code)
-Log ->> Log : Log: SelectionMade
 
-' ============== FLOW A: Public Gallery via list ============
-alt Flow A — Public gallery (from list)
-  User ->> Ctrl : Taps a public lobby from list
-  Ctrl ->> HUD : JoinLobby(lobby)
-  HUD ->> Net : JoinLobbySpecific(lobby)\n→ LobbyManager.SetupRelay()\n→ RelayService.JoinAllocationAsync()
+' ============== FLOW A: Public Room from list ============
+alt Flow A — Join public room (from list)
+  User ->> Ctrl : Taps a room from list
+  Ctrl ->> HUD : Join selected room
+  HUD ->> Net : Join room
   Net --> HUD : Status: Connecting…
 
-  Net ->> Net : NetworkManager.StartClient()
-  Net --> HUD : ConnectionState = Connected
-  HUD ->> Room : Load room layout + artworks\n(GalleryData.artworkmap)
-  Room ->> Canvas : GetArtworkPaths(galleryId)\n→ signed URLs via Supabase Storage
-  Canvas --> Room : Asset refs / streams ready
-  Room --> HUD : Gallery rendered
+  Net ->> Net : Start client
+  Net --> HUD : Connected
 
-  HUD ->> Voice : Join Vivox channel\n(proximity voice auto-enabled)
+  HUD ->> Voice : Join voice channel
   Voice --> User : Voice/chat active
-  Log ->> Log : Log: JoinedGallery (public)
 
-  ' ============== FLOW B: Personal Workspace ============
-else Flow B — Personal workspace (signed-in only)
-  User ->> Ctrl : Selects personal gallery or workspace
-  Ctrl ->> HUD : JoinLobby(galleryId from managedgallery[])
-  HUD ->> Net : CreateLobby() or JoinLobbySpecific()\n(private lobby, isPrivate=true)
-  Net --> HUD : Status: Connecting…
-
-  Net ->> Net : NetworkManager.StartClient()
-  Net --> HUD : ConnectionState = Connected
-  HUD ->> Room : Load workspace layout + artworks
-  Room ->> Canvas : GetArtworkPaths(galleryId)
-  Canvas --> Room : Asset refs ready
-  Room --> HUD : Workspace rendered
-
-  HUD ->> Voice : Join Vivox channel
-  Voice --> User : Voice/chat active
-  Log ->> Log : Log: JoinedGallery (workspace)
-
-  ' ============== FLOW C: Private Gallery via Join Code ============
-else Flow C — Private gallery (join code)
-  User ->> Ctrl : Enter code
+' ============== FLOW B: Join via Code ============
+else Flow B — Join via room code
+  User ->> Ctrl : Enters room code
   Ctrl ->> HUD : Submit join code
-  HUD ->> Net : JoinLobbyByCode(roomCode)\n(LobbyManager → LobbyService.JoinLobbyByCodeAsync())
+  HUD ->> Net : Join room by code
 
-  alt Code valid / lobby found
-    Net ->> Net : SetupRelay(lobby)\n→ RelayService.JoinAllocationAsync()\n→ SetClientRelayData()
-    Net ->> Net : NetworkManager.StartClient()
-    Net --> HUD : ConnectionState: Authenticating → Connecting → Connected
-    HUD ->> Room : Load room layout + artworks
-    Room ->> Canvas : GetArtworkPaths(galleryId)
-    Canvas --> Room : Signed asset URLs ready
-    Room --> HUD : Gallery rendered
+  alt Code valid / room found
+    Net ->> Net : Set up relay
+    Net ->> Net : Start client
+    Net --> HUD : Connected
 
-    HUD ->> Voice : Join Vivox channel
+    HUD ->> Voice : Join voice channel
     Voice --> User : Voice/chat active
-    Log ->> Log : Log: JoinedGallery (code)
 
-  else Code invalid / lobby not found
-    Net --> HUD : LobbyServiceException\n("Lobby not found")
-    HUD --> User : Show error: "Lobby not found.\nPlease try a new code."
-    Log ->> Log : Log: JoinFailed (invalid code)
+  else Code invalid / room not found
+    Net --> HUD : Room not found
+    HUD --> User : Show error: "Room not found.\nPlease try a new code."
   end
 
+' ============== FLOW C: Create Room ============
+else Flow C — Create room
+  User ->> Ctrl : Taps "Create Room"
+  Ctrl ->> HUD : Navigate to Create Room
+  HUD --> User : [See: Create Room use case]
+
 end
-
-' ============== NOTES ==============
-note over Net
-Networking stack:
-Unity Lobby + Relay (via LobbyManager)
-NGO NetworkManager (XRMultiplayer)
-Connection states:
-None → Authenticating → Authenticated
-→ Connecting → Connected
-end note
-
-note over Voice
-VoiceChatManager uses Vivox.
-Proximity (3D spatial) voice is
-distance-based and auto-enabled
-on join. Text chat also available.
-end note
-
-note over Room, Canvas
-Postcondition: gallery/workspace
-rendered with artworks loaded from
-Supabase Storage via signed URLs.
-GalleryData.artworkmap[slot → artworkId]
-drives Canvas placement.
-end note
 
 @enduml
