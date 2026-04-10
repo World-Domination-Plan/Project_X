@@ -1,4 +1,5 @@
 {
+    "version": 1,
     "name": "XR Device Simulator Controls",
     "maps": [
         {
@@ -225,10 +226,19 @@
                     "name": "Toggle Device Position Target",
                     "type": "Button",
                     "id": "15cd3c4a-56b1-4a43-a924-a2118e2adaf4",
-                    "expectedControlType": "Button",
+                    "expectedControlType": "",
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
+                },
+                {
+                    "name": "Keyboard Slash",
+                    "type": "Button",
+                    "id": "528da948-7ff4-4034-8222-d61b28b035b2",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": true
                 }
             ],
             "bindings": [
@@ -570,6 +580,17 @@
                     "processors": "",
                     "groups": "",
                     "action": "Hand-Controller Mode",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "b82a4cdc-1d9b-4f7a-94e7-f0594031e227",
+                    "path": "<Keyboard>/slash",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Keyboard Slash",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

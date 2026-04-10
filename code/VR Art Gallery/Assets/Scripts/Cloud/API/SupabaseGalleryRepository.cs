@@ -9,6 +9,7 @@ using UnityEngine;
 public class SupabaseGalleryRepository : IGalleryRepository
 {
     private const string TableName = "gallery";
+    private const string ArtworkBucketName = "artworks";
     public Supabase.Client SupabaseClientInstance { get; private set; }
 
     private SupabaseGalleryRepository(Supabase.Client client)
@@ -258,6 +259,8 @@ public class SupabaseGalleryRepository : IGalleryRepository
             var artworkPaths = new Dictionary<int, (string, string)>();
             if (gallery.artwork_map == null)
                 return artworkPaths;
+
+            var artworkRepository = await SupabaseArtworkRepository.CreateAsync();
             var map_iterable = maxArtWork > 0 ? gallery.artwork_map.Take(maxArtWork) : gallery.artwork_map;
             foreach (var kvp in map_iterable)
             {
@@ -271,8 +274,12 @@ public class SupabaseGalleryRepository : IGalleryRepository
                     .Single();
                 if (artwork != null)
                 {
-                    string thumbnailPath = getThumbnails ? artwork.thumbnail_url : null;
-                    artworkPaths[slotIndex] = (artwork.image_url, thumbnailPath);
+                    string imageUrl = await ResolveArtworkUrlAsync(artworkRepository, artwork.image_url);
+                    string thumbnailUrl = getThumbnails
+                        ? await ResolveArtworkUrlAsync(artworkRepository, artwork.thumbnail_url)
+                        : null;
+
+                    artworkPaths[slotIndex] = (imageUrl, thumbnailUrl);
                 }
             }
             return artworkPaths;
@@ -309,5 +316,19 @@ public class SupabaseGalleryRepository : IGalleryRepository
         artwork_table[from_index] = temp;
         galleryObject.artwork_map = artwork_table;
         return galleryObject;
+    }
+
+    private async Task<string> ResolveArtworkUrlAsync(SupabaseArtworkRepository artworkRepository, string storedPath)
+    {
+        if (string.IsNullOrWhiteSpace(storedPath))
+            return null;
+
+        if (Uri.TryCreate(storedPath, UriKind.Absolute, out var uri) &&
+            (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps))
+        {
+            return storedPath;
+        }
+
+        return await artworkRepository.CreateSignedUrlAsync(ArtworkBucketName, storedPath);
     }
 }
