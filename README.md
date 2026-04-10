@@ -5,6 +5,22 @@
 
 ---
 
+## Unity Compile & Deployment Quick Start
+
+1. Clone the repository from GitHub.
+2. Open **Unity Hub** and select **Add** / **Add project from disk**.
+3. Choose the Unity project folder: `code/VR Art Gallery/`.
+4. If Unity Hub prompts for an editor install, install **Unity `6000.2.2f1`** and open the project with that version.
+5. Let Unity finish importing packages and assets. The package set for this project is defined in `code/VR Art Gallery/Packages/manifest.json`.
+6. To build/deploy the project to a VR device, open **File -> Build Profiles** (or **Build Settings**), confirm the target platform, and build using the enabled scenes already listed in `ProjectSettings/EditorBuildSettings.asset`.
+7. To deploy:
+   - **Windows PC:** switch to **Windows**, then run **Build**.
+   - **Meta Quest / Horizon OS:** switch to **Android**, connect the headset with developer mode enabled, then run **Build And Run**.
+
+> Unity editor version note: the exact project editor version is `6000.2.2f1` in `code/VR Art Gallery/ProjectSettings/ProjectVersion.txt`. The package manifest in `code/VR Art Gallery/Packages/manifest.json` matches this Unity 6 setup.
+
+---
+
 ## Gallery Preview
 
 ![Project Development Plan](docs/ProjectDevPlan.png)
@@ -237,7 +253,7 @@ git config --global merge.unityyamlmerge.name "UnityYAMLMerge"
 git config --global merge.unityyamlmerge.driver "/Applications/Unity/Hub/Editor/<version>/Unity.app/Contents/Tools/UnityYAMLMerge merge -p %O %B %A %A"
 ```
 
-Replace `<version>` with the Unity editor version used by the project (visible in `ProjectSettings/ProjectVersion.txt`).
+Replace `<version>` with `6000.2.2f1`, the Unity editor version used by this project.
 
 Once configured, git will automatically invoke UnityYAMLMerge whenever a conflict is detected in a tracked Unity file. If UnityYAMLMerge cannot resolve a conflict automatically it falls back to a standard three-way diff, which can then be resolved manually.
 
