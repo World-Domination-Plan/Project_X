@@ -91,7 +91,9 @@ public class BucketColorPaletteOpener : MonoBehaviour
             return;
         }
 
-        if (IsPaletteVisible())
+        CachePicker();
+
+        if (cachedPicker != null && cachedPicker.IsOpen)
         {
             ClosePalette();
             Debug.Log("[Bucket] Palette closed");
@@ -142,7 +144,7 @@ public class BucketColorPaletteOpener : MonoBehaviour
             yield break;
         }
 
-        bool opened = ColorPicker.OpenForSharedSettings(
+        bool opened = cachedPicker.OpenForSharedSettings(
             pickerTitle,
             useAlpha,
             c => { },
@@ -165,18 +167,13 @@ public class BucketColorPaletteOpener : MonoBehaviour
             openRoutine = null;
         }
 
-        if (!ColorPicker.done)
-            ColorPicker.Done();
+        CachePicker();
+
+        if (cachedPicker != null && cachedPicker.IsOpen)
+            cachedPicker.ClosePicker(true);
 
         if (colorPickerUI != null)
             colorPickerUI.SetActive(false);
-    }
-
-    private bool IsPaletteVisible()
-    {
-        return colorPickerUI != null
-               && colorPickerUI.activeInHierarchy
-               && !ColorPicker.done;
     }
 
     private void CachePicker()

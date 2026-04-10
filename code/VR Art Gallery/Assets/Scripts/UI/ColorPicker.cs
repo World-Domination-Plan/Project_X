@@ -7,23 +7,10 @@ public class ColorPicker : MonoBehaviour
 {
     public delegate void ColorEvent(Color c);
 
-    private static ColorPicker instance;
-    public static bool done = true;
-
-    private static ColorEvent onCC;
-    private static ColorEvent onCS;
-
-    private static Color32 originalColor;
-    private static Color32 modifiedColor;
-    private static HSV modifiedHsv;
-    private static bool useA;
-
-    private bool interact;
-
     [Header("Optional Panel Root")]
-    [SerializeField] private GameObject panelRoot; // drag ColorPickerCanvasWS here
+    [SerializeField] private GameObject panelRoot;
 
-    [Header("Target Brush")]
+    [Header("Target Brush (optional)")]
     [SerializeField] private BrushToolState targetBrush;
 
     [Header("UI Refs")]
@@ -50,34 +37,38 @@ public class ColorPicker : MonoBehaviour
     public RawImage bGradientMin;
     public RawImage aGradientFill;
 
+    public bool IsOpen => isOpen;
+
+    private bool isOpen;
+    private bool interact;
+    private bool useAlpha;
+
+    private ColorEvent onColorChanged;
+    private ColorEvent onColorSelected;
+
+    private Color32 originalColor;
+    private Color32 modifiedColor;
+    private HSV modifiedHsv;
+
     private void Awake()
     {
-        instance = this;
-
         if (panelRoot == null)
-        {
-            Debug.LogWarning("[ColorPicker] panelRoot is not assigned. Assign the SAME top-level root used by BucketColorPaletteOpener.colorPickerUI.");
             panelRoot = gameObject;
-        }
     }
 
     private void Start()
     {
         if (panelRoot != null)
             panelRoot.SetActive(false);
+
+        isOpen = false;
     }
 
-    private void OnDestroy()
-    {
-        if (instance == this)
-            instance = null;
-    }
-
-    public static bool OpenForSharedSettings(
+    public bool OpenForSharedSettings(
         string message = "Colour Picker",
         bool useAlpha = false,
-        ColorEvent onColorChanged = null,
-        ColorEvent onColorSelected = null)
+        ColorEvent onChanged = null,
+        ColorEvent onSelected = null)
     {
         if (SharedBrushSettings.Instance == null)
         {
@@ -85,154 +76,142 @@ public class ColorPicker : MonoBehaviour
             return false;
         }
 
-        if (instance == null)
-        {
-            instance = FindFirstObjectByType<ColorPicker>(FindObjectsInactive.Include);
+        targetBrush = null;
 
-            if (instance == null)
-            {
-                Debug.LogError("[ColorPicker] No active ColorPicker instance in scene.");
-                return false;
-            }
-        }
-
-        instance.targetBrush = null;
-
-        return Create(
+        return OpenInternal(
             SharedBrushSettings.Instance.CurrentColor,
             message,
-            c =>
-            {
-                SharedBrushSettings.Instance.SetColor(c);
-                onColorChanged?.Invoke(c);
-            },
-            c =>
-            {
-                SharedBrushSettings.Instance.SetColor(c);
-                onColorSelected?.Invoke(c);
-            },
-            useAlpha
+            useAlpha,
+            onChanged,
+            onSelected
         );
     }
 
-    /// <summary>
-    /// Open picker for a specific brush.
-    /// </summary>
-    public static bool OpenForBrush(
+    public bool OpenForBrush(
         BrushToolState brush,
         string message = "Colour Picker",
         bool useAlpha = false,
-        ColorEvent onColorChanged = null,
-        ColorEvent onColorSelected = null)
+        ColorEvent onChanged = null,
+        ColorEvent onSelected = null)
     {
-        if (instance == null)
-        {
-            instance = FindFirstObjectByType<ColorPicker>(FindObjectsInactive.Include);
-
-            if (instance == null)
-            {
-                Debug.LogError("[ColorPicker] No active ColorPicker instance in scene.");
-                return false;
-            }
-        }
-
         if (brush == null)
         {
             Debug.LogWarning("[ColorPicker] OpenForBrush called with null brush.");
             return false;
         }
 
-        instance.targetBrush = brush;
+        targetBrush = brush;
 
-        return Create(
+        return OpenInternal(
             brush.SelectedColor,
             message,
-            onColorChanged,
-            onColorSelected,
-            useAlpha
+            useAlpha,
+            onChanged,
+            onSelected
         );
     }
 
-    private static Text FindTextByName(Transform root, string name)
-    {
-        foreach (Transform t in root.GetComponentsInChildren<Transform>(true))
-        {
-            if (t.name == name)
-                return t.GetComponent<Text>();
-        }
-        return null;
-    }
-
-    /// <summary>
-    /// Original static create API kept for compatibility.
-    /// </summary>
-    public static bool Create(
+    private bool OpenInternal(
         Color original,
         string message,
-        ColorEvent onColorChanged,
-        ColorEvent onColorSelected,
-        bool useAlpha = false)
+        bool alphaEnabled,
+        ColorEvent onChanged,
+        ColorEvent onSelected)
     {
-        if (instance == null)
-        {
-            Debug.LogError("[ColorPicker] No ColorPicker instance in scene.");
-            return false;
-        }
-
-        if (instance.panelRoot == null)
+        if (panelRoot == null)
         {
             Debug.LogError("[ColorPicker] panelRoot is null.");
             return false;
         }
 
-        if (!done)
+        if (isOpen)
+            return false;
+
+        if (positionIndicator == null ||
+            mainComponent == null ||
+            rComponent == null ||
+            gComponent == null ||
+            bComponent == null ||
+            hexaComponent == null ||
+            colorComponent == null)
         {
-            Done();
+            Debug.LogError("[ColorPicker] Missing core UI references.");
             return false;
         }
 
-        done = false;
+        isOpen = true;
+        useAlpha = alphaEnabled;
         originalColor = original;
         modifiedColor = original;
-        onCC = onColorChanged;
-        onCS = onColorSelected;
-        useA = useAlpha;
+        onColorChanged = onChanged;
+        onColorSelected = onSelected;
 
-        instance.panelRoot.SetActive(true);
-        instance.gameObject.SetActive(true);
+        panelRoot.SetActive(true);
+        gameObject.SetActive(true);
 
         Canvas.ForceUpdateCanvases();
 
-        Text titleText = FindTextByName(instance.panelRoot.transform, "Title");
+        Text titleText = FindTextByName(panelRoot.transform, "Title");
         if (titleText != null)
             titleText.text = message;
 
-        if (instance.aComponent != null)
-            instance.aComponent.gameObject.SetActive(useAlpha);
+        if (aComponent != null)
+            aComponent.gameObject.SetActive(useAlpha);
 
-        if (instance.positionIndicator == null ||
-            instance.mainComponent == null ||
-            instance.rComponent == null ||
-            instance.gComponent == null ||
-            instance.bComponent == null ||
-            instance.hexaComponent == null ||
-            instance.colorComponent == null)
+        if (hexaComponent.placeholder != null)
         {
-            Debug.LogError("[ColorPicker] Missing core UI references.");
-            instance.panelRoot.SetActive(false);
-            return false;
-        }
-
-        instance.RecalculateMenu(true);
-
-        if (instance.hexaComponent != null && instance.hexaComponent.placeholder != null)
-        {
-            Text ph = instance.hexaComponent.placeholder.GetComponent<Text>();
+            Text ph = hexaComponent.placeholder.GetComponent<Text>();
             if (ph != null)
-                ph.text = "RRGGBB" + (useAlpha ? "AA" : "");
+                ph.text = useAlpha ? "RRGGBBAA" : "RRGGBB";
         }
 
+        RecalculateMenu(true);
         return true;
+    }
+
+    public void ClosePicker(bool applyCurrentColor = true)
+    {
+        if (!isOpen)
+            return;
+
+        if (!applyCurrentColor)
+            ApplyColorToTarget(originalColor);
+        else
+            ApplyColorToTarget(modifiedColor);
+
+        if (applyCurrentColor)
+        {
+            onColorChanged?.Invoke(modifiedColor);
+            onColorSelected?.Invoke(modifiedColor);
+        }
+
+        isOpen = false;
+        interact = false;
+        onColorChanged = null;
+        onColorSelected = null;
+
+        if (panelRoot != null)
+            panelRoot.SetActive(false);
+        else
+            gameObject.SetActive(false);
+    }
+
+    public void CCancel()
+    {
+        ClosePicker(false);
+    }
+
+    public void CDone()
+    {
+        ClosePicker(true);
+    }
+
+    private void ApplyColorToTarget(Color color)
+    {
+        if (targetBrush != null)
+            targetBrush.SetColor(color);
+        else if (SharedBrushSettings.Instance != null)
+            SharedBrushSettings.Instance.SetColor(color);
     }
 
     private void RecalculateMenu(bool recalculateHSV)
@@ -253,7 +232,7 @@ public class ColorPicker : MonoBehaviour
         bComponent.value = modifiedColor.b;
         if (bInput != null) bInput.text = modifiedColor.b.ToString();
 
-        if (useA)
+        if (useAlpha && aComponent != null)
         {
             aComponent.value = modifiedColor.a;
             if (aInput != null) aInput.text = modifiedColor.a.ToString();
@@ -262,45 +241,39 @@ public class ColorPicker : MonoBehaviour
         mainComponent.value = (float)modifiedHsv.H;
 
         if (rGradientMax != null) rGradientMax.color = new Color32(255, modifiedColor.g, modifiedColor.b, 255);
-        if (rGradientMin != null) rGradientMin.color = new Color32(0,   modifiedColor.g, modifiedColor.b, 255);
+        if (rGradientMin != null) rGradientMin.color = new Color32(0, modifiedColor.g, modifiedColor.b, 255);
 
         if (gGradientMax != null) gGradientMax.color = new Color32(modifiedColor.r, 255, modifiedColor.b, 255);
-        if (gGradientMin != null) gGradientMin.color = new Color32(modifiedColor.r, 0,   modifiedColor.b, 255);
+        if (gGradientMin != null) gGradientMin.color = new Color32(modifiedColor.r, 0, modifiedColor.b, 255);
 
         if (bGradientMax != null) bGradientMax.color = new Color32(modifiedColor.r, modifiedColor.g, 255, 255);
-        if (bGradientMin != null) bGradientMin.color = new Color32(modifiedColor.r, modifiedColor.g, 0,   255);
+        if (bGradientMin != null) bGradientMin.color = new Color32(modifiedColor.r, modifiedColor.g, 0, 255);
 
-        if (useA && aGradientFill != null)
+        if (useAlpha && aGradientFill != null)
             aGradientFill.color = new Color32(modifiedColor.r, modifiedColor.g, modifiedColor.b, 255);
 
-        positionIndicator.parent.GetChild(0).GetComponent<RawImage>().color =
-            new HSV(modifiedHsv.H, 1d, 1d).ToColor();
+        if (positionIndicator != null && positionIndicator.parent != null && positionIndicator.parent.childCount > 0)
+        {
+            RawImage svBg = positionIndicator.parent.GetChild(0).GetComponent<RawImage>();
+            if (svBg != null)
+                svBg.color = new HSV(modifiedHsv.H, 1d, 1d).ToColor();
+        }
 
         positionIndicator.anchorMin = new Vector2((float)modifiedHsv.S, (float)modifiedHsv.V);
         positionIndicator.anchorMax = positionIndicator.anchorMin;
 
-        hexaComponent.text = useA
+        hexaComponent.text = useAlpha
             ? ColorUtility.ToHtmlStringRGBA(modifiedColor)
             : ColorUtility.ToHtmlStringRGB(modifiedColor);
 
         colorComponent.color = modifiedColor;
 
-        // live callback
-        onCC?.Invoke(modifiedColor);
-
-        // live update brush
-        if (targetBrush != null)
-            targetBrush.SetColor(modifiedColor);
-        else if (SharedBrushSettings.Instance != null)
-            SharedBrushSettings.Instance.SetColor(modifiedColor);
+        onColorChanged?.Invoke(modifiedColor);
+        ApplyColorToTarget(modifiedColor);
 
         interact = true;
     }
 
-    /// <summary>
-    /// For mouse + XR ray.
-    /// Bind this to EventTrigger PointerDown + Drag on the SV square.
-    /// </summary>
     public void SetChooserFromEvent(BaseEventData eventData)
     {
         if (!interact) return;
@@ -314,7 +287,6 @@ public class ColorPicker : MonoBehaviour
         if (RectTransformUtility.ScreenPointToLocalPointInRectangle(rt, ped.position, eventCam, out Vector2 localPoint))
         {
             Vector2 normalized = Rect.PointToNormalized(rt.rect, localPoint);
-
             normalized.x = Mathf.Clamp01(normalized.x);
             normalized.y = Mathf.Clamp01(normalized.y);
 
@@ -410,58 +382,26 @@ public class ColorPicker : MonoBehaviour
 
         if (ColorUtility.TryParseHtmlString("#" + value, out Color c))
         {
-            if (!useA) c.a = 1f;
+            if (!useAlpha) c.a = 1f;
             modifiedColor = c;
             RecalculateMenu(true);
         }
         else
         {
-            hexaComponent.text = useA
+            hexaComponent.text = useAlpha
                 ? ColorUtility.ToHtmlStringRGBA(modifiedColor)
                 : ColorUtility.ToHtmlStringRGB(modifiedColor);
         }
     }
 
-    public void CCancel() => Cancel();
-    public void CDone() => Done();
-
-    public static void Cancel()
+    private static Text FindTextByName(Transform root, string name)
     {
-        modifiedColor = originalColor;
-
-        if (instance != null)
+        foreach (Transform t in root.GetComponentsInChildren<Transform>(true))
         {
-            if (instance.targetBrush != null)
-                instance.targetBrush.SetColor(originalColor);
-            else if (SharedBrushSettings.Instance != null)
-                SharedBrushSettings.Instance.SetColor(originalColor);
+            if (t.name == name)
+                return t.GetComponent<Text>();
         }
-
-        Done();
-    }
-
-    public static void Done()
-    {
-        done = true;
-
-        onCC?.Invoke(modifiedColor);
-        onCS?.Invoke(modifiedColor);
-
-        if (instance != null)
-        {
-            if (instance.targetBrush != null)
-                instance.targetBrush.SetColor(modifiedColor);
-            else if (SharedBrushSettings.Instance != null)
-                SharedBrushSettings.Instance.SetColor(modifiedColor);
-        }
-
-        if (instance != null)
-        {
-            if (instance.panelRoot != null)
-                instance.panelRoot.SetActive(false);
-            else
-                instance.gameObject.SetActive(false);
-        }
+        return null;
     }
 
     private sealed class HSV
@@ -483,7 +423,7 @@ public class ColorPicker : MonoBehaviour
             float max = Mathf.Max(color.r, Mathf.Max(color.g, color.b));
             float min = Mathf.Min(color.r, Mathf.Min(color.g, color.b));
 
-            float hue = (float)H;
+            float hue = 0f;
             if (min != max)
             {
                 if (max == color.r)
