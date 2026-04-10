@@ -1,0 +1,25 @@
+@startuml
+actor User
+participant "Controller/Input Manager" as Input
+participant "HUD" as HUD
+participant "Room Manager" as Room
+participant "Canvas" as Canvas
+participant "Network Manager" as Network
+
+title Interact with an Art Piece (Swap)
+
+User -> Input: uses controller pointer to select art piece
+HUD -> User: Choose art to swap with
+Input -> Room: confirm arts pieces selection
+Room -> Canvas: request arts pieces details
+Canvas -> Network: fetch arts pieces data (ID,gallery slot,path)
+Network -> Canvas: send arts pieces data
+Canvas -> Room: update arts pieces display according to users action and re-render
+
+alt Network Failure
+    Canvas -> Network: request art data
+    Network --> Canvas: error / timeout
+    Canvas -> HUD: show error notification ("Unable to load art details")
+end
+
+@enduml
