@@ -25,6 +25,9 @@ public class GalleryManager : MonoBehaviour
 
     private IGalleryRepository m_GalleryRepository;
 
+    public long CurrentOwnerId => _ownerId;
+    public int CurrentGalleryId => _currentGalleryId;
+
     private async void Start()
     {
         try
@@ -231,6 +234,114 @@ public class GalleryManager : MonoBehaviour
     {
         await InitializeCloudAsync();
         await LoadGalleryAsync(_currentGalleryId);
+    }
+
+    /// <summary>
+    /// Resolves an artist profile from Supabase auth user ID and loads that artist's gallery.
+    /// Falls back to current-user gallery loading if the host profile cannot be resolved.
+    /// </summary>
+    public async Task InitializeAndLoadGalleryByAuthUserIdAsync(string hostAuthUserId)
+    {
+        if (string.IsNullOrWhiteSpace(hostAuthUserId))
+        {
+            await InitializeAndLoadGalleryAsync();
+            return;
+        }
+
+        await EnsureRepositoriesInitializedAsync();
+
+        ArtistProfile hostProfile = await _artistRepo.GetArtistProfileAsync(hostAuthUserId);
+        if (hostProfile == null)
+        {
+            LogError($"Host artist profile was not found for auth user ID: {hostAuthUserId}. Falling back to local gallery.");
+            await InitializeAndLoadGalleryAsync();
+            return;
+        }
+
+        if (hostProfile.managed_gallery != null && hostProfile.managed_gallery.Length > 0)
+        {
+            if (int.TryParse(hostProfile.managed_gallery[0], out int managedGalleryId))
+            {
+                await LoadGalleryAsync(managedGalleryId);
+                return;
+            }
+        }
+
+        await InitializeAndLoadGalleryByOwnerIdAsync(hostProfile.user_id);
+    }
+
+    /// <summary>
+    /// Loads the latest gallery owned by a given owner_id.
+    /// </summary>
+    public async Task InitializeAndLoadGalleryByOwnerIdAsync(long ownerId)
+    {
+        if (ownerId <= 0)
+        {
+            LogError($"Invalid owner_id passed to gallery load: {ownerId}");
+            return;
+        }
+
+        await EnsureRepositoriesInitializedAsync();
+
+        int? galleryId = await ResolveLatestGalleryIdForOwnerAsync(ownerId);
+        if (!galleryId.HasValue)
+        {
+            LogError($"No gallery found for owner_id {ownerId}.");
+            return;
+        }
+
+        await LoadGalleryAsync(galleryId.Value);
+    }
+
+    /// <summary>
+    /// Loads a known gallery id directly.
+    /// </summary>
+    public async Task InitializeAndLoadGalleryByGalleryIdAsync(int galleryId)
+    {
+        if (galleryId <= 0)
+        {
+            LogError($"Invalid gallery id passed to gallery load: {galleryId}");
+            return;
+        }
+
+        await EnsureRepositoriesInitializedAsync();
+        await LoadGalleryAsync(galleryId);
+    }
+
+    public string GetCurrentAuthUserId()
+    {
+        return AuthenticationManager.Instance?.CurrentUser?.Id;
+    }
+
+    async Task EnsureRepositoriesInitializedAsync()
+    {
+        if (!SupabaseClientManager.IsInitialized)
+            await SupabaseClientManager.InitializeAsync();
+
+        if (m_GalleryRepository == null)
+            m_GalleryRepository = await SupabaseGalleryRepository.CreateAsync();
+
+        if (_artistRepo == null)
+            _artistRepo = await SupabaseArtistRepository.CreateAsync();
+    }
+
+    async Task<int?> ResolveLatestGalleryIdForOwnerAsync(long ownerId)
+    {
+        var allGalleries = await m_GalleryRepository.GetAllGalleriesAsync();
+        if (allGalleries == null || allGalleries.Count == 0)
+            return null;
+
+        GalleryData latestGallery = null;
+        foreach (var gallery in allGalleries)
+        {
+            if (gallery == null || gallery.owner_id != ownerId)
+                continue;
+
+            if (latestGallery == null || gallery.updated_at > latestGallery.updated_at)
+                latestGallery = gallery;
+        }
+
+        return latestGallery?.id;
     }
 
     // ── Logging ───────────────────────────────────────────────────────────────
