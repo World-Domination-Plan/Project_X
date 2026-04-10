@@ -6,14 +6,14 @@ participant "Controller/Input Manager" as Input
 participant "HUD" as HUD
 participant "AuthenticationUI" as AuthUI
 participant "AuthenticationManager" as AuthMgr
-participant "SupabaseClient\n(via SupabaseClientManager)" as Supa
+participant "SupabaseClient\\n(via SupabaseClientManager)" as Supa
 participant "SupabaseArtistRepository" as ArtistRepo
-participant "Room Manager" as Room
+participant "GameManager" as GameMgr
 participant "Event Logger" as Log
 
 User -> Input : Opens HUD
 Input -> HUD : Show HUD
-HUD -> AuthUI : Awake/Start:\ncheck AuthenticationManager.IsAuthenticated
+HUD -> AuthUI : Awake/Start:\\ncheck AuthenticationManager.IsAuthenticated
 
 alt Already authenticated (session restored)
     AuthMgr --> AuthUI : OnUserLoggedIn event fires
@@ -21,13 +21,13 @@ alt Already authenticated (session restored)
     AuthUI -> ArtistRepo : GetCurrentUserRole(userId)
     ArtistRepo --> AuthUI : UserRole
     AuthUI -> AuthUI : HandleUserRoleChanged(role)
-    AuthUI -> User : Show authenticated panel\n(or hide UI if hideUIWhenAuthenticated)
+    AuthUI -> User : Show authenticated panel\\n(or hide UI if hideUIWhenAuthenticated)
 else Not authenticated
     AuthUI -> AuthUI : ShowLoginPanel()
-    AuthUI -> User : Display Login panel\n(email + password fields)
+    AuthUI -> User : Display Login panel\\n(email + password fields)
 
-    User -> AuthUI : Enters email + password,\nclicks Login
-    AuthUI -> AuthUI : ValidateLoginInput()\n[non-empty email + password]
+    User -> AuthUI : Enters email + password,\\nclicks Login
+    AuthUI -> AuthUI : ValidateLoginInput()\\n[non-empty email + password]
 
     alt Validation fails
         AuthUI -> User : Show inline error message
@@ -45,11 +45,22 @@ else Not authenticated
             AuthUI -> AuthUI : ShowLoginPanel()
             AuthUI -> User : Show error message
         else Sign in succeeded
-            AuthMgr -> AuthMgr : CurrentSession = response\nOnUserLoggedIn?.Invoke(user)
+            AuthMgr -> AuthMgr : CurrentSession = response
+            AuthMgr -> AuthMgr : OnUserLoggedIn?.Invoke(user)
+            AuthMgr -> ArtistRepo : GetUserRole(userId)
+            ArtistRepo --> AuthMgr : UserRole
+            AuthMgr -> AuthMgr : OnUserRoleChanged?.Invoke(role)
             Log -> Log : Log user signed in
+
+            AuthMgr --> GameMgr : OnUserLoggedIn event
+            GameMgr -> AuthMgr : GetCurrentUserRole()
+            AuthMgr --> GameMgr : UserRole
+            GameMgr -> GameMgr : OnAuthenticationStateChanged?.Invoke(true)\\nOnUserRoleChanged?.Invoke(role)
+
+            AuthMgr --> AuthUI : OnUserLoggedIn event
             AuthUI -> AuthUI : HandleUserLoggedIn(user)
             AuthUI -> ArtistRepo : GetCurrentUserRole(userId)
-            ArtistRepo --> AuthUI : UserRole (Artist / Guest)
+            ArtistRepo --> AuthUI : UserRole
             AuthUI -> AuthUI : HandleUserRoleChanged(role)
 
             alt hideUIWhenAuthenticated = true
@@ -58,9 +69,10 @@ else Not authenticated
                 AuthUI -> AuthUI : ShowAuthenticatedPanel()
             end
 
-            AuthUI -> Room : (via GameManager/RoomManager)\nLoad workspace or default gallery
-            Room -> User : Places user in scene
+            GameMgr -> GameMgr : LoadGallery()\\n(if CanAccessGallery())
+            GameMgr -> User : Gallery scene loaded
         end
     end
 end
 @enduml
+
