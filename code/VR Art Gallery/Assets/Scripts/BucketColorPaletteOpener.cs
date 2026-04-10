@@ -6,22 +6,14 @@ using UnityEngine.XR.Interaction.Toolkit.Interactables;
 public class BucketColorPaletteOpener : MonoBehaviour
 {
     [Header("UI")]
-    [Tooltip("Assign the OUTERMOST root of the picker you want to move/show/hide. In your current hierarchy this should be the top-level 'Color Picker' object, not CanvasRoot and not ColorPicker_UI.")]
     public GameObject colorPickerUI;
-
-    [Tooltip("World-space anchor where the picker should appear.")]
     public Transform paletteAnchor;
 
     [Header("Message")]
     public string pickerTitle = "Colour Picker";
     public bool useAlpha = false;
 
-    [Header("Target Brush (optional)")]
-    [Tooltip("Optional manual brush reference. If left empty, the script will find the first BrushToolState in the scene.")]
-    public BrushToolState targetBrush;
-
     [Header("Input")]
-    [Tooltip("Prevents select/activate from double-toggling on the same click.")]
     [Range(0.05f, 0.5f)]
     public float toggleDebounceSeconds = 0.15f;
 
@@ -33,10 +25,8 @@ public class BucketColorPaletteOpener : MonoBehaviour
     void Awake()
     {
         simpleInteractable = GetComponent<XRSimpleInteractable>();
-
         CachePicker();
 
-        // Start hidden.
         if (colorPickerUI != null)
             colorPickerUI.SetActive(false);
     }
@@ -47,9 +37,6 @@ public class BucketColorPaletteOpener : MonoBehaviour
         {
             simpleInteractable.hoverEntered.AddListener(OnHoverEntered);
             simpleInteractable.selectEntered.AddListener(OnSelected);
-
-            // Keep this only if you really need Activate separately.
-            // Debounce below prevents double toggles if both fire.
             simpleInteractable.activated.AddListener(OnActivated);
         }
     }
@@ -104,7 +91,6 @@ public class BucketColorPaletteOpener : MonoBehaviour
             return;
         }
 
-        // Close if already open.
         if (IsPaletteVisible())
         {
             ClosePalette();
@@ -120,7 +106,6 @@ public class BucketColorPaletteOpener : MonoBehaviour
 
     private IEnumerator OpenPaletteRoutine()
     {
-        // Move the OUTER ROOT before showing it.
         if (paletteAnchor != null)
         {
             colorPickerUI.transform.position = paletteAnchor.position;
@@ -131,13 +116,9 @@ public class BucketColorPaletteOpener : MonoBehaviour
             Debug.LogWarning("[Bucket] paletteAnchor is null");
         }
 
-        // IMPORTANT:
-        // Enable the OUTER ROOT first, otherwise the child picker can be active
-        // but still invisible because the parent hierarchy is disabled.
         if (!colorPickerUI.activeSelf)
             colorPickerUI.SetActive(true);
 
-        // Let Awake/OnEnable run on the newly-enabled hierarchy.
         yield return null;
 
         CachePicker();
@@ -150,38 +131,26 @@ public class BucketColorPaletteOpener : MonoBehaviour
             yield break;
         }
 
-        // Make sure the actual picker GameObject itself is active too.
         if (!cachedPicker.gameObject.activeSelf)
             cachedPicker.gameObject.SetActive(true);
 
-        BrushToolState brush = targetBrush;
-        if (brush == null)
-            brush = FindFirstObjectByType<BrushToolState>();
-
-        if (brush == null)
+        if (SharedBrushSettings.Instance == null)
         {
-            Debug.LogWarning("[Bucket] No BrushToolState found in scene");
+            Debug.LogWarning("[Bucket] SharedBrushSettings.Instance is null");
             colorPickerUI.SetActive(false);
             openRoutine = null;
             yield break;
         }
 
-        bool opened = ColorPicker.OpenForBrush(
-            brush,
+        bool opened = ColorPicker.OpenForSharedSettings(
             pickerTitle,
             useAlpha,
-            c => { },   // optional live callback
-            c => { }    // optional final callback
+            c => { },
+            c => { }
         );
 
         Debug.Log("[Bucket] Palette open requested = " + opened);
-        Debug.Log("[Bucket] Root activeSelf = " + colorPickerUI.activeSelf);
-        Debug.Log("[Bucket] Root activeInHierarchy = " + colorPickerUI.activeInHierarchy);
-        Debug.Log("[Bucket] Picker object = " + cachedPicker.gameObject.name);
-        Debug.Log("[Bucket] Picker activeSelf = " + cachedPicker.gameObject.activeSelf);
-        Debug.Log("[Bucket] Picker activeInHierarchy = " + cachedPicker.gameObject.activeInHierarchy);
 
-        // If the static API says it didn't open, hide the root again.
         if (!opened)
             colorPickerUI.SetActive(false);
 

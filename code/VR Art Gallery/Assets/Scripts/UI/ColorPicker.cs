@@ -73,6 +73,48 @@ public class ColorPicker : MonoBehaviour
             instance = null;
     }
 
+    public static bool OpenForSharedSettings(
+        string message = "Colour Picker",
+        bool useAlpha = false,
+        ColorEvent onColorChanged = null,
+        ColorEvent onColorSelected = null)
+    {
+        if (SharedBrushSettings.Instance == null)
+        {
+            Debug.LogWarning("[ColorPicker] SharedBrushSettings.Instance is null.");
+            return false;
+        }
+
+        if (instance == null)
+        {
+            instance = FindFirstObjectByType<ColorPicker>(FindObjectsInactive.Include);
+
+            if (instance == null)
+            {
+                Debug.LogError("[ColorPicker] No active ColorPicker instance in scene.");
+                return false;
+            }
+        }
+
+        instance.targetBrush = null;
+
+        return Create(
+            SharedBrushSettings.Instance.CurrentColor,
+            message,
+            c =>
+            {
+                SharedBrushSettings.Instance.SetColor(c);
+                onColorChanged?.Invoke(c);
+            },
+            c =>
+            {
+                SharedBrushSettings.Instance.SetColor(c);
+                onColorSelected?.Invoke(c);
+            },
+            useAlpha
+        );
+    }
+
     /// <summary>
     /// Open picker for a specific brush.
     /// </summary>
@@ -249,6 +291,8 @@ public class ColorPicker : MonoBehaviour
         // live update brush
         if (targetBrush != null)
             targetBrush.SetColor(modifiedColor);
+        else if (SharedBrushSettings.Instance != null)
+            SharedBrushSettings.Instance.SetColor(modifiedColor);
 
         interact = true;
     }
@@ -385,8 +429,13 @@ public class ColorPicker : MonoBehaviour
     {
         modifiedColor = originalColor;
 
-        if (instance != null && instance.targetBrush != null)
-            instance.targetBrush.SetColor(originalColor);
+        if (instance != null)
+        {
+            if (instance.targetBrush != null)
+                instance.targetBrush.SetColor(originalColor);
+            else if (SharedBrushSettings.Instance != null)
+                SharedBrushSettings.Instance.SetColor(originalColor);
+        }
 
         Done();
     }
@@ -398,8 +447,13 @@ public class ColorPicker : MonoBehaviour
         onCC?.Invoke(modifiedColor);
         onCS?.Invoke(modifiedColor);
 
-        if (instance != null && instance.targetBrush != null)
-            instance.targetBrush.SetColor(modifiedColor);
+        if (instance != null)
+        {
+            if (instance.targetBrush != null)
+                instance.targetBrush.SetColor(modifiedColor);
+            else if (SharedBrushSettings.Instance != null)
+                SharedBrushSettings.Instance.SetColor(modifiedColor);
+        }
 
         if (instance != null)
         {
