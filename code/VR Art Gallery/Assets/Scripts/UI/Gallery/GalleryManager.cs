@@ -4,12 +4,21 @@ using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Networking;
 using VRGallery.Cloud;
+using VRGallery.Authentication;
+
 
 public class GalleryManager : MonoBehaviour
 {
     [Header("Artwork Display References")]
     [SerializeField] private ArtworkDisplay[] artworkDisplays;
     [SerializeField] private int maxArtworks = 9;
+
+    private IArtworkRepository _artworkRepo;
+    private IArtistRepository _artistRepo;
+    private IGalleryRepository _galleryRepo;
+
+    private long _ownerId = 49;//WorkflowArtist, just in case
+    private int _currentGalleryId = 141;//WorkflowArtist's gallery, just in case
 
     [Header("Debug")]
     [SerializeField] private bool enableDebugLogs = true;
@@ -26,6 +35,11 @@ public class GalleryManager : MonoBehaviour
 
             m_GalleryRepository = await SupabaseGalleryRepository.CreateAsync();
             LogDebug("GalleryManager initialized.");
+
+            // await InitializeCloudAsync();
+            // await LoadGalleryAsync(_currentGalleryId);
+
+
         }
         catch (Exception ex)
         {
@@ -37,6 +51,41 @@ public class GalleryManager : MonoBehaviour
     /// Loads and displays all artworks for the given gallery ID.
     /// Automatically finds instantiated ArtworkDisplay objects if array is empty.
     /// </summary>
+    
+    public async Task InitializeCloudAsync()
+    {
+        try
+        {
+            if (!SupabaseClientManager.IsInitialized)
+                await SupabaseClientManager.InitializeAsync();
+
+            _artworkRepo = await SupabaseArtworkRepository.CreateAsync();
+            _artistRepo = await SupabaseArtistRepository.CreateAsync();
+
+            var authUser = AuthenticationManager.Instance?.CurrentUser;
+            if (authUser != null)
+            {
+                var profile = await _artistRepo.GetArtistProfileAsync(authUser.Id);
+                if (profile != null)
+                {
+                    _ownerId = profile.user_id;
+
+                    if (profile.managed_gallery != null && profile.managed_gallery.Length > 0)
+                    {
+                        if (int.TryParse(profile.managed_gallery[0], out int galId))
+                        {
+                            _currentGalleryId = galId;
+                        }
+                    }
+                }
+            }
+            Debug.Log($"[PaintableSurfaceRT] Cloud Sync initialized. OwnerId: {_ownerId}, GalleryId: {_currentGalleryId}");
+        }
+        catch (System.Exception ex)
+        {
+            Debug.LogError($"[PaintableSurfaceRT] Cloud Sync init failed: {ex.Message}");
+        }
+    }
     public async Task LoadGalleryAsync(int galleryId)
     {
         try
@@ -173,6 +222,15 @@ public class GalleryManager : MonoBehaviour
                 display.Populate(null);
             }
         }
+    }
+
+    /// <summary>
+    /// Public entry point to initialize and load the gallery.
+    /// </summary>
+    public async Task InitializeAndLoadGalleryAsync()
+    {
+        await InitializeCloudAsync();
+        await LoadGalleryAsync(_currentGalleryId);
     }
 
     // ── Logging ───────────────────────────────────────────────────────────────
