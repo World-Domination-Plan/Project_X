@@ -1,5 +1,4 @@
-@startuml XR_VoiceChat_Updated
-
+@startuml
 skinparam sequenceArrowThickness 2
 skinparam roundcorner 10
 skinparam sequenceParticipantBorderColor #21808D
@@ -12,7 +11,7 @@ actor UserA
 
 participant "Controllers" as Input
 participant "On-Screen Notifications" as HUD
-participant "Communications Manager" as CCM
+participant "Unity Vivox SDK" as CCM
 participant "Network Services" as NM
 
 
@@ -39,12 +38,10 @@ end
 
 == Public Text Chat ==
 
-UserA -> HUD : Type message in chat box
+UserA -> HUD : Type message in the UI chat box
 HUD -> CCM : Submit message locally
 CCM -> NM : Send message to server
 NM -> NM : Add to master message list
 NM --> CCM : Broadcast to all other users
 CCM -> HUD : Display message on everyone's screen
-
-
 @enduml
