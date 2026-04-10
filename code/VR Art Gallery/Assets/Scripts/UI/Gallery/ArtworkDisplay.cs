@@ -6,6 +6,10 @@ public class ArtworkDisplay : MonoBehaviour
     [Header("References")]
     [SerializeField] private Renderer meshRenderer;
 
+    [Header("Slot Information")]
+    [Tooltip("The index of this slot in the gallery (0-8). Set automatically by GalleryManager.")]
+    public int SlotIndex;
+
     private Material dynamicMaterial;
 
     private void Start()
@@ -42,5 +46,13 @@ public class ArtworkDisplay : MonoBehaviour
     {
         if (dynamicMaterial != null)
             dynamicMaterial.mainTexture = null;
+    }
+
+    /// <summary>
+    /// Call this when the slot is clicked in VR (e.g., from an XR Interactable or UI Button).
+    /// </summary>
+    public void SelectSlot()
+    {
+        GalleryInfoUI.HandleSlotClicked(SlotIndex);
     }
 }

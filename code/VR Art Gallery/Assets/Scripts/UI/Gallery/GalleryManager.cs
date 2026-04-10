@@ -177,7 +177,16 @@ public class GalleryManager : MonoBehaviour
             return a.name.CompareTo(b.name);
         });
 
-        LogDebug($"Sorted {artworkDisplays.Length} displays by spline order.");
+        // Automatically assign slot indices based on their sorted order
+        for (int i = 0; i < artworkDisplays.Length; i++)
+        {
+            if (artworkDisplays[i] != null)
+            {
+                artworkDisplays[i].SlotIndex = i;
+            }
+        }
+
+        LogDebug($"Sorted {artworkDisplays.Length} displays by spline order and assigned SlotIndices.");
     }
 
     /// <summary>
