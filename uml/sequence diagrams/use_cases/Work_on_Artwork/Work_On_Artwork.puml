@@ -1,0 +1,82 @@
+@startuml
+title Work on Artwork
+
+' ============== ACTORS & COMPONENTS ==============
+actor "User" as User
+participant "Controller/Input Manager" as Ctrl
+participant "HUD" as HUD
+participant "Artwork Session / Network Manager" as Net
+participant "Brush Tool State" as Brush
+participant "Canvas Stroke Sync" as StrokeSync
+participant "Canvas" as Canvas
+participant "Authentication Manager" as Auth
+participant "Artwork Repository / Supabase" as Cloud
+
+' ============== TRIGGER ==============
+User ->> HUD : Request "Create Room"
+HUD ->> Net : Create or join room/workspace
+User ->> HUD : Request "Create Canvas"
+
+' ============== ENTRY ==============
+
+Net --> HUD : Status: Connecting...
+Net ->> Net : Start host/client session
+Net --> HUD : Connected
+HUD --> User : Workspace opened
+' ============== ENTRY ==============
+HUD -> Net : requests creation of workspace in room
+Net --> HUD : status: Connecting...
+Net -> Net : start host/client session
+Net --> HUD : Connected
+HUD --> User : workspace opened
+
+' ============== WORKFLOW A: Paint on artwork ============
+alt Flow A — Draw on artwork
+  User ->> Ctrl : Grabs brush and presses draw
+  Ctrl ->> Brush : Get current brush state
+  Brush --> Ctrl : Colour / radius / hardness
+
+  Ctrl ->> Canvas : Raycast hit on artwork surface
+
+  alt Synced collaborative artwork
+    Ctrl ->> StrokeSync : Begin local stroke
+    StrokeSync ->> StrokeSync : Send stroke begin over network
+
+    loop While drawing
+      Ctrl ->> Canvas : Apply local paint at UV
+      Ctrl ->> StrokeSync : Send stroke points
+      StrokeSync ->> StrokeSync : Broadcast stroke points
+      StrokeSync ->> Canvas : Apply synced paint ops
+    end
+
+    User ->> Ctrl : Releases draw input
+    Ctrl ->> StrokeSync : End local stroke
+    StrokeSync ->> StrokeSync : Send stroke end over network
+
+  else Local-only artwork
+    loop While drawing
+      Ctrl ->> Canvas : Apply local paint at UV
+    end
+  end
+
+' ============== WORKFLOW B: Upload artwork ============
+else Flow B — Upload artwork to cloud
+  User ->> Ctrl : Clicks "Upload Artwork"
+  Ctrl ->> HUD : Request upload
+  HUD ->> Auth : Check authentication state
+
+  alt User logged in
+    Auth --> HUD : Authenticated
+    HUD ->> Canvas : Export artwork image
+    Canvas --> HUD : Image data / file path
+    HUD ->> Cloud : Create artwork record + upload image
+    Cloud --> HUD : Upload success
+    HUD --> User : Show success: "Artwork uploaded"
+
+  else User not logged in
+    Auth --> HUD : Not authenticated
+    HUD --> User : Show error: "Log in or sign up to upload artwork."
+  end
+end
+
+@enduml
