@@ -1,0 +1,63 @@
+@startuml
+title Browse/Join Rooms
+
+' ============== ACTORS & COMPONENTS ==============
+actor "User" as User
+participant "Controller/Input Manager" as Ctrl
+participant "HUD" as HUD
+participant "Network Manager" as Net
+participant "Voice Chat" as Voice
+
+' ============== TRIGGER ==============
+User ->> Ctrl : Opens Join Room
+Ctrl ->> HUD : Open "Join a Room"
+
+' ============== LISTING ==============
+HUD ->> Net : Poll live public rooms
+Net --> HUD : Live room list
+
+HUD --> User : Show: live public room list\n+ "Enter Code" input\n+ "Create Room" button
+
+User ->> Ctrl : Selects option
+
+' ============== FLOW A: Public Room from list ============
+alt Flow A — Join public room (from list)
+  User ->> Ctrl : Taps a room from list
+  Ctrl ->> HUD : Join selected room
+  HUD ->> Net : Join room
+  Net --> HUD : Status: Connecting…
+
+  Net ->> Net : Start client
+  Net --> HUD : Connected
+
+  HUD ->> Voice : Join voice channel
+  Voice --> User : Voice/chat active
+
+' ============== FLOW B: Join via Code ============
+else Flow B — Join via room code
+  User ->> Ctrl : Enters room code
+  Ctrl ->> HUD : Submit join code
+  HUD ->> Net : Join room by code
+
+  alt Code valid / room found
+    Net ->> Net : Set up relay
+    Net ->> Net : Start client
+    Net --> HUD : Connected
+
+    HUD ->> Voice : Join voice channel
+    Voice --> User : Voice/chat active
+
+  else Code invalid / room not found
+    Net --> HUD : Room not found
+    HUD --> User : Show error: "Room not found.\nPlease try a new code."
+  end
+
+' ============== FLOW C: Create Room ============
+else Flow C — Create room
+  User ->> Ctrl : Taps "Create Room"
+  Ctrl ->> HUD : Navigate to Create Room
+  HUD --> User : [See: Create Room use case]
+
+end
+
+@enduml
