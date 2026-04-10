@@ -5,7 +5,7 @@ title Browse/Join Galleries - Full Flow
 actor "User" as User
 participant "Controller/Input Manager" as Ctrl
 participant "HUD" as HUD
-participant "Security Manager" as Sec
+participant "Auth Manager" as Sec
 participant "Profile Manager" as Prof
 participant "Network Manager\n(XRINetworkGameManager\n+ LobbyManager)" as Net
 participant "Room Manager" as Room

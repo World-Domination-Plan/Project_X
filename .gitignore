@@ -61,3 +61,4 @@ Thumbs.db
 **/Packages/packages-lock.json
 .vscode/
 **.env
+code/VR Art Gallery/ProjectSettings/Packages/com.unity.probuilder/Settings.json
