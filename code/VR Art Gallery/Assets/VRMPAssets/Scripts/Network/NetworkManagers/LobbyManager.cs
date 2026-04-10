@@ -24,6 +24,7 @@ namespace XRMultiplayer
         public const string k_BuildIdKeyIdentifier = "b";
         public const string k_SceneKeyIdentifier = "s";
         public const string k_EditorKeyIdentifier = "e";
+        public const string k_HostAuthUserIdKeyIdentifier = "ha";
 
         static bool s_HideEditorInLobbies;
 
@@ -166,33 +167,43 @@ namespace XRMultiplayer
                 // Get a join code based on the Allocation
                 var joinCode = await RelayService.Instance.GetJoinCodeAsync(alloc.AllocationId);
 
+                string hostSupabaseAuthUserId = TryGetSupabaseAuthUserId();
+
+                var lobbyData = new Dictionary<string, DataObject>
+                {
+                    {
+                        // Set Join Code Key
+                        k_JoinCodeKeyIdentifier, new DataObject(DataObject.VisibilityOptions.Public, joinCode)
+                    },
+                    {
+                        // Set Region Key
+                        k_RegionKeyIdentifier, new DataObject(DataObject.VisibilityOptions.Public, alloc.Region)
+                    },
+                    {
+                        // Set Build ID Key
+                        k_BuildIdKeyIdentifier, new DataObject(DataObject.VisibilityOptions.Public, Application.version, DataObject.IndexOptions.S1)
+                    },
+                    {
+                        // Set Scene Key
+                        k_SceneKeyIdentifier, new DataObject(DataObject.VisibilityOptions.Public, SceneManager.GetActiveScene().name, DataObject.IndexOptions.S2)
+                    },
+                    {
+                        // Set Editor Key
+                        k_EditorKeyIdentifier, new DataObject(DataObject.VisibilityOptions.Public, hideEditorFromLobby.ToString(), DataObject.IndexOptions.S3)
+                    },
+                };
+
+                if (!string.IsNullOrWhiteSpace(hostSupabaseAuthUserId))
+                {
+                    // This allows joining clients to resolve and load the host's gallery.
+                    lobbyData[k_HostAuthUserIdKeyIdentifier] = new DataObject(DataObject.VisibilityOptions.Public, hostSupabaseAuthUserId);
+                }
+
                 // Creates Lobby Options Dictionary for other clients to find and join
                 var options = new CreateLobbyOptions
                 {
                     // Set the Data to be used for lobby filtering
-                    Data = new Dictionary<string, DataObject>
-                    {
-                        {
-                            // Set Join Code Key
-                            k_JoinCodeKeyIdentifier, new DataObject(DataObject.VisibilityOptions.Public, joinCode)
-                        },
-                        {
-                            // Set Region Key
-                            k_RegionKeyIdentifier, new DataObject(DataObject.VisibilityOptions.Public, alloc.Region)
-                        },
-                        {
-                            // Set Build ID Key
-                            k_BuildIdKeyIdentifier, new DataObject(DataObject.VisibilityOptions.Public, Application.version, DataObject.IndexOptions.S1)
-                        },
-                        {
-                            // Set Scene Key
-                            k_SceneKeyIdentifier, new DataObject(DataObject.VisibilityOptions.Public, SceneManager.GetActiveScene().name, DataObject.IndexOptions.S2)
-                        },
-                        {
-                            // Set Editor Key
-                            k_EditorKeyIdentifier, new DataObject(DataObject.VisibilityOptions.Public, hideEditorFromLobby.ToString(), DataObject.IndexOptions.S3)
-                        },
-                    },
+                    Data = lobbyData,
                     IsPrivate = isPrivate,
                 };
 
@@ -225,6 +236,33 @@ namespace XRMultiplayer
                 Utils.Log($"{k_DebugPrepend}{failureMessage}\n\n{e}", 1);
                 // Debug.LogWarning($"[XRMPT] {failureMessage}\n\n{e}");
                 OnLobbyFailed?.Invoke(failureMessage);
+                return null;
+            }
+        }
+
+        static string TryGetSupabaseAuthUserId()
+        {
+            try
+            {
+                var authManagerType = Type.GetType("VRGallery.Authentication.AuthenticationManager, Assembly-CSharp")
+                    ?? Type.GetType("VRGallery.Authentication.AuthenticationManager");
+
+                if (authManagerType == null)
+                    return null;
+
+                var instance = authManagerType.GetProperty("Instance")?.GetValue(null);
+                if (instance == null)
+                    return null;
+
+                var currentUser = authManagerType.GetProperty("CurrentUser")?.GetValue(instance);
+                if (currentUser == null)
+                    return null;
+
+                return currentUser.GetType().GetProperty("Id")?.GetValue(currentUser) as string;
+            }
+            catch (Exception e)
+            {
+                Utils.Log($"{k_DebugPrepend}Failed to resolve Supabase auth user id: {e.Message}", 1);
                 return null;
             }
         }
