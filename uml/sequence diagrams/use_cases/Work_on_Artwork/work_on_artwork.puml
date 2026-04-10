@@ -1,0 +1,67 @@
+@startuml
+actor User
+participant "AuthenticationUI" as AuthUI
+participant "AuthenticationManager" as Auth
+participant "NgoArtworkJoinGate" as JoinGate
+participant "Artwork Session / Network Object" as ArtworkSession
+participant "XR Interactor / Input" as Input
+participant "XRPainterRayInput" as Painter
+participant "BrushToolState" as Brush
+participant "CanvasStrokeSyncNgo" as StrokeSync
+participant "PaintableSurfaceRT" as Canvas
+
+== Precondition: authenticate before joining ==
+User -> AuthUI : login / register
+AuthUI -> Auth : LoginUser(...) / RegisterUser(...)
+Auth --> AuthUI : auth success
+
+User -> JoinGate : request join artwork
+JoinGate -> Auth : check IsAuthenticated / CurrentUser
+alt user authenticated
+    JoinGate -> ArtworkSession : allow join
+    ArtworkSession --> User : enters artwork session
+else user not authenticated
+    JoinGate --> User : deny entry
+end
+
+== Work on Artwork ==
+User -> Input : grab brush
+Input -> Painter : Update()
+Painter -> Painter : GetHeldBrushToolState()
+Painter -> Brush : CurrentBrushState
+
+User -> Input : press draw on canvas
+Input -> Painter : Update()
+Painter -> Canvas : raycast hit test
+
+alt synced collaborative artwork
+    Painter -> StrokeSync : CreateLocalStrokeId()
+    Painter -> StrokeSync : LocalStrokeBegin(strokeId, brush)
+    StrokeSync -> StrokeSync : StrokeBeginServerRpc(...)
+    StrokeSync -> StrokeSync : StrokeBeginClientRpc(...)
+
+    loop while drawing
+        Painter -> Canvas : PaintAt(uv, brush)
+        Painter -> StrokeSync : LocalStrokePoints(strokeId, points)
+        StrokeSync -> StrokeSync : StrokePointsServerRpc(...)
+        StrokeSync -> StrokeSync : StrokePointsClientRpc(...)
+        StrokeSync -> Canvas : enqueue + apply remote paint ops
+    end
+
+    User -> Input : release draw
+    Input -> Painter : EndStroke()
+    Painter -> StrokeSync : LocalStrokeEnd(strokeId)
+    StrokeSync -> StrokeSync : StrokeEndServerRpc(...)
+    StrokeSync -> StrokeSync : StrokeEndClientRpc(...)
+else local-only fallback
+    loop while drawing
+        Painter -> Canvas : PaintAt(uv, brush)
+    end
+end
+
+== Undo ==
+User -> Input : trigger undo
+Input -> Brush : Undo last stroke/change
+Brush -> Canvas : restore previous artwork state
+
+@enduml
