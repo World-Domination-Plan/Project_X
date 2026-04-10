@@ -379,6 +379,7 @@ namespace XRMultiplayer
                     if (method.Invoke(behaviour, null) is Task initTask)
                     {
                         await initTask;
+                        await PublishHostGalleryContextAsync(behaviour);
                         return true;
                     }
                 }
@@ -405,6 +406,8 @@ namespace XRMultiplayer
             try
             {
                 string hostAuthUserId = null;
+                long hostOwnerId = 0;
+                int hostGalleryId = 0;
                 Lobby connectedLobby = XRINetworkGameManager.Instance?.lobbyManager?.connectedLobby;
 
                 if (connectedLobby != null &&
@@ -414,10 +417,18 @@ namespace XRMultiplayer
                     hostAuthUserId = hostAuthData?.Value;
                 }
 
-                if (string.IsNullOrWhiteSpace(hostAuthUserId) && connectedLobby != null)
+                if (connectedLobby != null &&
+                    connectedLobby.Data != null &&
+                    connectedLobby.Data.TryGetValue(LobbyManager.k_HostOwnerIdKeyIdentifier, out DataObject hostOwnerData))
                 {
-                    // Backward compatibility path for lobbies created before host metadata was added.
-                    hostAuthUserId = connectedLobby.HostId;
+                    long.TryParse(hostOwnerData?.Value, out hostOwnerId);
+                }
+
+                if (connectedLobby != null &&
+                    connectedLobby.Data != null &&
+                    connectedLobby.Data.TryGetValue(LobbyManager.k_HostGalleryIdKeyIdentifier, out DataObject hostGalleryData))
+                {
+                    int.TryParse(hostGalleryData?.Value, out hostGalleryId);
                 }
 
                 var behaviours = FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None);
@@ -425,6 +436,28 @@ namespace XRMultiplayer
                 {
                     if (behaviour == null || behaviour.GetType().Name != "GalleryManager")
                         continue;
+
+                    if (hostGalleryId > 0)
+                    {
+                        var directGalleryMethod = behaviour.GetType().GetMethod("InitializeAndLoadGalleryByGalleryIdAsync");
+                        if (directGalleryMethod != null &&
+                            directGalleryMethod.Invoke(behaviour, new object[] { hostGalleryId }) is Task directGalleryTask)
+                        {
+                            await directGalleryTask;
+                            return;
+                        }
+                    }
+
+                    if (hostOwnerId > 0)
+                    {
+                        var ownerGalleryMethod = behaviour.GetType().GetMethod("InitializeAndLoadGalleryByOwnerIdAsync");
+                        if (ownerGalleryMethod != null &&
+                            ownerGalleryMethod.Invoke(behaviour, new object[] { hostOwnerId }) is Task ownerGalleryTask)
+                        {
+                            await ownerGalleryTask;
+                            return;
+                        }
+                    }
 
                     if (!string.IsNullOrWhiteSpace(hostAuthUserId))
                     {
@@ -437,6 +470,7 @@ namespace XRMultiplayer
                         }
                     }
 
+                    Debug.LogWarning("Host gallery context missing in lobby data. Falling back to local gallery load.");
                     var fallbackMethod = behaviour.GetType().GetMethod("InitializeAndLoadGalleryAsync");
                     if (fallbackMethod != null && fallbackMethod.Invoke(behaviour, null) is Task fallbackTask)
                     {
@@ -452,6 +486,26 @@ namespace XRMultiplayer
             {
                 m_IsLoadingConnectedLobbyGallery = false;
             }
+        }
+
+        async Task PublishHostGalleryContextAsync(MonoBehaviour galleryManager)
+        {
+            if (galleryManager == null)
+                return;
+
+            string hostAuthUserId = galleryManager.GetType().GetMethod("GetCurrentAuthUserId")?.Invoke(galleryManager, null) as string;
+
+            long hostOwnerId = 0;
+            object ownerValue = galleryManager.GetType().GetProperty("CurrentOwnerId")?.GetValue(galleryManager);
+            if (ownerValue != null)
+                hostOwnerId = System.Convert.ToInt64(ownerValue);
+
+            int hostGalleryId = 0;
+            object galleryValue = galleryManager.GetType().GetProperty("CurrentGalleryId")?.GetValue(galleryManager);
+            if (galleryValue != null)
+                hostGalleryId = System.Convert.ToInt32(galleryValue);
+
+            await XRINetworkGameManager.Instance.lobbyManager.UpdateHostGalleryContext(hostAuthUserId, hostOwnerId, hostGalleryId);
         }
 
         void ConnectedUpdated(string update)

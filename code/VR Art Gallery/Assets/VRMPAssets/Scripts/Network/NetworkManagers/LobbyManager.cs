@@ -25,6 +25,8 @@ namespace XRMultiplayer
         public const string k_SceneKeyIdentifier = "s";
         public const string k_EditorKeyIdentifier = "e";
         public const string k_HostAuthUserIdKeyIdentifier = "ha";
+        public const string k_HostOwnerIdKeyIdentifier = "ho";
+        public const string k_HostGalleryIdKeyIdentifier = "hg";
 
         static bool s_HideEditorInLobbies;
 
@@ -167,7 +169,7 @@ namespace XRMultiplayer
                 // Get a join code based on the Allocation
                 var joinCode = await RelayService.Instance.GetJoinCodeAsync(alloc.AllocationId);
 
-                string hostSupabaseAuthUserId = TryGetSupabaseAuthUserId();
+                TryGetHostGalleryContext(out string hostSupabaseAuthUserId, out long hostOwnerId, out int hostGalleryId);
 
                 var lobbyData = new Dictionary<string, DataObject>
                 {
@@ -197,6 +199,16 @@ namespace XRMultiplayer
                 {
                     // This allows joining clients to resolve and load the host's gallery.
                     lobbyData[k_HostAuthUserIdKeyIdentifier] = new DataObject(DataObject.VisibilityOptions.Public, hostSupabaseAuthUserId);
+                }
+
+                if (hostOwnerId > 0)
+                {
+                    lobbyData[k_HostOwnerIdKeyIdentifier] = new DataObject(DataObject.VisibilityOptions.Public, hostOwnerId.ToString());
+                }
+
+                if (hostGalleryId > 0)
+                {
+                    lobbyData[k_HostGalleryIdKeyIdentifier] = new DataObject(DataObject.VisibilityOptions.Public, hostGalleryId.ToString());
                 }
 
                 // Creates Lobby Options Dictionary for other clients to find and join
@@ -240,31 +252,92 @@ namespace XRMultiplayer
             }
         }
 
-        static string TryGetSupabaseAuthUserId()
+        public async Task UpdateHostGalleryContext(string hostAuthUserId, long hostOwnerId, int hostGalleryId)
         {
+            if (m_ConnectedLobby == null)
+                return;
+
+            var data = new Dictionary<string, DataObject>();
+
+            if (!string.IsNullOrWhiteSpace(hostAuthUserId))
+                data[k_HostAuthUserIdKeyIdentifier] = new DataObject(DataObject.VisibilityOptions.Public, hostAuthUserId);
+
+            if (hostOwnerId > 0)
+                data[k_HostOwnerIdKeyIdentifier] = new DataObject(DataObject.VisibilityOptions.Public, hostOwnerId.ToString());
+
+            if (hostGalleryId > 0)
+                data[k_HostGalleryIdKeyIdentifier] = new DataObject(DataObject.VisibilityOptions.Public, hostGalleryId.ToString());
+
+            if (data.Count == 0)
+                return;
+
             try
             {
-                var authManagerType = Type.GetType("VRGallery.Authentication.AuthenticationManager, Assembly-CSharp")
-                    ?? Type.GetType("VRGallery.Authentication.AuthenticationManager");
-
-                if (authManagerType == null)
-                    return null;
-
-                var instance = authManagerType.GetProperty("Instance")?.GetValue(null);
-                if (instance == null)
-                    return null;
-
-                var currentUser = authManagerType.GetProperty("CurrentUser")?.GetValue(instance);
-                if (currentUser == null)
-                    return null;
-
-                return currentUser.GetType().GetProperty("Id")?.GetValue(currentUser) as string;
+                await LobbyService.Instance.UpdateLobbyAsync(m_ConnectedLobby.Id, new UpdateLobbyOptions
+                {
+                    Data = data
+                });
             }
             catch (Exception e)
             {
-                Utils.Log($"{k_DebugPrepend}Failed to resolve Supabase auth user id: {e.Message}", 1);
-                return null;
+                Utils.Log($"{k_DebugPrepend}Failed to update host gallery context: {e.Message}", 1);
             }
+        }
+
+        static void TryGetHostGalleryContext(out string hostAuthUserId, out long hostOwnerId, out int hostGalleryId)
+        {
+            hostAuthUserId = null;
+            hostOwnerId = 0;
+            hostGalleryId = 0;
+
+            try
+            {
+                var authManagerType = TryFindTypeInAppDomain("VRGallery.Authentication.AuthenticationManager");
+                if (authManagerType != null)
+                {
+                    var instance = authManagerType.GetProperty("Instance")?.GetValue(null);
+                    var currentUser = authManagerType.GetProperty("CurrentUser")?.GetValue(instance);
+                    hostAuthUserId = currentUser?.GetType().GetProperty("Id")?.GetValue(currentUser) as string;
+                }
+
+                var behaviours = FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None);
+                foreach (var behaviour in behaviours)
+                {
+                    if (behaviour == null || behaviour.GetType().Name != "GalleryManager")
+                        continue;
+
+                    object ownerValue = behaviour.GetType().GetProperty("CurrentOwnerId")?.GetValue(behaviour);
+                    if (ownerValue != null)
+                        hostOwnerId = Convert.ToInt64(ownerValue);
+
+                    object galleryValue = behaviour.GetType().GetProperty("CurrentGalleryId")?.GetValue(behaviour);
+                    if (galleryValue != null)
+                        hostGalleryId = Convert.ToInt32(galleryValue);
+
+                    if (string.IsNullOrWhiteSpace(hostAuthUserId))
+                    {
+                        hostAuthUserId = behaviour.GetType().GetMethod("GetCurrentAuthUserId")?.Invoke(behaviour, null) as string;
+                    }
+
+                    break;
+                }
+            }
+            catch (Exception e)
+            {
+                Utils.Log($"{k_DebugPrepend}Failed to resolve host gallery context: {e.Message}", 1);
+            }
+        }
+
+        static Type TryFindTypeInAppDomain(string fullTypeName)
+        {
+            foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
+            {
+                var type = assembly.GetType(fullTypeName, false);
+                if (type != null)
+                    return type;
+            }
+
+            return null;
         }
 
         async Task SetupRelay(Lobby lobby)

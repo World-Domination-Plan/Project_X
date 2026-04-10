@@ -25,6 +25,9 @@ public class GalleryManager : MonoBehaviour
 
     private IGalleryRepository m_GalleryRepository;
 
+    public long CurrentOwnerId => _ownerId;
+    public int CurrentGalleryId => _currentGalleryId;
+
     private async void Start()
     {
         try
@@ -288,6 +291,26 @@ public class GalleryManager : MonoBehaviour
         }
 
         await LoadGalleryAsync(galleryId.Value);
+    }
+
+    /// <summary>
+    /// Loads a known gallery id directly.
+    /// </summary>
+    public async Task InitializeAndLoadGalleryByGalleryIdAsync(int galleryId)
+    {
+        if (galleryId <= 0)
+        {
+            LogError($"Invalid gallery id passed to gallery load: {galleryId}");
+            return;
+        }
+
+        await EnsureRepositoriesInitializedAsync();
+        await LoadGalleryAsync(galleryId);
+    }
+
+    public string GetCurrentAuthUserId()
+    {
+        return AuthenticationManager.Instance?.CurrentUser?.Id;
     }
 
     async Task EnsureRepositoriesInitializedAsync()
