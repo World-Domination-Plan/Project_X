@@ -7,6 +7,8 @@ using TMPro;
 using WebSocketSharp;
 using Unity.Services.Vivox;
 
+
+
 namespace XRMultiplayer
 {
     public class LobbyUI : MonoBehaviour
@@ -236,7 +238,7 @@ namespace XRMultiplayer
                 ToggleConnectionSubPanel(0);
         }
 
-        public void CreateLobby()
+        public async void CreateLobby()
         {
             XRINetworkGameManager.Connected.Subscribe(OnConnected);
 
@@ -245,6 +247,20 @@ namespace XRMultiplayer
 
             XRINetworkGameManager.Instance.CreateNewLobby(m_RoomNameText.text, m_Private, m_PlayerCount);
             m_ConnectionSuccessText.text = $"Joining {m_RoomNameText.text}";
+
+            // Initialize gallery when lobby is created
+            var behaviours = FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None);
+            foreach (var behaviour in behaviours)
+            {
+                if (behaviour == null || behaviour.GetType().Name != "GalleryManager")
+                    continue;
+
+                var method = behaviour.GetType().GetMethod("InitializeAndLoadGalleryAsync");
+                if (method != null && method.Invoke(behaviour, null) is System.Threading.Tasks.Task initTask)
+                    await initTask;
+
+                break;
+            }
         }
 
         public void UpdatePlayerCount(int count)
