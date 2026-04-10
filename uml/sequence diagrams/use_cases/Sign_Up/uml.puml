@@ -1,59 +1,59 @@
 @startuml
 title Sign Up
 
-actor User as User
+actor "User" as User
 participant "Controller/Input Manager" as Input
 participant "HUD" as HUD
-participant "AuthenticationUI" as AuthUI
-participant "AuthenticationManager" as AuthMgr
-participant "SupabaseAuthService" as SupaAuth
-participant "SupabaseArtistRepository" as ArtistRepo
-participant "SupabaseClient\\n(via SupabaseClientManager)" as Supa
-participant "Event Logger" as Log
+participant "Authentication UI" as AuthUI
+participant "Authentication Manager" as AuthMgr
+participant "Supabase Client" as Supa
+participant "Artist Repository" as ArtistRepo
 
-User -> Input : Opens HUD
-Input -> HUD : Show HUD
-HUD -> AuthUI : Show login panel\\n(if not authenticated)
-AuthUI -> User : Display Login/Register UI
 
-User -> AuthUI : Clicks "Show Register"
-AuthUI -> User : Display Register panel\\n(email, password, confirm,\\nusername fields)
+alt Already authenticated
+    AuthMgr --> AuthUI : User logged in
+    AuthUI --> User : Hide auth UI
 
-User -> AuthUI : Enters credentials\\n+ username, clicks Register
-AuthUI -> AuthUI : ValidateRegisterInput()\\n[email format, password ≥6,\\npasswords match]
+else Not authenticated
+    AuthUI --> User : Show login panel
 
-alt Validation fails
-    AuthUI -> User : Show inline error message
-else Validation passes
-    AuthUI -> AuthUI : ShowLoadingPanel()
-    AuthUI -> AuthMgr : RegisterUser(email, password, username)
-    Log -> Log : Log registration attempt
+    User ->> AuthUI : Clicks "Register"
+    AuthUI --> User : Show register panel
 
-    AuthMgr -> SupaAuth : SignUpAsync(email, password)
-    SupaAuth -> Supa : Auth.SignUp(email, password)
-    Supa --> SupaAuth : Session + User (or null)
-    SupaAuth --> AuthMgr : Session + User (or null)
+    User ->> AuthUI : Enter email, password, username
+    AuthUI ->> AuthUI : Validate input
 
-    alt SignUp failed (no user returned)
-        AuthMgr -> AuthMgr : OnAuthenticationError?.Invoke("Registration failed")
-        AuthUI -> AuthUI : HandleAuthenticationError()
-        AuthUI -> User : Show error message
-    else SignUp succeeded
-        AuthMgr -> ArtistRepo : CreateArtistProfileAsync(userId, username)
-        ArtistRepo -> Supa : INSERT into artists\\n(username, auth_user_id)
+    alt Validation fails
+        AuthUI --> User : Log error message
 
-        alt Profile creation failed
-            ArtistRepo --> AuthMgr : false
-            AuthMgr --> AuthUI : success = true\\n(user created, profile warning logged)
-            AuthUI -> User : "Registration successful!\\nCheck email for verification."
-            AuthUI -> AuthUI : ShowLoginPanel()
-        else Profile created successfully
-            ArtistRepo --> AuthMgr : true
-            AuthMgr --> AuthUI : success = true
-            Log -> Log : Log user + profile created
-            AuthUI -> User : "Registration successful!\\nCheck email for verification."
-            AuthUI -> AuthUI : ShowLoginPanel()
+    else Validation passes
+        AuthUI ->> AuthMgr : Register
+
+        AuthMgr ->> Supa : Sign up
+        Supa --> AuthMgr : Session + User
+
+        alt Sign up failed
+            AuthMgr --> AuthUI : Error
+            AuthUI --> User : Log serror message
+            AuthUI --> User : Show register panel
+
+        else Sign up succeeded
+            AuthMgr ->> ArtistRepo : Create artist profile
+            ArtistRepo ->> Supa : Insert into artists table
+
+            alt Profile creation failed
+                ArtistRepo --> AuthMgr : false
+                AuthMgr --> AuthUI : Success (profile warning logged)
+            else Profile created
+                ArtistRepo --> AuthMgr : true
+                AuthMgr --> AuthUI : Success
+            end
+
+            AuthUI --> User : Show login panel
         end
     end
 end
+
 @enduml
+
+
