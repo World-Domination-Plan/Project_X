@@ -46,6 +46,7 @@ public class SharedBrushSettings : MonoBehaviour
 
     public void SetColor(Color color)
     {
+        Debug.Log($"[SharedBrushSettings] SetColor alpha = {color.a}");
         currentColor = color;
         ApplyToAllBrushes();
     }

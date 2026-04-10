@@ -7,12 +7,12 @@ Shader "Hidden/BrushBlit"
         _BrushColor ("Brush Color", Color) = (1,0,0,1)
         _BrushParams ("Brush Params", Vector) = (0.5, 0.5, 0.05, 0.8)
     }
-    
+
     SubShader
     {
         Tags { "RenderType"="Opaque" }
         ZTest Always ZWrite Off Cull Off
-        
+
         Pass
         {
             CGPROGRAM
@@ -50,26 +50,27 @@ Shader "Hidden/BrushBlit"
                 float2 brushCenter = _BrushParams.xy;
                 float brushRadius = _BrushParams.z;
                 float hardness = _BrushParams.w;
-                
+
                 float2 diff = i.uv - brushCenter;
                 float dist = length(diff);
-                
+
                 fixed4 canvas = tex2D(_MainTex, i.uv);
-                
+
                 if (dist < brushRadius)
                 {
-                    // Sample brush texture (if provided)
                     float2 brushUV = (diff / brushRadius) * 0.5 + 0.5;
                     float brushMask = tex2D(_BrushTex, brushUV).a;
-                    
-                    // Apply hardness falloff
+
                     float falloff = 1.0 - smoothstep(brushRadius * hardness, brushRadius, dist);
                     float influence = brushMask * falloff;
-                    
-                    // Blend with brush color
-                    return lerp(canvas, _BrushColor, influence);
+                    float opacity = influence * _BrushColor.a;
+
+                    fixed4 result = canvas;
+                    result.rgb = lerp(canvas.rgb, _BrushColor.rgb, opacity);
+                    result.a = canvas.a;
+                    return result;
                 }
-                
+
                 return canvas;
             }
             ENDCG

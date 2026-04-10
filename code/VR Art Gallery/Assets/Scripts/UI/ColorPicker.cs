@@ -66,7 +66,7 @@ public class ColorPicker : MonoBehaviour
 
     public bool OpenForSharedSettings(
         string message = "Colour Picker",
-        bool useAlpha = false,
+        bool useAlpha = true,
         ColorEvent onChanged = null,
         ColorEvent onSelected = null)
     {
@@ -90,7 +90,7 @@ public class ColorPicker : MonoBehaviour
     public bool OpenForBrush(
         BrushToolState brush,
         string message = "Colour Picker",
-        bool useAlpha = false,
+        bool useAlpha = true,
         ColorEvent onChanged = null,
         ColorEvent onSelected = null)
     {
@@ -158,6 +158,12 @@ public class ColorPicker : MonoBehaviour
         if (aComponent != null)
             aComponent.gameObject.SetActive(useAlpha);
 
+        if (aInput != null)
+            aInput.gameObject.SetActive(useAlpha);
+
+        if (aGradientFill != null)
+            aGradientFill.gameObject.SetActive(useAlpha);
+
         if (hexaComponent.placeholder != null)
         {
             Text ph = hexaComponent.placeholder.GetComponent<Text>();
@@ -208,6 +214,7 @@ public class ColorPicker : MonoBehaviour
 
     private void ApplyColorToTarget(Color color)
     {
+        Debug.Log($"[ColorPicker] ApplyColorToTarget alpha = {color.a}");
         if (targetBrush != null)
             targetBrush.SetColor(color);
         else if (SharedBrushSettings.Instance != null)

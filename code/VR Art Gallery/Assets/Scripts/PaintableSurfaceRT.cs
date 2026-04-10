@@ -152,6 +152,7 @@ public class PaintableSurfaceRT : MonoBehaviour
         if (!brushBlitMaterial) return false;
 
         brushBlitMaterial.SetTexture(BrushTex, brushMask ? brushMask : Texture2D.whiteTexture);
+        Debug.Log($"[PaintAt] brush alpha = {brush.color.a}");
         brushBlitMaterial.SetColor(BrushColorID, brush.color);
         brushBlitMaterial.SetVector(BrushParams, new Vector4(uv.x, uv.y, brush.radius, brush.hardness));
 

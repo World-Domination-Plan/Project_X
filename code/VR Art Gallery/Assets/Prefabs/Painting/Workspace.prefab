@@ -214,7 +214,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 425912234
+  GlobalObjectIdHash: 1902360318
   InScenePlacedSourceGlobalObjectIdHash: 0
   DeferredDespawnTick: 0
   Ownership: 1
@@ -406,9 +406,7 @@ MonoBehaviour:
   colorPickerUI: {fileID: 6030265109231879705}
   paletteAnchor: {fileID: 6196052639447588801}
   pickerTitle: Colour Picker
-  useAlpha: 0
-  targetBrush: {fileID: 0}
-  brushInteractor: {fileID: 0}
+  useAlpha: 1
   toggleDebounceSeconds: 0.15
 --- !u!114 &1169390836969415157
 MonoBehaviour:
