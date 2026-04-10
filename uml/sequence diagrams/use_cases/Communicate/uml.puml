@@ -1,64 +1,50 @@
-@startuml
-title Sequence Diagram: Communicate
+@startuml XR_VoiceChat_Updated
+
+skinparam sequenceArrowThickness 2
+skinparam roundcorner 10
+skinparam sequenceParticipantBorderColor #21808D
+skinparam sequenceParticipantBackgroundColor #e8f4f5
+skinparam actorBorderColor #21808D
+skinparam noteBackgroundColor #fffde7
+skinparam noteBorderColor #e0c000
 
 actor UserA
-actor UserB
-participant "ControllerInput Manager" as CIM
-participant "HUD" as HUD
-participant "CollaborationCommunication Manager" as CCM
-participant "VoiceChatManager" as VoiceChat
-participant "Network Manager" as NM
-participant "Event Logger" as EL
 
-== Proximity Voice Chat (Vivox Positional Audio) ==
-UserA -> VoiceChat: Connect to Vivox channel (on spawn)
-VoiceChat -> NM: Set3DAudio(headTransform)
-NM -> VoiceChat: Positional audio active
+participant "Controllers" as Input
+participant "On-Screen Notifications" as HUD
+participant "Communications Manager" as CCM
+participant "Network Services" as NM
 
-UserA -> NM: Moves closer to UserB
-NM -> VoiceChat: UpdateVoicePosition(headOrigin)
-VoiceChat -> VoiceChat: Adjust volume based on 3D distance
-UserA -> CIM: Speaks (voice input)
-CIM -> VoiceChat: Capture audio
-VoiceChat -> NM: Broadcast positional voice to UserB
-NM -> UserB: Deliver voice (distance-attenuated)
 
-alt UserA leaves UserB's range
-    UserA -> NM: Moves away from UserB
-    NM -> VoiceChat: UpdateVoicePosition(headOrigin)
-    VoiceChat -> VoiceChat: Volume decreases with distance
-    CCM -> EL: Log proximity/volume event
-    EL -> EL: Log Mute Action
+== Voice Chat ==
+
+UserA -> NM : Authenticate and join session
+NM --> CCM : Voice access granted
+CCM -> NM : Join Voice channel
+CCM -> HUD : Show "Connected to Voice" message
+
+loop While moving
+    UserA -> Input : Move or turn head
+    Input -> CCM : Send new head position
+    CCM -> NM : Update voice location
 end
 
-== Self-Mute ==
-UserA -> CIM: Toggle mute
-CIM -> VoiceChat: ToggleSelfMute(true/false)
-VoiceChat -> NM: selfMuted.Value = true/false (NetworkVariable)
-NM -> UserB: Sync mute state (all clients)
+alt Muting self
+    UserA -> HUD : Press Mute in Menu
+    HUD -> CCM : Turn off microphone
+    CCM -> NM : Tell network to stop sending audio
+    CCM -> HUD : Show "Mic: OFF"
 
-== Public ChatBox Flow (Text) ==
-UserA -> HUD: Opens HUD
-HUD -> CCM: Selects public chat
-CCM -> NM: Get message history
-NM --> CCM: Returns messages
-CCM -> HUD: Shows history
-UserA -> CIM: Types message, clicks send
-CIM -> CCM: Forwards message
-CCM -> NM: Broadcasts to all users in room
-CCM -> EL: Log message event
-EL -> EL: Log Message
+end
 
-== Private ChatBox Flow (Text) ==
-UserA -> HUD: Selects UserB for private chat
-UserA -> CIM: Points at UserB, selects chat option
-CIM -> CCM: Initiate private chat
-CCM -> NM: Opens private chat channel
-NM -> UserB: Deliver private message
+== Public Text Chat ==
 
-note over VoiceChat, NM
-    Vivox positional audio (XRINetworkPlayer.SetVoiceId)
-    drives 3D attenuation via VivoxParticipant.
-    selfMuted is a NetworkVariable synced to all clients.
-end note
+UserA -> HUD : Type message in chat box
+HUD -> CCM : Submit message locally
+CCM -> NM : Send message to server
+NM -> NM : Add to master message list
+NM --> CCM : Broadcast to all other users
+CCM -> HUD : Display message on everyone's screen
+
+
 @enduml
