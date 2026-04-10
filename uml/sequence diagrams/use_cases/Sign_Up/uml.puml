@@ -6,21 +6,21 @@ participant "Controller/Input Manager" as Input
 participant "HUD" as HUD
 participant "AuthenticationUI" as AuthUI
 participant "AuthenticationManager" as AuthMgr
-participant "SupabaseClient\n(via SupabaseClientManager)" as Supa
+participant "SupabaseAuthService" as SupaAuth
 participant "SupabaseArtistRepository" as ArtistRepo
-participant "Room Manager" as Room
+participant "SupabaseClient\\n(via SupabaseClientManager)" as Supa
 participant "Event Logger" as Log
 
 User -> Input : Opens HUD
 Input -> HUD : Show HUD
-HUD -> AuthUI : Show login panel\n(if not authenticated)
+HUD -> AuthUI : Show login panel\\n(if not authenticated)
 AuthUI -> User : Display Login/Register UI
 
 User -> AuthUI : Clicks "Show Register"
-AuthUI -> User : Display Register panel\n(email, password, confirm,\nusername fields)
+AuthUI -> User : Display Register panel\\n(email, password, confirm,\\nusername fields)
 
-User -> AuthUI : Enters credentials\n+ username, clicks Register
-AuthUI -> AuthUI : ValidateRegisterInput()\n[email format, password ≥6,\npasswords match]
+User -> AuthUI : Enters credentials\\n+ username, clicks Register
+AuthUI -> AuthUI : ValidateRegisterInput()\\n[email format, password ≥6,\\npasswords match]
 
 alt Validation fails
     AuthUI -> User : Show inline error message
@@ -29,8 +29,10 @@ else Validation passes
     AuthUI -> AuthMgr : RegisterUser(email, password, username)
     Log -> Log : Log registration attempt
 
-    AuthMgr -> Supa : Auth.SignUp(email, password)
-    Supa --> AuthMgr : Session + User (or null)
+    AuthMgr -> SupaAuth : SignUpAsync(email, password)
+    SupaAuth -> Supa : Auth.SignUp(email, password)
+    Supa --> SupaAuth : Session + User (or null)
+    SupaAuth --> AuthMgr : Session + User (or null)
 
     alt SignUp failed (no user returned)
         AuthMgr -> AuthMgr : OnAuthenticationError?.Invoke("Registration failed")
@@ -38,18 +40,18 @@ else Validation passes
         AuthUI -> User : Show error message
     else SignUp succeeded
         AuthMgr -> ArtistRepo : CreateArtistProfileAsync(userId, username)
-        ArtistRepo -> Supa : INSERT into artists table
+        ArtistRepo -> Supa : INSERT into artists\\n(username, auth_user_id)
 
         alt Profile creation failed
             ArtistRepo --> AuthMgr : false
-            AuthMgr --> AuthUI : success = true\n(user created, profile warning logged)
-            AuthUI -> User : "Registration successful!\nCheck email for verification."
+            AuthMgr --> AuthUI : success = true\\n(user created, profile warning logged)
+            AuthUI -> User : "Registration successful!\\nCheck email for verification."
             AuthUI -> AuthUI : ShowLoginPanel()
         else Profile created successfully
             ArtistRepo --> AuthMgr : true
             AuthMgr --> AuthUI : success = true
             Log -> Log : Log user + profile created
-            AuthUI -> User : "Registration successful!\nCheck email for verification."
+            AuthUI -> User : "Registration successful!\\nCheck email for verification."
             AuthUI -> AuthUI : ShowLoginPanel()
         end
     end
