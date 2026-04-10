@@ -1,13 +1,5 @@
 @startuml
-skinparam sequenceArrowThickness 2
-skinparam roundcorner 10
-skinparam sequenceParticipantBorderColor #21808D
-skinparam sequenceParticipantBackgroundColor #e8f4f5
-skinparam actorBorderColor #21808D
-skinparam noteBackgroundColor #fffde7
-skinparam noteBorderColor #e0c000
-
-actor UserA
+actor User
 
 participant "Controllers" as Input
 participant "On-Screen Notifications" as HUD
@@ -17,19 +9,19 @@ participant "Network Services" as NM
 
 == Voice Chat ==
 
-UserA -> NM : Authenticate and join session
+User -> NM : Authenticate and join session
 NM --> CCM : Voice access granted
 CCM -> NM : Join Voice channel
 CCM -> HUD : Show "Connected to Voice" message
 
 loop While moving
-    UserA -> Input : Move or turn head
+    User -> Input : Move or turn head
     Input -> CCM : Send new head position
     CCM -> NM : Update voice location
 end
 
 alt Muting self
-    UserA -> HUD : Press Mute in Menu
+    User -> HUD : Press Mute in Menu
     HUD -> CCM : Turn off microphone
     CCM -> NM : Tell network to stop sending audio
     CCM -> HUD : Show "Mic: OFF"
@@ -38,7 +30,7 @@ end
 
 == Public Text Chat ==
 
-UserA -> HUD : Type message in the UI chat box
+User -> HUD : Type message in the UI chat box
 HUD -> CCM : Submit message locally
 CCM -> NM : Send message to server
 NM -> NM : Add to master message list
