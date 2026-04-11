@@ -98,7 +98,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 31321ba15b8f8eb4c954353edc038b1d, type: 2}
+  - {fileID: 2100000, guid: c9e0be270d192c84791049b7ba3eed7f, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -520,6 +520,10 @@ PrefabInstance:
       propertyPath: GlobalObjectIdHash
       value: 3971964826
       objectReference: {fileID: 0}
+    - target: {fileID: -937053613395505371, guid: 370bdc0574e664c8185d5c500fd90f64, type: 3}
+      propertyPath: paintbrushPrefab
+      value: 
+      objectReference: {fileID: 919132149155446097, guid: 9e08a8e8304465e4a9d8a7b2cbe7647e, type: 3}
     - target: {fileID: 98501652969008110, guid: 370bdc0574e664c8185d5c500fd90f64, type: 3}
       propertyPath: m_LocalScale.x
       value: 1
@@ -576,6 +580,10 @@ PrefabInstance:
       propertyPath: m_ConstrainProportionsScale
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 2142953488154244179, guid: 370bdc0574e664c8185d5c500fd90f64, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 8ce4855e80c9304478de69975391f9f8, type: 2}
     - target: {fileID: 3929296768846025282, guid: 370bdc0574e664c8185d5c500fd90f64, type: 3}
       propertyPath: brushBlitMaterial
       value: 
