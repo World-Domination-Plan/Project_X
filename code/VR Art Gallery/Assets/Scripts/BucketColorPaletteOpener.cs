@@ -11,7 +11,7 @@ public class BucketColorPaletteOpener : MonoBehaviour
 
     [Header("Message")]
     public string pickerTitle = "Colour Picker";
-    public bool useAlpha = true;
+    public bool useAlpha = false;
 
     [Header("Input")]
     [Range(0.05f, 0.5f)]

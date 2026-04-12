@@ -66,7 +66,7 @@ public class ColorPicker : MonoBehaviour
 
     public bool OpenForSharedSettings(
         string message = "Colour Picker",
-        bool useAlpha = true,
+        bool useAlpha = false,
         ColorEvent onChanged = null,
         ColorEvent onSelected = null)
     {
@@ -90,7 +90,7 @@ public class ColorPicker : MonoBehaviour
     public bool OpenForBrush(
         BrushToolState brush,
         string message = "Colour Picker",
-        bool useAlpha = true,
+        bool useAlpha = false,
         ColorEvent onChanged = null,
         ColorEvent onSelected = null)
     {
