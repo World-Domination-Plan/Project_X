@@ -4,41 +4,46 @@ using XRMultiplayer;
 
 public class HUDSpawner : MonoBehaviour
 {
-    public InputActionReference spawnButton; // Assign in Inspector
-    public GameObject prefabToSpawn;
-    private GameObject spawnedInstance; // To keep track of the spawned object
+    [Header("Input Actions")]
+    public InputActionReference vrSpawnButton;      // VR controller binding
+    public InputActionReference desktopSpawnButton; // Keyboard/mouse binding
+
+    [Header("HUD")]
+    public GameObject hudObject;
     public Transform headCamera;
     public float spawnDistance = 1.5f;
     public float spawnHeightOffset = 0.5f;
-    public LobbyUI m_PrefabScript;
+
+    private InputActionReference ActiveAction =>
+        PlatformModeManager.CurrentMode == PlatformMode.VR ? vrSpawnButton : desktopSpawnButton;
 
     private void OnEnable()
     {
-        spawnButton.action.performed += OnSpawnPressed;
-        spawnButton.action.Enable();
+        ActiveAction.action.performed += OnTogglePressed;
+        ActiveAction.action.Enable();
     }
 
     private void OnDisable()
     {
-        spawnButton.action.performed -= OnSpawnPressed;
-        spawnButton.action.Disable();
+        ActiveAction.action.performed -= OnTogglePressed;
+        ActiveAction.action.Disable();
     }
 
-    private void OnSpawnPressed(InputAction.CallbackContext ctx)
+    private void OnTogglePressed(InputAction.CallbackContext ctx)
     {
-        if (headCamera == null) headCamera = Camera.main.transform;
-        Vector3 spawnPos = headCamera.position + headCamera.forward * spawnDistance;
-        spawnPos.y = headCamera.position.y + spawnHeightOffset;
+        if (hudObject == null || hudObject.transform.childCount == 0) return;
 
-        if (spawnedInstance != null)
+        GameObject child = hudObject.transform.GetChild(0).gameObject;
+        bool show = !child.activeSelf;
+
+        if (show)
         {
-            LobbyUI existingScript = spawnedInstance.GetComponent<LobbyUI>();
-            if (existingScript != null) existingScript.HideLoginUI();
-            Destroy(spawnedInstance);
+            if (headCamera == null) headCamera = Camera.main.transform;
+            Vector3 pos = headCamera.position + headCamera.forward * spawnDistance;
+            pos.y += spawnHeightOffset;
+            hudObject.transform.SetPositionAndRotation(pos, Quaternion.LookRotation(headCamera.forward));
         }
 
-        spawnedInstance = Instantiate(prefabToSpawn, spawnPos, Quaternion.LookRotation(headCamera.forward));
-        m_PrefabScript = spawnedInstance.GetComponent<LobbyUI>();
-
+        child.SetActive(show);
     }
 }
