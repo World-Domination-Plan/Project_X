@@ -289,8 +289,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 773ae0993909b484db55b426ed072c3f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Scripts::BrushToolState
-  selectedColor: {r: 0.7075472, g: 0.15686187, b: 0.15686187, a: 1}
-  radius: 0.06
+  selectedColor: {r: 0.6886792, g: 0.1721698, b: 0.1721698, a: 1}
+  radius: 0.057000298
   hardness: 0.067
   brushTipRenderer: {fileID: 0}
   colorProperty: _BaseColor
@@ -303,6 +303,7 @@ MonoBehaviour:
   - {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   - {r: 0, g: 1, b: 1, a: 1}
   - {r: 1, g: 0, b: 1, a: 1}
+  currentPresetIndex: 0
 --- !u!114 &2712933426389813818
 MonoBehaviour:
   m_ObjectHideFlags: 0
