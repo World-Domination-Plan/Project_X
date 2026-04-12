@@ -25,7 +25,7 @@ public class BrushToolState : MonoBehaviour
         Color.magenta
     };
 
-    private int currentPresetIndex = 0;
+    [SerializeField] private int currentPresetIndex = 0;
 
     public event Action<Color> OnColorChanged;
 
@@ -41,11 +41,31 @@ public class BrushToolState : MonoBehaviour
         ApplyPreviewColor(selectedColor);
     }
 
+    private void OnEnable()
+    {
+        if (SharedBrushSettings.Instance != null)
+            SharedBrushSettings.Instance.RegisterBrush(this);
+    }
+
+    private void Start(){}
+
+    private void OnDisable()
+    {
+        if (SharedBrushSettings.Instance != null)
+            SharedBrushSettings.Instance.UnregisterBrush(this);
+    }
+
     public void SetColor(Color c)
     {
-        selectedColor = c;
-        ApplyPreviewColor(c);
-        OnColorChanged?.Invoke(c);
+        UpdatePresetIndexFromColor(c);
+
+        if (SharedBrushSettings.Instance != null)
+        {
+            SharedBrushSettings.Instance.SetColor(c);
+            return;
+        }
+
+        ApplyLocalColor(c);
     }
 
     public void SetColorByIndex(int index)
@@ -79,20 +99,51 @@ public class BrushToolState : MonoBehaviour
         SetColor(presetColors[currentPresetIndex]);
     }
 
+    public void SetRadius(float value)
+    {
+        value = Mathf.Clamp(value, 0.001f, 0.25f);
+
+        if (SharedBrushSettings.Instance != null)
+        {
+            SharedBrushSettings.Instance.SetRadius(value);
+            return;
+        }
+
+        radius = value;
+    }
+
+    public void SetHardness(float value)
+    {
+        value = Mathf.Clamp01(value);
+
+        if (SharedBrushSettings.Instance != null)
+        {
+            SharedBrushSettings.Instance.SetHardness(value);
+            return;
+        }
+
+        hardness = value;
+    }
+
     public void SetColorFromHtml(string html)
     {
         if (ColorUtility.TryParseHtmlString(html, out Color parsed))
             SetColor(parsed);
     }
 
-    public void SetRadius(float value)
+    public void ApplySharedSettings(Color color, float newRadius, float newHardness)
     {
-        radius = Mathf.Clamp(value, 0.001f, 0.25f);
-    }
+        bool colorChanged = selectedColor != color;
 
-    public void SetHardness(float value)
-    {
-        hardness = Mathf.Clamp01(value);
+        selectedColor = color;
+        radius = Mathf.Clamp(newRadius, 0.001f, 0.25f);
+        hardness = Mathf.Clamp01(newHardness);
+
+        UpdatePresetIndexFromColor(color);
+        ApplyPreviewColor(selectedColor);
+
+        if (colorChanged)
+            OnColorChanged?.Invoke(selectedColor);
     }
 
     public void SetBlack()   => SetColor(Color.black);
@@ -104,6 +155,14 @@ public class BrushToolState : MonoBehaviour
     public void SetCyan()    => SetColor(Color.cyan);
     public void SetMagenta() => SetColor(Color.magenta);
 
+    private void ApplyLocalColor(Color c)
+    {
+        selectedColor = c;
+        ApplyPreviewColor(c);
+        Debug.Log($"[BrushToolState] {name} SetColor -> {c}");
+        OnColorChanged?.Invoke(c);
+    }
+
     private void ApplyPreviewColor(Color c)
     {
         if (!brushTipRenderer) return;
@@ -111,5 +170,28 @@ public class BrushToolState : MonoBehaviour
         Material mat = brushTipRenderer.material;
         if (mat.HasProperty(colorProperty))
             mat.SetColor(colorProperty, c);
+    }
+
+    private void UpdatePresetIndexFromColor(Color c)
+    {
+        if (presetColors == null || presetColors.Length == 0)
+            return;
+
+        for (int i = 0; i < presetColors.Length; i++)
+        {
+            if (ApproximatelySameColor(presetColors[i], c))
+            {
+                currentPresetIndex = i;
+                return;
+            }
+        }
+    }
+
+    private bool ApproximatelySameColor(Color a, Color b)
+    {
+        return Mathf.Abs(a.r - b.r) < 0.001f &&
+               Mathf.Abs(a.g - b.g) < 0.001f &&
+               Mathf.Abs(a.b - b.b) < 0.001f &&
+               Mathf.Abs(a.a - b.a) < 0.001f;
     }
 }

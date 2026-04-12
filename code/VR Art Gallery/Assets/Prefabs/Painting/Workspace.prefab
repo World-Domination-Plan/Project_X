@@ -407,7 +407,6 @@ MonoBehaviour:
   paletteAnchor: {fileID: 6196052639447588801}
   pickerTitle: Colour Picker
   useAlpha: 0
-  targetBrush: {fileID: 0}
   toggleDebounceSeconds: 0.15
 --- !u!114 &1169390836969415157
 MonoBehaviour:

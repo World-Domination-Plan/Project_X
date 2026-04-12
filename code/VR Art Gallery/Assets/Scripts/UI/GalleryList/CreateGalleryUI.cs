@@ -25,7 +25,10 @@ public class CreateGalleryUI : MonoBehaviour
     [SerializeField] private bool enableDebugLogs = true;
 
     private IGalleryRepository m_GalleryRepository;
+    public IGalleryRepository GalleryRepository => m_GalleryRepository;
     private IArtistRepository m_ArtistRepository;
+    private IArtworkRepository m_ArtworkRepository;
+    public IArtworkRepository ArtworkRepository => m_ArtworkRepository;
 
     private async void Start()
     {
@@ -36,6 +39,7 @@ public class CreateGalleryUI : MonoBehaviour
         var supabaseClientWrapper = new SupabaseClientWrapper(SupabaseClientManager.Instance);
         m_ArtistRepository = new SupabaseArtistRepository(supabaseClientWrapper);
         m_GalleryRepository = await SupabaseGalleryRepository.CreateAsync();
+        m_ArtworkRepository = await SupabaseArtworkRepository.CreateAsync();
 
         // Hook up button listeners
         m_CreateButton.onClick.AddListener(OnCreateButtonClicked);
@@ -48,6 +52,15 @@ public class CreateGalleryUI : MonoBehaviour
         await RefreshGalleryStatus();
 
         LogDebug("CreateGalleryUI initialized.");
+    }
+
+    private async void OnEnable()
+    {
+        // Re-fetch when the tab is opened, but make sure Start has finished initializing repos
+        if (m_GalleryRepository != null && m_ArtistRepository != null)
+        {
+            await RefreshGalleryStatus();
+        }
     }
 
     /// <summary>
@@ -107,7 +120,7 @@ public class CreateGalleryUI : MonoBehaviour
         if (m_GalleryInfoUI != null)
         {
             m_GalleryInfoUI.gameObject.SetActive(true);
-            m_GalleryInfoUI.InitializeInfo(gallery, this);
+            m_GalleryInfoUI.InitializeInfo(gallery);
         }
     }
 

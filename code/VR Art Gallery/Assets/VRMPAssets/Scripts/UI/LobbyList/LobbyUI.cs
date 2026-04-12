@@ -6,6 +6,9 @@ using UnityEngine.UI;
 using TMPro;
 using WebSocketSharp;
 using Unity.Services.Vivox;
+using System.Threading.Tasks;
+
+
 
 namespace XRMultiplayer
 {
@@ -61,6 +64,9 @@ namespace XRMultiplayer
         Coroutine m_CooldownFillRoutine;
 
         bool m_Private = false;
+        bool m_IsLoadingConnectedLobbyGallery = false;
+        bool m_IsCreateGalleryLoadInProgress = false;
+        bool m_DidCreateGalleryLoadSucceed = false;
 
         /// <summary>
         /// Max players passed to <see cref="XRINetworkGameManager.CreateNewLobby"/>; kept in sync by UI (e.g. IntButtonUI) via <see cref="UpdatePlayerCount"/>.
@@ -236,7 +242,7 @@ namespace XRMultiplayer
                 ToggleConnectionSubPanel(0);
         }
 
-        public void CreateLobby()
+        public async void CreateLobby()
         {
             XRINetworkGameManager.Connected.Subscribe(OnConnected);
 
@@ -245,6 +251,17 @@ namespace XRMultiplayer
 
             XRINetworkGameManager.Instance.CreateNewLobby(m_RoomNameText.text, m_Private, m_PlayerCount);
             m_ConnectionSuccessText.text = $"Joining {m_RoomNameText.text}";
+
+            m_IsCreateGalleryLoadInProgress = true;
+            m_DidCreateGalleryLoadSucceed = false;
+            try
+            {
+                m_DidCreateGalleryLoadSucceed = await LoadLocalGalleryAfterCreateAsync();
+            }
+            finally
+            {
+                m_IsCreateGalleryLoadInProgress = false;
+            }
         }
 
         public void UpdatePlayerCount(int count)
@@ -325,13 +342,170 @@ namespace XRMultiplayer
             else HideLobbies();
         }
 
-        void OnConnected(bool connected)
+        async void OnConnected(bool connected)
         {
             if (connected)
             {
                 ToggleConnectionSubPanel(3);
                 XRINetworkGameManager.Connected.Unsubscribe(OnConnected);
+
+                while (m_IsCreateGalleryLoadInProgress)
+                    await Task.Yield();
+
+                if (m_DidCreateGalleryLoadSucceed)
+                {
+                    m_DidCreateGalleryLoadSucceed = false;
+                    return;
+                }
+
+                await LoadConnectedLobbyGalleryAsync();
             }
+        }
+
+        async Task<bool> LoadLocalGalleryAfterCreateAsync()
+        {
+            var behaviours = FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None);
+            foreach (var behaviour in behaviours)
+            {
+                if (behaviour == null || behaviour.GetType().Name != "GalleryManager")
+                    continue;
+
+                var method = behaviour.GetType().GetMethod("InitializeAndLoadGalleryAsync");
+                if (method == null)
+                    return false;
+
+                try
+                {
+                    if (method.Invoke(behaviour, null) is Task initTask)
+                    {
+                        await initTask;
+                        await PublishHostGalleryContextAsync(behaviour);
+                        return true;
+                    }
+                }
+                catch (System.Exception ex)
+                {
+                    Debug.LogError($"Failed to load gallery right after lobby creation: {ex.Message}");
+                    return false;
+                }
+
+                return false;
+            }
+
+            Debug.LogWarning("GalleryManager was not found in the scene. Skipping create-time gallery load.");
+            return false;
+        }
+
+        async Task LoadConnectedLobbyGalleryAsync()
+        {
+            if (m_IsLoadingConnectedLobbyGallery)
+                return;
+
+            m_IsLoadingConnectedLobbyGallery = true;
+
+            try
+            {
+                string hostAuthUserId = null;
+                long hostOwnerId = 0;
+                int hostGalleryId = 0;
+                Lobby connectedLobby = XRINetworkGameManager.Instance?.lobbyManager?.connectedLobby;
+
+                if (connectedLobby != null &&
+                    connectedLobby.Data != null &&
+                    connectedLobby.Data.TryGetValue(LobbyManager.k_HostAuthUserIdKeyIdentifier, out DataObject hostAuthData))
+                {
+                    hostAuthUserId = hostAuthData?.Value;
+                }
+
+                if (connectedLobby != null &&
+                    connectedLobby.Data != null &&
+                    connectedLobby.Data.TryGetValue(LobbyManager.k_HostOwnerIdKeyIdentifier, out DataObject hostOwnerData))
+                {
+                    long.TryParse(hostOwnerData?.Value, out hostOwnerId);
+                }
+
+                if (connectedLobby != null &&
+                    connectedLobby.Data != null &&
+                    connectedLobby.Data.TryGetValue(LobbyManager.k_HostGalleryIdKeyIdentifier, out DataObject hostGalleryData))
+                {
+                    int.TryParse(hostGalleryData?.Value, out hostGalleryId);
+                }
+
+                var behaviours = FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None);
+                foreach (var behaviour in behaviours)
+                {
+                    if (behaviour == null || behaviour.GetType().Name != "GalleryManager")
+                        continue;
+
+                    if (hostGalleryId > 0)
+                    {
+                        var directGalleryMethod = behaviour.GetType().GetMethod("InitializeAndLoadGalleryByGalleryIdAsync");
+                        if (directGalleryMethod != null &&
+                            directGalleryMethod.Invoke(behaviour, new object[] { hostGalleryId }) is Task directGalleryTask)
+                        {
+                            await directGalleryTask;
+                            return;
+                        }
+                    }
+
+                    if (hostOwnerId > 0)
+                    {
+                        var ownerGalleryMethod = behaviour.GetType().GetMethod("InitializeAndLoadGalleryByOwnerIdAsync");
+                        if (ownerGalleryMethod != null &&
+                            ownerGalleryMethod.Invoke(behaviour, new object[] { hostOwnerId }) is Task ownerGalleryTask)
+                        {
+                            await ownerGalleryTask;
+                            return;
+                        }
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(hostAuthUserId))
+                    {
+                        var hostGalleryMethod = behaviour.GetType().GetMethod("InitializeAndLoadGalleryByAuthUserIdAsync");
+                        if (hostGalleryMethod != null &&
+                            hostGalleryMethod.Invoke(behaviour, new object[] { hostAuthUserId }) is Task hostGalleryTask)
+                        {
+                            await hostGalleryTask;
+                            return;
+                        }
+                    }
+
+                    Debug.LogWarning("Host gallery context missing in lobby data. Falling back to local gallery load.");
+                    var fallbackMethod = behaviour.GetType().GetMethod("InitializeAndLoadGalleryAsync");
+                    if (fallbackMethod != null && fallbackMethod.Invoke(behaviour, null) is Task fallbackTask)
+                    {
+                        await fallbackTask;
+                    }
+
+                    return;
+                }
+
+                Debug.LogWarning("GalleryManager was not found in the scene. Skipping gallery load after lobby connect.");
+            }
+            finally
+            {
+                m_IsLoadingConnectedLobbyGallery = false;
+            }
+        }
+
+        async Task PublishHostGalleryContextAsync(MonoBehaviour galleryManager)
+        {
+            if (galleryManager == null)
+                return;
+
+            string hostAuthUserId = galleryManager.GetType().GetMethod("GetCurrentAuthUserId")?.Invoke(galleryManager, null) as string;
+
+            long hostOwnerId = 0;
+            object ownerValue = galleryManager.GetType().GetProperty("CurrentOwnerId")?.GetValue(galleryManager);
+            if (ownerValue != null)
+                hostOwnerId = System.Convert.ToInt64(ownerValue);
+
+            int hostGalleryId = 0;
+            object galleryValue = galleryManager.GetType().GetProperty("CurrentGalleryId")?.GetValue(galleryManager);
+            if (galleryValue != null)
+                hostGalleryId = System.Convert.ToInt32(galleryValue);
+
+            await XRINetworkGameManager.Instance.lobbyManager.UpdateHostGalleryContext(hostAuthUserId, hostOwnerId, hostGalleryId);
         }
 
         void ConnectedUpdated(string update)
