@@ -2092,6 +2092,17 @@ MonoBehaviour:
   aComponent: {fileID: 2645092813349941324}
   hexaComponent: {fileID: 1698156302978562103}
   colorComponent: {fileID: 2645092812931905260}
+  rInput: {fileID: 0}
+  gInput: {fileID: 0}
+  bInput: {fileID: 0}
+  aInput: {fileID: 0}
+  rGradientMax: {fileID: 0}
+  rGradientMin: {fileID: 0}
+  gGradientMax: {fileID: 0}
+  gGradientMin: {fileID: 0}
+  bGradientMax: {fileID: 0}
+  bGradientMin: {fileID: 0}
+  aGradientFill: {fileID: 0}
 --- !u!1 &2645092812543426091
 GameObject:
   m_ObjectHideFlags: 0
@@ -4333,7 +4344,7 @@ RectTransform:
   m_GameObject: {fileID: 5896647248456005000}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: -1}
-  m_LocalScale: {x: 1.0188841, y: 0.99492586, z: 1}
+  m_LocalScale: {x: 1.0728849, y: 1.0476569, z: 1.053}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 2645092812384357787}
