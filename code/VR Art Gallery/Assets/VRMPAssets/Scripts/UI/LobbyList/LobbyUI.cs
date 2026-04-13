@@ -384,13 +384,13 @@ namespace XRMultiplayer
                     {
                         await initTask;
                         await PublishHostGalleryContextAsync(behaviour);
-                        
+
                         // Now initialize GalleryInfoUI with the loaded gallery
                         int currentGalleryId = 0;
                         object galleryIdValue = behaviour.GetType().GetProperty("CurrentGalleryId")?.GetValue(behaviour);
                         if (galleryIdValue != null)
                             currentGalleryId = System.Convert.ToInt32(galleryIdValue);
-                        
+
                         if (currentGalleryId > 0 && galleryInfo != null)
                         {
                             // Fetch gallery data and initialize UI
@@ -402,7 +402,7 @@ namespace XRMultiplayer
                                 galleryInfo.InitializeInfo(galleryData);
                             }
                         }
-                        
+
                         return true;
                     }
                 }

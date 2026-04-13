@@ -23,10 +23,10 @@ public class GalleryInfoUI : MonoBehaviour
     [SerializeField] private MonoBehaviour m_LobbyUI; // The script that controls the lobby/room creation
 
     private GalleryData m_CurrentGallery;
-    
+
     private IArtworkRepository m_ArtworkRepository;
     private IGalleryRepository m_GalleryRepository;
-    
+
     public static int PendingSlotIndex = -1;
     public static int PendingArtworkId = -1;
     public static GalleryInfoUI ActiveInstance;
@@ -70,7 +70,7 @@ public class GalleryInfoUI : MonoBehaviour
     private async Task AutoLoadUserGallery()
     {
         int galleryIdToLoad = _defaultGalleryId;
-        
+
         try
         {
             if (AuthenticationManager.Instance != null && AuthenticationManager.Instance.IsAuthenticated && AuthenticationManager.Instance.CurrentUser != null)
@@ -78,7 +78,7 @@ public class GalleryInfoUI : MonoBehaviour
                 string userId = AuthenticationManager.Instance.CurrentUser.Id;
                 var artistRepo = new SupabaseArtistRepository(new SupabaseClientWrapper(SupabaseClientManager.Instance));
                 var profile = await artistRepo.GetArtistProfileAsync(userId);
-                
+
                 if (profile != null && profile.managed_gallery != null && profile.managed_gallery.Length > 0)
                 {
                     if (int.TryParse(profile.managed_gallery[0], out int galId))
@@ -94,7 +94,7 @@ public class GalleryInfoUI : MonoBehaviour
         }
 
         Debug.Log($"[GalleryInfoUI] Auto-loading Gallery ID: {galleryIdToLoad}...");
-        
+
         try
         {
             m_CurrentGallery = await m_GalleryRepository.GetGalleryAsync(galleryIdToLoad);
@@ -126,13 +126,13 @@ public class GalleryInfoUI : MonoBehaviour
     {
         Debug.Log($"[GalleryInfoUI] PopulateArtworksAsync started.");
         Debug.Log($"[GalleryInfoUI] InventoryContainer assigned: {m_InventoryContainer != null}, Prefab assigned: {m_GalleryInfoArtworkDisplayPrefab != null}");
-        
+
         if (m_InventoryContainer == null || m_GalleryInfoArtworkDisplayPrefab == null)
         {
             Debug.LogError("[GalleryInfoUI] Aborting: Missing InventoryContainer or Prefab reference.");
             return;
         }
-        
+
         if (m_ArtworkRepository == null)
         {
             Debug.LogError($"[GalleryInfoUI] Aborting: Missing ArtworkRepository.");
@@ -176,7 +176,7 @@ public class GalleryInfoUI : MonoBehaviour
                 Debug.LogWarning($"[GalleryInfoUI] Failed: Artwork {artworkId} returned null from repository");
                 return;
             }
-            
+
             Debug.Log($"[GalleryInfoUI] Loaded artwork data: ID={artworkId}, Title={artData.title}");
 
             // Get the storage path (thumbnail preferred, fall back to image)
@@ -221,7 +221,7 @@ public class GalleryInfoUI : MonoBehaviour
             // Instantiate prefab on main thread (which is fine after await)
             var obj = Instantiate(m_GalleryInfoArtworkDisplayPrefab, m_InventoryContainer);
             Debug.Log($"[GalleryInfoUI] Instantiated prefab for artwork {artworkId}");
-            
+
             var displayScript = obj.GetComponent<GalleryInfoArtworkDisplay>();
             if (displayScript != null)
             {
@@ -273,9 +273,9 @@ public class GalleryInfoUI : MonoBehaviour
         if (m_CurrentGallery == null || m_GalleryRepository == null) return;
 
         Debug.Log($"[GalleryInfoUI] Executing Swap of Artwork {artworkId} into Slot {slot}...");
-        
+
         // Ensure map exists
-        if (m_CurrentGallery.artwork_map == null) 
+        if (m_CurrentGallery.artwork_map == null)
             m_CurrentGallery.artwork_map = new Dictionary<int, int>();
 
         // Update local state
@@ -309,7 +309,7 @@ public class GalleryInfoUI : MonoBehaviour
         try
         {
             Debug.Log($"[GalleryInfoUI] Downloading texture from: {url}");
-            
+
             using (UnityWebRequest request = UnityWebRequestTexture.GetTexture(url))
             {
                 var operation = request.SendWebRequest();
@@ -358,7 +358,7 @@ public class GalleryInfoUI : MonoBehaviour
         {
             // Activate the Lobby Panel
             m_LobbyUI.gameObject.SetActive(true);
-            
+
             // Re-render gallery similar to LobbyUI instantiation
             var behaviours = FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None);
             foreach (var behaviour in behaviours)
