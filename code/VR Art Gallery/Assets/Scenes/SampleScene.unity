@@ -6975,6 +6975,10 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 4294967295
   testTexture: {fileID: 0}
+  hudPanelName: Gallery Selection UI
+  hudFallbackName: World Space Canvas
+  workspaceBehindHudDistance: 0.35
+  workspaceBehindHudHeightOffset: -1.1
 --- !u!4 &1212051091
 Transform:
   m_ObjectHideFlags: 0
@@ -8515,8 +8519,14 @@ MonoBehaviour:
   hudObject: {fileID: 525470198}
   hudPanelName: Gallery Selection UI
   headCamera: {fileID: 4607428429233221385}
-  spawnDistance: 1.5
-  spawnHeightOffset: 0.5
+  spawnDistance: 1
+  spawnHeightOffset: 1
+  minVisibleDistance: 1
+  maxVisibleDistance: 1.5
+  minVisibleHeightOffset: 1
+  maxVisibleHeightOffset: 1.5
+  keepPanelLevel: 0
+  panelRotationOffsetEuler: {x: 0, y: 180, z: 0}
 --- !u!4 &1864569578
 Transform:
   m_ObjectHideFlags: 0
