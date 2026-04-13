@@ -123,7 +123,7 @@ public class XRPainterRayInput : MonoBehaviour
 
         BrushState brush = brushToolState.CurrentBrushState;
 
-        var sync = surface.GetComponent<CanvasStrokeSyncNgo>();
+        CanvasStrokeSyncNgo sync = FindSpawnedStrokeSync(surface);
         if (!sync)
         {
             surface.PaintAt(hit.textureCoord, brush);
@@ -174,6 +174,26 @@ public class XRPainterRayInput : MonoBehaviour
 
         _lastUV = uv;
         _hasLast = true;
+    }
+
+    private static CanvasStrokeSyncNgo FindSpawnedStrokeSync(PaintableSurfaceRT surface)
+    {
+        if (!surface)
+            return null;
+
+        CanvasStrokeSyncNgo selfSync = surface.GetComponent<CanvasStrokeSyncNgo>();
+        if (selfSync != null && selfSync.IsSpawned)
+            return selfSync;
+
+        CanvasStrokeSyncNgo[] parentSyncs = surface.GetComponentsInParent<CanvasStrokeSyncNgo>(true);
+        for (int i = 0; i < parentSyncs.Length; i++)
+        {
+            CanvasStrokeSyncNgo candidate = parentSyncs[i];
+            if (candidate != null && candidate.IsSpawned)
+                return candidate;
+        }
+
+        return null;
     }
 
     void EndStroke()

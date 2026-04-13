@@ -4,7 +4,6 @@ using Unity.Netcode;
 using System.Collections.Concurrent;
 
 [DisallowMultipleComponent]
-[RequireComponent(typeof(PaintableSurfaceRT))]
 public class CanvasStrokeSyncNgo : NetworkBehaviour
 {
     struct PaintOperation
@@ -29,6 +28,7 @@ public class CanvasStrokeSyncNgo : NetworkBehaviour
     void Awake()
     {
         if (!surface) surface = GetComponent<PaintableSurfaceRT>();
+        if (!surface) surface = GetComponentInChildren<PaintableSurfaceRT>(true);
         Debug.Log($"[StrokeSync] Awake � surface: {surface}, IsSpawned: {IsSpawned}");
     }
 

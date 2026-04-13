@@ -110,8 +110,8 @@ public class CanvasSpawner : NetworkBehaviour
             return;
         }
 
+        StripNestedNetworkObjectsForSpawn(workspace, netObj);
         netObj.Spawn();
-        SpawnNestedNetworkObjects(workspace, netObj);
         m_SpawnedWorkspace = netObj;
         m_IsWorkspaceVisible = true;
 
@@ -252,7 +252,7 @@ public class CanvasSpawner : NetworkBehaviour
         return (corners[0] + corners[2]) * 0.5f;
     }
 
-    private static void SpawnNestedNetworkObjects(GameObject workspaceRoot, NetworkObject rootNetworkObject)
+    private static void StripNestedNetworkObjectsForSpawn(GameObject workspaceRoot, NetworkObject rootNetworkObject)
     {
         if (workspaceRoot == null || rootNetworkObject == null)
             return;
@@ -261,17 +261,14 @@ public class CanvasSpawner : NetworkBehaviour
         for (int i = 0; i < nestedNetworkObjects.Length; i++)
         {
             NetworkObject nested = nestedNetworkObjects[i];
-            if (nested == null || nested == rootNetworkObject || nested.IsSpawned)
+            if (nested == null || nested == rootNetworkObject)
                 continue;
 
-            try
-            {
-                nested.Spawn();
-            }
-            catch (System.Exception ex)
-            {
-                Debug.LogWarning($"[CanvasSpawner] Failed to spawn nested NetworkObject '{nested.name}': {ex.Message}");
-            }
+            NetworkBehaviour[] nestedBehaviours = nested.GetComponents<NetworkBehaviour>();
+            for (int b = 0; b < nestedBehaviours.Length; b++)
+                Object.DestroyImmediate(nestedBehaviours[b]);
+
+            Object.DestroyImmediate(nested);
         }
     }
 
