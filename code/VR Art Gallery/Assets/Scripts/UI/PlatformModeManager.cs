@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.XR.Interaction.Toolkit;
 using System.Collections;
 using SandboxXRI;
 
@@ -10,7 +11,12 @@ public class PlatformModeManager : MonoBehaviour
     public static PlatformModeManager Instance { get; private set; }
     public static PlatformMode CurrentMode { get; set; } = PlatformMode.Desktop;
 
-    [Header("XR Rig Children — disable in Desktop mode")]
+    public DesktopFirstPersonController desktopController;
+
+    [Header("XR Device Simulator")]
+    public GameObject xrDeviceSimulator;
+
+    [Header("XR Rig Children - Disable in Desktop mode")]
     public GameObject leftController;
     public GameObject rightController;
     public GameObject leftHand;
@@ -18,12 +24,16 @@ public class PlatformModeManager : MonoBehaviour
     public GameObject locomotionSystem;
 
     [Header("Desktop Controller")]
-    public DesktopFirstPersonController desktopController;
+    public GameObject desktopControllerPrefab;
 
     [Header("Other")]
     public GameObject teleportAreaSetup;
     public XRPainterRayInput painterRayInput;
     public EventSystem eventSystem;
+
+    // Cached internally — no need to assign in Inspector
+    private CharacterControllerDriver _ccDriver;
+    private CharacterController _characterController;
 
     void Awake()
     {
@@ -36,14 +46,33 @@ public class PlatformModeManager : MonoBehaviour
         if (!rightHand) rightHand = GameObject.Find("Right Hand");
         if (!locomotionSystem) locomotionSystem = GameObject.Find("Locomotion System");
         if (!teleportAreaSetup) teleportAreaSetup = GameObject.Find("Reset Area Setup");
-        if (painterRayInput == null) painterRayInput = FindObjectOfType<XRPainterRayInput>();
-        if (desktopController == null) desktopController = FindObjectOfType<DesktopFirstPersonController>();
-        if (eventSystem == null) eventSystem = FindObjectOfType<EventSystem>();
+
+        if (painterRayInput == null)
+            painterRayInput = FindObjectOfType<XRPainterRayInput>();
+
+        if (desktopController == null)
+            desktopController = FindObjectOfType<DesktopFirstPersonController>();
+
+        if (desktopController == null && desktopControllerPrefab != null)
+        {
+            var go = Instantiate(desktopControllerPrefab);
+            desktopController = go.GetComponent<DesktopFirstPersonController>();
+        }
+
+        if (eventSystem == null)
+            eventSystem = FindObjectOfType<EventSystem>();
+
+        // Find CharacterControllerDriver on the XR rig
+        var xrRig = GameObject.Find("XR Interaction Setup MP Variant");
+        if (xrRig != null)
+        {
+            _ccDriver = xrRig.GetComponent<CharacterControllerDriver>();
+            _characterController = xrRig.GetComponent<CharacterController>();
+        }
     }
 
     IEnumerator Start()
     {
-        // Wait two end-of-frames for all XR systems to fully initialise
         yield return new WaitForEndOfFrame();
         yield return new WaitForEndOfFrame();
 
@@ -55,6 +84,7 @@ public class PlatformModeManager : MonoBehaviour
     {
         bool isVR = mode == PlatformMode.VR;
 
+        // XR rig children
         if (leftController) leftController.SetActive(isVR);
         if (rightController) rightController.SetActive(isVR);
         if (leftHand) leftHand.SetActive(isVR);
@@ -62,11 +92,33 @@ public class PlatformModeManager : MonoBehaviour
         if (locomotionSystem) locomotionSystem.SetActive(isVR);
         if (teleportAreaSetup) teleportAreaSetup.SetActive(isVR);
 
+        // XR Device Simulator — only active in VR mode
+        if (xrDeviceSimulator != null)
+            xrDeviceSimulator.SetActive(isVR);
+
+        // CharacterControllerDriver fights with desktop movement — disable it in Desktop mode
+        if (_ccDriver != null)
+            _ccDriver.enabled = isVR;
+
+        // Reset the CharacterController to a sane state for desktop use
+        if (_characterController != null && !isVR)
+        {
+            _characterController.enabled = false;
+            _characterController.center = new Vector3(0f, 1f, 0f);
+            _characterController.height = 2f;
+            _characterController.enabled = true;
+        }
+
+        // Painter ray input
         if (painterRayInput != null)
             painterRayInput.mouseFallback = !isVR;
 
+        // Desktop controller
         if (desktopController != null)
+        {
             desktopController.enabled = !isVR;
+            if (!isVR) desktopController.Activate();
+        }
 
         // Disable Oculus input module in desktop mode
         if (eventSystem != null)
