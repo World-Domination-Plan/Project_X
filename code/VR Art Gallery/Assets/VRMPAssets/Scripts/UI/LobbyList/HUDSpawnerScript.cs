@@ -12,14 +12,14 @@ public class HUDSpawner : MonoBehaviour
     public GameObject hudObject;
     public string hudPanelName = "Gallery Selection UI";
     public Transform headCamera;
-    public float spawnDistance = 1.5f;
-    public float spawnHeightOffset = 0.5f;
+    public float spawnDistance = 1.0f;
+    public float spawnHeightOffset = 1.0f;
 
     [Header("Spawn Comfort")]
-    public float minVisibleDistance = 0.45f;
-    public float maxVisibleDistance = 0.75f;
-    public float minVisibleHeightOffset = -0.15f;
-    public float maxVisibleHeightOffset = 0.07f;
+    public float minVisibleDistance = 1.0f;
+    public float maxVisibleDistance = 1.5f;
+    public float minVisibleHeightOffset = 1f;
+    public float maxVisibleHeightOffset = 1.5f;
     public bool keepPanelLevel = false;
     public Vector3 panelRotationOffsetEuler = new Vector3(0f, 180f, 0f);
 
@@ -64,7 +64,7 @@ public class HUDSpawner : MonoBehaviour
             return desktopSpawnButton.action;
 
         if (m_RuntimeDesktopAction == null)
-            m_RuntimeDesktopAction = new InputAction("ToggleHUD_Desktop", InputActionType.Button, "<Keyboard>/h");
+            m_RuntimeDesktopAction = new InputAction("ToggleHUD_Desktop", InputActionType.Button, "<Keyboard>/slash");
 
         return m_RuntimeDesktopAction;
     }
