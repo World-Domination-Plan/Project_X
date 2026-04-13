@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.EventSystems;
 
 namespace SandboxXRI
 {
@@ -18,7 +19,6 @@ namespace SandboxXRI
         public float maxPitchAngle = 85f;
 
         private float _pitch = 0f;
-        private bool _cursorLocked = false;
         private CharacterController _cc;
         private Rigidbody _rb;
 
@@ -29,14 +29,15 @@ namespace SandboxXRI
 
         void OnDisable()
         {
-            LockCursor(false);
+            // Ensure cursor is always restored when this controller is disabled
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
         }
 
         public void Activate()
         {
             ResolveReferences();
             _pitch = 0f;
-            LockCursor(true);
         }
 
         void ResolveReferences()
@@ -55,7 +56,6 @@ namespace SandboxXRI
                 else Debug.LogError("[DesktopFPC] Camera Offset not found!");
             }
 
-            // Cache movement components — try CC first, then Rigidbody, then raw transform
             _cc = xrOriginRoot.GetComponent<CharacterController>();
             _rb = xrOriginRoot.GetComponent<Rigidbody>();
 
@@ -70,7 +70,6 @@ namespace SandboxXRI
             {
                 if (Mouse.current != null) HandleMouseLook();
                 if (Keyboard.current != null) HandleMovement();
-                HandleCursorToggle();
             }
             catch (System.Exception e)
             {
@@ -80,7 +79,8 @@ namespace SandboxXRI
 
         void HandleMouseLook()
         {
-            if (!_cursorLocked) return;
+            // Hold RMB to look — cursor stays free at all times so UI buttons always work
+            if (!Mouse.current.rightButton.isPressed) return;
 
             Vector2 delta = Mouse.current.delta.ReadValue();
             xrOriginRoot.Rotate(Vector3.up, delta.x * mouseSensitivity, Space.World);
@@ -113,20 +113,6 @@ namespace SandboxXRI
             {
                 xrOriginRoot.position += move;
             }
-        }
-
-        void HandleCursorToggle()
-        {
-            if (Keyboard.current == null) return;
-            if (Keyboard.current.escapeKey.wasPressedThisFrame) LockCursor(false);
-            if (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame && !_cursorLocked) LockCursor(true);
-        }
-
-        void LockCursor(bool locked)
-        {
-            _cursorLocked = locked;
-            Cursor.lockState = locked ? CursorLockMode.Locked : CursorLockMode.None;
-            Cursor.visible = !locked;
         }
     }
 }
