@@ -111,6 +111,7 @@ public class CanvasSpawner : NetworkBehaviour
         }
 
         netObj.Spawn();
+        SpawnNestedNetworkObjects(workspace, netObj);
         m_SpawnedWorkspace = netObj;
         m_IsWorkspaceVisible = true;
 
@@ -249,6 +250,29 @@ public class CanvasSpawner : NetworkBehaviour
         Vector3[] corners = new Vector3[4];
         rectTransform.GetWorldCorners(corners);
         return (corners[0] + corners[2]) * 0.5f;
+    }
+
+    private static void SpawnNestedNetworkObjects(GameObject workspaceRoot, NetworkObject rootNetworkObject)
+    {
+        if (workspaceRoot == null || rootNetworkObject == null)
+            return;
+
+        NetworkObject[] nestedNetworkObjects = workspaceRoot.GetComponentsInChildren<NetworkObject>(true);
+        for (int i = 0; i < nestedNetworkObjects.Length; i++)
+        {
+            NetworkObject nested = nestedNetworkObjects[i];
+            if (nested == null || nested == rootNetworkObject || nested.IsSpawned)
+                continue;
+
+            try
+            {
+                nested.Spawn();
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogWarning($"[CanvasSpawner] Failed to spawn nested NetworkObject '{nested.name}': {ex.Message}");
+            }
+        }
     }
 
     private static void ApplyWorkspacePlacementLocal(GameObject workspaceRoot, Vector3 pos, Quaternion rot, bool alignVisualCenterToTargetY)
