@@ -7,6 +7,7 @@ using TMPro;
 using WebSocketSharp;
 using Unity.Services.Vivox;
 using System.Threading.Tasks;
+using VRGallery.Cloud;
 
 
 
@@ -56,6 +57,9 @@ namespace XRMultiplayer
         [Header("Room Creation")]
         [SerializeField] TMP_InputField m_RoomNameText;
         [SerializeField] Toggle m_PrivacyToggle;
+
+        [Header("Gallery Info Loader")]
+        [SerializeField] GalleryInfoUI galleryInfo;
 
         [SerializeField] GameObject[] m_ConnectionSubPanels;
 
@@ -131,7 +135,7 @@ namespace XRMultiplayer
             if (m_HeadCamera == null) m_HeadCamera = Camera.main.transform;
 
             // Reposition in front of camera then show
-            Vector3 spawnPos = m_HeadCamera.position 
+            Vector3 spawnPos = m_HeadCamera.position
             + m_HeadCamera.forward * m_UIDistance
             + Vector3.up * m_UIHeightOffset
             + m_HeadCamera.right * m_UISideOffset;
@@ -380,6 +384,25 @@ namespace XRMultiplayer
                     {
                         await initTask;
                         await PublishHostGalleryContextAsync(behaviour);
+                        
+                        // Now initialize GalleryInfoUI with the loaded gallery
+                        int currentGalleryId = 0;
+                        object galleryIdValue = behaviour.GetType().GetProperty("CurrentGalleryId")?.GetValue(behaviour);
+                        if (galleryIdValue != null)
+                            currentGalleryId = System.Convert.ToInt32(galleryIdValue);
+                        
+                        if (currentGalleryId > 0 && galleryInfo != null)
+                        {
+                            // Fetch gallery data and initialize UI
+                            var galleryRepo = await SupabaseGalleryRepository.CreateAsync();
+                            var galleryData = await galleryRepo.GetGalleryAsync(currentGalleryId);
+                            if (galleryData != null)
+                            {
+                                Debug.Log($"[LobbyUI] Initializing GalleryInfoUI with local gallery {currentGalleryId}");
+                                galleryInfo.InitializeInfo(galleryData);
+                            }
+                        }
+                        
                         return true;
                     }
                 }
@@ -444,6 +467,7 @@ namespace XRMultiplayer
                             directGalleryMethod.Invoke(behaviour, new object[] { hostGalleryId }) is Task directGalleryTask)
                         {
                             await directGalleryTask;
+                            await InitializeGalleryUIAsync(hostGalleryId);
                             return;
                         }
                     }
@@ -455,6 +479,12 @@ namespace XRMultiplayer
                             ownerGalleryMethod.Invoke(behaviour, new object[] { hostOwnerId }) is Task ownerGalleryTask)
                         {
                             await ownerGalleryTask;
+                            // Get the gallery ID from GalleryManager after loading
+                            int galId = 0;
+                            object galIdValue = behaviour.GetType().GetProperty("CurrentGalleryId")?.GetValue(behaviour);
+                            if (galIdValue != null)
+                                galId = System.Convert.ToInt32(galIdValue);
+                            await InitializeGalleryUIAsync(galId);
                             return;
                         }
                     }
@@ -466,6 +496,12 @@ namespace XRMultiplayer
                             hostGalleryMethod.Invoke(behaviour, new object[] { hostAuthUserId }) is Task hostGalleryTask)
                         {
                             await hostGalleryTask;
+                            // Get the gallery ID from GalleryManager after loading
+                            int galId = 0;
+                            object galIdValue = behaviour.GetType().GetProperty("CurrentGalleryId")?.GetValue(behaviour);
+                            if (galIdValue != null)
+                                galId = System.Convert.ToInt32(galIdValue);
+                            await InitializeGalleryUIAsync(galId);
                             return;
                         }
                     }
@@ -475,6 +511,12 @@ namespace XRMultiplayer
                     if (fallbackMethod != null && fallbackMethod.Invoke(behaviour, null) is Task fallbackTask)
                     {
                         await fallbackTask;
+                        // Get the gallery ID from GalleryManager after loading
+                        int galId = 0;
+                        object galIdValue = behaviour.GetType().GetProperty("CurrentGalleryId")?.GetValue(behaviour);
+                        if (galIdValue != null)
+                            galId = System.Convert.ToInt32(galIdValue);
+                        await InitializeGalleryUIAsync(galId);
                     }
 
                     return;
@@ -485,6 +527,27 @@ namespace XRMultiplayer
             finally
             {
                 m_IsLoadingConnectedLobbyGallery = false;
+            }
+        }
+
+        private async Task InitializeGalleryUIAsync(int galleryId)
+        {
+            if (galleryId <= 0 || galleryInfo == null)
+                return;
+
+            try
+            {
+                var galleryRepo = await SupabaseGalleryRepository.CreateAsync();
+                var galleryData = await galleryRepo.GetGalleryAsync(galleryId);
+                if (galleryData != null)
+                {
+                    Debug.Log($"[LobbyUI] Initializing GalleryInfoUI with connected lobby gallery {galleryId}");
+                    galleryInfo.InitializeInfo(galleryData);
+                }
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError($"[LobbyUI] Failed to initialize gallery UI for gallery {galleryId}: {ex.Message}");
             }
         }
 

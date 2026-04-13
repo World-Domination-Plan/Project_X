@@ -57,10 +57,12 @@ public class GalleryInfoUI : MonoBehaviour
         m_GalleryRepository = await SupabaseGalleryRepository.CreateAsync();
 
         // If not externally initialized, try to auto-fetch the gallery
-        if (m_CurrentGallery == null)
-        {
-            await AutoLoadUserGallery();
-        }
+        // DISABLED: Auto-load conflicts with external initialization from LobbyUI
+        // Will be initialized externally via InitializeInfo() when needed
+        // if (m_CurrentGallery == null)
+        // {
+        //     await AutoLoadUserGallery();
+        // }
     }
 
     private int _defaultGalleryId = 141;
@@ -123,6 +125,7 @@ public class GalleryInfoUI : MonoBehaviour
     private async Task PopulateArtworksAsync()
     {
         Debug.Log($"[GalleryInfoUI] PopulateArtworksAsync started.");
+        Debug.Log($"[GalleryInfoUI] InventoryContainer assigned: {m_InventoryContainer != null}, Prefab assigned: {m_GalleryInfoArtworkDisplayPrefab != null}");
         
         if (m_InventoryContainer == null || m_GalleryInfoArtworkDisplayPrefab == null)
         {
@@ -154,11 +157,12 @@ public class GalleryInfoUI : MonoBehaviour
         var loadTasks = new List<Task>();
         foreach (int artworkId in m_CurrentGallery.artwork_ids)
         {
+            Debug.Log($"[GalleryInfoUI] Queueing artwork {artworkId} for loading...");
             loadTasks.Add(LoadAndInstantiateArtworkUIAsync(artworkId));
         }
 
         await Task.WhenAll(loadTasks);
-        Debug.Log($"[GalleryInfoUI] Finished UI population.");
+        Debug.Log($"[GalleryInfoUI] Finished UI population. Instantiated {loadTasks.Count} artwork items.");
     }
 
     private async Task LoadAndInstantiateArtworkUIAsync(int artworkId)
@@ -167,27 +171,71 @@ public class GalleryInfoUI : MonoBehaviour
         {
             // Fetch artwork details from repo
             var artData = await m_ArtworkRepository.GetArtworkAsync(artworkId);
-            if (artData == null) return;
+            if (artData == null)
+            {
+                Debug.LogWarning($"[GalleryInfoUI] Failed: Artwork {artworkId} returned null from repository");
+                return;
+            }
+            
+            Debug.Log($"[GalleryInfoUI] Loaded artwork data: ID={artworkId}, Title={artData.title}");
 
-            string url = !string.IsNullOrEmpty(artData.thumbnail_url) ? artData.thumbnail_url : artData.image_url;
+            // Get the storage path (thumbnail preferred, fall back to image)
+            string storagePath = !string.IsNullOrEmpty(artData.thumbnail_url) ? artData.thumbnail_url : artData.image_url;
+            Debug.Log($"[GalleryInfoUI] Image URL for {artworkId}: {storagePath}");
 
             Texture2D texture = null;
-            if (!string.IsNullOrEmpty(url))
+            if (!string.IsNullOrEmpty(storagePath))
             {
-                texture = await LoadTextureFromUrlAsync(url);
+                // Convert storage path to signed URL for download access
+                string signedUrl = null;
+                try
+                {
+                    signedUrl = await m_ArtworkRepository.CreateSignedUrlAsync("artworks", storagePath);
+                    Debug.Log($"[GalleryInfoUI] Generated signed URL for {artworkId}: {signedUrl}");
+                }
+                catch (System.Exception ex)
+                {
+                    Debug.LogError($"[GalleryInfoUI] Failed to create signed URL for {artworkId}: {ex.Message}");
+                    signedUrl = null;
+                }
+
+                if (!string.IsNullOrEmpty(signedUrl))
+                {
+                    Debug.Log($"[GalleryInfoUI] Starting texture load for {artworkId} from signed URL");
+                    texture = await LoadTextureFromUrlAsync(signedUrl);
+                    if (texture != null)
+                        Debug.Log($"[GalleryInfoUI] Successfully loaded texture for {artworkId}: {texture.width}x{texture.height}");
+                    else
+                        Debug.LogWarning($"[GalleryInfoUI] Texture load returned null for {artworkId}");
+                }
+                else
+                {
+                    Debug.LogWarning($"[GalleryInfoUI] Could not generate signed URL for artwork {artworkId}");
+                }
+            }
+            else
+            {
+                Debug.LogWarning($"[GalleryInfoUI] No URL available for artwork {artworkId}");
             }
 
             // Instantiate prefab on main thread (which is fine after await)
             var obj = Instantiate(m_GalleryInfoArtworkDisplayPrefab, m_InventoryContainer);
+            Debug.Log($"[GalleryInfoUI] Instantiated prefab for artwork {artworkId}");
+            
             var displayScript = obj.GetComponent<GalleryInfoArtworkDisplay>();
             if (displayScript != null)
             {
+                Debug.Log($"[GalleryInfoUI] Found GalleryInfoArtworkDisplay script, calling Initialize with texture={texture != null}");
                 displayScript.Initialize(artworkId, texture, this);
+            }
+            else
+            {
+                Debug.LogError($"[GalleryInfoUI] Prefab for artwork {artworkId} does NOT have GalleryInfoArtworkDisplay script!");
             }
         }
         catch (System.Exception ex)
         {
-            Debug.LogError($"[GalleryInfoUI] Error loading artwork UI {artworkId}: {ex.Message}");
+            Debug.LogError($"[GalleryInfoUI] Error loading artwork UI {artworkId}: {ex.Message}\n{ex.StackTrace}");
         }
     }
 
@@ -260,6 +308,8 @@ public class GalleryInfoUI : MonoBehaviour
     {
         try
         {
+            Debug.Log($"[GalleryInfoUI] Downloading texture from: {url}");
+            
             using (UnityWebRequest request = UnityWebRequestTexture.GetTexture(url))
             {
                 var operation = request.SendWebRequest();
@@ -269,18 +319,20 @@ public class GalleryInfoUI : MonoBehaviour
 
                 if (request.result == UnityWebRequest.Result.Success)
                 {
-                    return DownloadHandlerTexture.GetContent(request);
+                    Texture2D result = DownloadHandlerTexture.GetContent(request);
+                    Debug.Log($"[GalleryInfoUI] Successfully downloaded texture: {result.width}x{result.height}");
+                    return result;
                 }
                 else
                 {
-                    Debug.LogError($"Failed to download texture: {request.error}");
+                    Debug.LogError($"[GalleryInfoUI] Failed to download texture from {url}: {request.result} - {request.error}");
                     return null;
                 }
             }
         }
         catch (System.Exception ex)
         {
-            Debug.LogError($"Error loading texture: {ex.Message}");
+            Debug.LogError($"[GalleryInfoUI] Exception loading texture from {url}: {ex.Message}\n{ex.StackTrace}");
             return null;
         }
     }
