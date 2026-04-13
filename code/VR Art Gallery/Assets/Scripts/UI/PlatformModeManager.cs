@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using System.Collections;
 using SandboxXRI;
+using UnityEngine.XR.Interaction.Toolkit.Inputs.Simulation;
 
 public enum PlatformMode { VR, Desktop }
 
@@ -20,6 +21,9 @@ public class PlatformModeManager : MonoBehaviour
     [Header("Desktop Controller")]
     public DesktopFirstPersonController desktopController;
 
+    [Header("XR Device Simulator")]
+    public XRDeviceSimulator xrDeviceSimulator;
+
     [Header("Other")]
     public GameObject teleportAreaSetup;
     public XRPainterRayInput painterRayInput;
@@ -27,7 +31,12 @@ public class PlatformModeManager : MonoBehaviour
 
     void Awake()
     {
-        if (Instance != null) { Destroy(gameObject); return; }
+        if (Instance != null)
+        {
+            Destroy(gameObject);
+            return;
+        }
+
         Instance = this;
 
         if (!leftController) leftController = GameObject.Find("Left Controller");
@@ -36,14 +45,17 @@ public class PlatformModeManager : MonoBehaviour
         if (!rightHand) rightHand = GameObject.Find("Right Hand");
         if (!locomotionSystem) locomotionSystem = GameObject.Find("Locomotion System");
         if (!teleportAreaSetup) teleportAreaSetup = GameObject.Find("Reset Area Setup");
+
         if (painterRayInput == null) painterRayInput = FindObjectOfType<XRPainterRayInput>();
         if (desktopController == null) desktopController = FindObjectOfType<DesktopFirstPersonController>();
         if (eventSystem == null) eventSystem = FindObjectOfType<EventSystem>();
+
+        if (xrDeviceSimulator == null)
+            xrDeviceSimulator = FindFirstObjectByType<XRDeviceSimulator>(FindObjectsInactive.Include);
     }
 
     IEnumerator Start()
     {
-        // Wait two end-of-frames for all XR systems to fully initialise
         yield return new WaitForEndOfFrame();
         yield return new WaitForEndOfFrame();
 
@@ -54,6 +66,7 @@ public class PlatformModeManager : MonoBehaviour
     public void ApplyMode(PlatformMode mode)
     {
         bool isVR = mode == PlatformMode.VR;
+        bool isDesktop = mode == PlatformMode.Desktop;
 
         if (leftController) leftController.SetActive(isVR);
         if (rightController) rightController.SetActive(isVR);
@@ -63,12 +76,16 @@ public class PlatformModeManager : MonoBehaviour
         if (teleportAreaSetup) teleportAreaSetup.SetActive(isVR);
 
         if (painterRayInput != null)
-            painterRayInput.mouseFallback = !isVR;
+            painterRayInput.mouseFallback = isDesktop;
 
         if (desktopController != null)
-            desktopController.enabled = !isVR;
+            desktopController.enabled = isDesktop;
 
-        // Disable Oculus input module in desktop mode
+        if (xrDeviceSimulator != null)
+            xrDeviceSimulator.gameObject.SetActive(isDesktop);
+        else
+            Debug.LogWarning("[PlatformModeManager] XR Device Simulator not found in scene.");
+
         if (eventSystem != null)
         {
             foreach (var module in eventSystem.GetComponents<BaseInputModule>())
