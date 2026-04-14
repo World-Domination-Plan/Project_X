@@ -82,7 +82,8 @@ public class CanvasStrokeSyncNgo : NetworkBehaviour
         if (uvPoints == null || uvPoints.Length < 2) return;
         if (!_activeStrokes.TryGetValue(strokeId, out var brush)) return;
 
-        EnqueuePaintOperations(uvPoints, brush);
+        // Local painting is already done by XRPainterRayInput directly.
+        // Only remote clients need the paint queue (handled in StrokePointsClientRpc).
 
         if (IsSpawned)
         {
@@ -139,6 +140,7 @@ public class CanvasStrokeSyncNgo : NetworkBehaviour
     {
         if (_localStrokes.Contains(strokeId)) return;
         _activeStrokes[strokeId] = brush;
+        Debug.Log($"[StrokeSync] StrokeBeginClientRpc received — strokeId: {strokeId}, sender: {senderId}");
     }
 
     [ClientRpc]
@@ -146,7 +148,11 @@ public class CanvasStrokeSyncNgo : NetworkBehaviour
     {
         if (_localStrokes.Contains(strokeId)) return;
         if (uvPoints == null || uvPoints.Length < 2) return;
-        if (!_activeStrokes.TryGetValue(strokeId, out var brush)) return;
+        if (!_activeStrokes.TryGetValue(strokeId, out var brush))
+        {
+            Debug.LogWarning($"[StrokeSync] StrokePointsClientRpc — strokeId {strokeId} not in _activeStrokes, dropping {uvPoints.Length / 2} point(s)");
+            return;
+        }
 
         EnqueuePaintOperations(uvPoints, brush);
     }
