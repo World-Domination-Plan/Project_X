@@ -9,13 +9,19 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 3315304863013935608}
+  - component: {fileID: 1422460076397483922}
+  - component: {fileID: 4750760035069434726}
   - component: {fileID: 6128767186495270469}
+  - component: {fileID: 3463883579553487380}
+  - component: {fileID: 8070433373265912406}
+  - component: {fileID: 6433557230604632711}
+  - component: {fileID: 55932797895984275}
   m_Layer: 0
   m_Name: TestMule
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
+  m_StaticEditorFlags: 2147483647
   m_IsActive: 1
 --- !u!4 &3315304863013935608
 Transform:
@@ -27,11 +33,56 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 11.08463, y: -0.58677, z: -6.42203}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
+  m_LocalScale: {x: 2, y: 2, z: 2}
+  m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1422460076397483922
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 994809326822256009}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2fc59ec495add6e4aac1d31787dc38cb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Scripts::FullWorkflowTest
+  useAuthManager: 0
+  authEmail: workflow_test@example.com
+  authPassword: Password123!
+  authUsername: WorkflowArtist
+  artistSearchUsername: guest1
+  numArtworksToCreate: 4
+  testWorkflowTexture: {fileID: 2800000, guid: 6d30a121ea57d4a1b804fc5068a54cde, type: 3}
+  workflowStorageBucket: artworks
+  getThumbnailsInWorkflow: 0
+  inviteUserAfterWorkflow: 0
+  inviteeUsername: nm
+  deleteGalleryWork: 1
+  deleteArtworksWork: 1
+  deleteUserWork: 1
+  fetchedOwnerId: 0
+  createdArtworkIds: 
+  createdGalleryId: 0
+  fetchedInviteeId: 0
+--- !u!114 &4750760035069434726
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 994809326822256009}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: debdda85163ee3645b833823a85b68e5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Scripts::InviteTest
+  targetGalleryId: 0
+  ownerArtistId: 0
+  inviteeArtistId: 0
 --- !u!114 &6128767186495270469
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -46,4 +97,101 @@ MonoBehaviour:
   m_EditorClassIdentifier: Scripts::SupabaseArtworkTest
   testOnStart: 1
   testArtworkTitle: Test Artwork
+  secondArtworkTitle: Test Artwork 2
   testOwnerUserId: 1
+  testTexture: {fileID: 2800000, guid: 6d30a121ea57d4a1b804fc5068a54cde, type: 3}
+  storageBucket: artworks
+  signedUrlExpirySeconds: 300
+  alsoDeleteFirstArtwork: 1
+--- !u!114 &3463883579553487380
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 994809326822256009}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 76d2466daa95b417aadca6ec402d8d38, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Scripts::SupabaseGalleryTest
+  galleryName: Manual Test Gallery
+  galleryDescription: Manually entered description
+  ownerId: 1
+  artworkIds: 
+  artworkMapInput: []
+  testOnStart: 0
+  targetGalleryId: 0
+--- !u!114 &8070433373265912406
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 994809326822256009}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e13d37bede515d54ea58942c5759cb0c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Scripts::VRGallery.Authentication.AuthenticationManager
+  runDevTestOnStart: 0
+  testEmail: test@example.com
+  testPassword: password123
+  testUsername: user12345
+  enableDebugLogs: 1
+--- !u!23 &6433557230604632711
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 994809326822256009}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 25f8d5afd0110f14fb3ee77d34b0c960, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!33 &55932797895984275
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 994809326822256009}
+  m_Mesh: {fileID: -8281384842790700704, guid: 90337c42faab5664ba10c4042cdf0969, type: 3}

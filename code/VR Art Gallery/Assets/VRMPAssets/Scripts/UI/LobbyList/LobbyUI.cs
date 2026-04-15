@@ -6,6 +6,10 @@ using UnityEngine.UI;
 using TMPro;
 using WebSocketSharp;
 using Unity.Services.Vivox;
+using System.Threading.Tasks;
+using VRGallery.Cloud;
+
+
 
 namespace XRMultiplayer
 {
@@ -19,13 +23,22 @@ namespace XRMultiplayer
         [SerializeField] GameObject m_LobbyListPrefab;
         [SerializeField] Button m_RefreshButton;
         [SerializeField] Image m_CooldownImage;
-        [SerializeField] float m_AutoRefreshTime = 5.0f;
+        [SerializeField] float m_AutoRefreshTime = 120.0f;
         [SerializeField] float m_RefreshCooldownTime = .5f;
+
+        [Header("Login UI Positioning")]
+        [SerializeField] private float m_UIDistance = 1.5f;
+        [SerializeField] private float m_UIHeightOffset = 0.0f;
+        [SerializeField] private float m_UISideOffset = 0.0f;
 
         [Header("Navigation Toggles & Panels")]
         [SerializeField] private Toggle m_HomeToggle;
         [SerializeField] private Toggle m_PrivateGalleriesToggle;
         [SerializeField] private Toggle m_WorkspacesToggle;
+        [SerializeField] private Toggle m_LoginToggle;
+        [SerializeField] private GameObject m_LoginUI;        // Assign the SCENE object here
+        [SerializeField] private Transform m_HeadCamera;
+        // [SerializeField] private float m_UIDistance = 1.5f;
         [SerializeField] private GameObject m_HomePanel;
         [SerializeField] private GameObject m_PrivateGalleriesPanel;
         [SerializeField] private GameObject m_WorkspacesPanel;
@@ -35,19 +48,35 @@ namespace XRMultiplayer
         [SerializeField] TMP_Text m_ConnectionSuccessText;
         [SerializeField] TMP_Text m_ConnectionFailedText;
 
+        [Header("Connection Buttons")]
+        [SerializeField] Button m_CancelButton;                        // shows while attempting to connect
+        [SerializeField] Button m_ConnectionSuccessDoneButton;        // shown when a connection succeeds
+        [SerializeField] Button m_ConnectionFailedDoneButton;         // shown when a connection fails
+        [SerializeField] Button m_RetryConnectionButton;              // shown when there is no internet
+
         [Header("Room Creation")]
         [SerializeField] TMP_InputField m_RoomNameText;
         [SerializeField] Toggle m_PrivacyToggle;
 
+        [Header("Gallery Info Loader")]
+        [SerializeField] GalleryInfoUI galleryInfo;
+
         [SerializeField] GameObject[] m_ConnectionSubPanels;
 
         VoiceChatManager m_VoiceChatManager;
-
         Coroutine m_UpdateLobbiesRoutine;
         Coroutine m_CooldownFillRoutine;
 
         bool m_Private = false;
-        int m_PlayerCount;
+        bool m_IsLoadingConnectedLobbyGallery = false;
+        bool m_IsCreateGalleryLoadInProgress = false;
+        bool m_DidCreateGalleryLoadSucceed = false;
+
+        /// <summary>
+        /// Max players passed to <see cref="XRINetworkGameManager.CreateNewLobby"/>; kept in sync by UI (e.g. IntButtonUI) via <see cref="UpdatePlayerCount"/>.
+        /// Defaults to <see cref="XRINetworkGameManager.maxPlayers"/> so capacity is valid before any UI runs and is not overwritten in <c>Start</c>.
+        /// </summary>
+        int m_PlayerCount = XRINetworkGameManager.maxPlayers;
 
         private void Awake()
         {
@@ -58,66 +87,104 @@ namespace XRMultiplayer
 
         private void Start()
         {
-            //m_PrivacyToggle.onValueChanged.AddListener(TogglePrivacy);
-
-            m_PlayerCount = XRINetworkGameManager.maxPlayers / 2;
-
             XRINetworkGameManager.Instance.connectionFailedAction += FailedToConnect;
             XRINetworkGameManager.Instance.connectionUpdated += ConnectedUpdated;
 
             ClearLobbyParents();
-
-            // Create test lobby UI components
             CreateTestLobbies();
 
-            // Set up navigation toggles
-            m_HomeToggle.onValueChanged.AddListener((isOn) => { if (isOn) ShowPanel(PanelType.Home); });
-            m_PrivateGalleriesToggle.onValueChanged.AddListener((isOn) => { if (isOn) ShowPanel(PanelType.PrivateGalleries); });
-            m_WorkspacesToggle.onValueChanged.AddListener((isOn) => { if (isOn) ShowPanel(PanelType.Workspaces); });
+            // Set up navigation toggles (guard against missing references)
+            if (m_HomeToggle != null)
+                m_HomeToggle.onValueChanged.AddListener((isOn) => { if (isOn) ShowPanel(PanelType.Home); });
+            if (m_PrivateGalleriesToggle != null)
+                m_PrivateGalleriesToggle.onValueChanged.AddListener((isOn) => { if (isOn) ShowPanel(PanelType.PrivateGalleries); });
+            if (m_WorkspacesToggle != null)
+                m_WorkspacesToggle.onValueChanged.AddListener((isOn) => { if (isOn) ShowPanel(PanelType.Workspaces); });
 
             // Show only the Home panel at start and set Home toggle on
-            m_HomeToggle.isOn = true;
-            m_PrivateGalleriesToggle.isOn = false;
-            m_WorkspacesToggle.isOn = false;
+            if (m_HomeToggle != null) m_HomeToggle.isOn = true;
+            if (m_PrivateGalleriesToggle != null) m_PrivateGalleriesToggle.isOn = false;
+            if (m_WorkspacesToggle != null) m_WorkspacesToggle.isOn = false;
             ShowPanel(PanelType.Home);
+
+            // hookup connection button callbacks
+            if (m_CancelButton != null)
+                m_CancelButton.onClick.AddListener(CancelConnection);
+
+            if (m_ConnectionSuccessDoneButton != null)
+                m_ConnectionSuccessDoneButton.onClick.AddListener(() => ToggleConnectionSubPanel(0));
+
+            if (m_ConnectionFailedDoneButton != null)
+                m_ConnectionFailedDoneButton.onClick.AddListener(() => ToggleConnectionSubPanel(0));
+
+            if (m_RetryConnectionButton != null)
+                m_RetryConnectionButton.onClick.AddListener(CheckForInternet);
 
         }
 
         private enum PanelType { Home, PrivateGalleries, Workspaces }
 
-        private void ShowPanel(PanelType panel)
+        private void ShowLoginUI()
         {
-            m_HomePanel.SetActive(panel == PanelType.Home);
-            m_PrivateGalleriesPanel.SetActive(panel == PanelType.PrivateGalleries);
-            m_WorkspacesPanel.SetActive(panel == PanelType.Workspaces);
+            if (m_LoginUI == null)
+            {
+                Debug.Log("No login panel in scene — skipping.");
+                return;
+            }
+
+            if (m_HeadCamera == null) m_HeadCamera = Camera.main.transform;
+
+            // Reposition in front of camera then show
+            Vector3 spawnPos = m_HeadCamera.position
+            + m_HeadCamera.forward * m_UIDistance
+            + Vector3.up * m_UIHeightOffset
+            + m_HeadCamera.right * m_UISideOffset;
+
+            m_LoginUI.transform.position = spawnPos;
+            m_LoginUI.transform.rotation = Quaternion.LookRotation(m_HeadCamera.forward);
+            m_LoginUI.SetActive(true);
+
+            Debug.Log("Login UI shown at: " + spawnPos);
         }
 
-        // Testing method to create fake lobbies
+        public void HideLoginUI()
+        {
+            if (m_LoginUI == null) return;
+            m_LoginUI.SetActive(false);
+            Debug.Log("Login UI hidden.");
+        }
+
+        private void ShowPanel(PanelType panel)
+        {
+            if (m_HomePanel != null)
+                m_HomePanel.SetActive(panel == PanelType.Home);
+            if (m_PrivateGalleriesPanel != null)
+                m_PrivateGalleriesPanel.SetActive(panel == PanelType.PrivateGalleries);
+            if (m_WorkspacesPanel != null)
+                m_WorkspacesPanel.SetActive(panel == PanelType.Workspaces);
+        }
+
         void CreateTestLobbies()
         {
             if (!m_TestMode) return;
 
-            // Create multiple fake lobbies for testing
             var fakeLobby1 = CreateFakeLobby("Testing Room 1", 2, 4);
             var fakeLobby2 = CreateFakeLobby("VR Art Gallery", 4, 8);
             var fakeLobby3 = CreateFakeLobby("Full Room", 6, 6);
             var fakeLobby4 = CreateFakeLobby("Empty Room", 0, 4);
 
-            // Instantiate UI for each fake lobby
             CreateLobbyUIForAllParents(fakeLobby1);
             CreateLobbyUIForAllParents(fakeLobby2);
             CreateLobbyUIForAllParents(fakeLobby3);
             CreateLobbyUIForAllParents(fakeLobby4);
 
-            // Example of a non-joinable lobby
             var fakeIncompatibleLobby = CreateFakeLobby("Old Version Room", 3, 6);
             CreateNonJoinableLobbyUIForAllParents(fakeIncompatibleLobby, "Version Conflict");
         }
 
-        // Helper method to create a fake lobby
         Lobby CreateFakeLobby(string name, int currentPlayers, int maxPlayers)
         {
-            var lobby = new Lobby(
+            return new Lobby(
                 id: System.Guid.NewGuid().ToString(),
                 lobbyCode: "TEST" + UnityEngine.Random.Range(1000, 9999),
                 name: name,
@@ -130,23 +197,15 @@ namespace XRMultiplayer
                 lastUpdated: System.DateTime.UtcNow,
                 hostId: "fake-host-id",
                 players: CreateFakePlayers(currentPlayers),
-                data: new System.Collections.Generic.Dictionary<string, DataObject>()
+                data: new Dictionary<string, DataObject>()
             );
-
-            return lobby;
         }
 
-        // Helper method to create fake player list
-        System.Collections.Generic.List<Player> CreateFakePlayers(int count)
+        List<Player> CreateFakePlayers(int count)
         {
-            var players = new System.Collections.Generic.List<Player>();
+            var players = new List<Player>();
             for (int i = 0; i < count; i++)
-            {
-                players.Add(new Player(
-                    id: $"player-{i}",
-                    data: new System.Collections.Generic.Dictionary<string, PlayerDataObject>()
-                ));
-            }
+                players.Add(new Player(id: $"player-{i}", data: new Dictionary<string, PlayerDataObject>()));
             return players;
         }
 
@@ -164,9 +223,9 @@ namespace XRMultiplayer
         {
             XRINetworkGameManager.Instance.connectionFailedAction -= FailedToConnect;
             XRINetworkGameManager.Instance.connectionUpdated -= ConnectedUpdated;
-
             LobbyManager.status.Unsubscribe(ConnectedUpdated);
         }
+
         public async void CheckInternetAsync()
         {
             if (m_TestMode) return;
@@ -182,29 +241,32 @@ namespace XRMultiplayer
         void CheckForInternet()
         {
             if (Application.internetReachability == NetworkReachability.NotReachable)
-            {
                 ToggleConnectionSubPanel(5);
-            }
             else
-            {
                 ToggleConnectionSubPanel(0);
-            }
         }
 
-        public void CreateLobby()
+        public async void CreateLobby()
         {
             XRINetworkGameManager.Connected.Subscribe(OnConnected);
 
             if (m_RoomNameText.text.IsNullOrEmpty() || m_RoomNameText.text == "<Room Name>")
-            {
                 m_RoomNameText.text = $"{XRINetworkGameManager.LocalPlayerName.Value}'s Room";
-            }
 
             XRINetworkGameManager.Instance.CreateNewLobby(m_RoomNameText.text, m_Private, m_PlayerCount);
-
             m_ConnectionSuccessText.text = $"Joining {m_RoomNameText.text}";
-        }
 
+            m_IsCreateGalleryLoadInProgress = true;
+            m_DidCreateGalleryLoadSucceed = false;
+            try
+            {
+                m_DidCreateGalleryLoadSucceed = await LoadLocalGalleryAfterCreateAsync();
+            }
+            finally
+            {
+                m_IsCreateGalleryLoadInProgress = false;
+            }
+        }
 
         public void UpdatePlayerCount(int count)
         {
@@ -214,26 +276,17 @@ namespace XRMultiplayer
         public void CancelConnection()
         {
             XRINetworkGameManager.Instance.CancelMatchmaking();
+            // return to the lobby list and reset status text
+            ToggleConnectionSubPanel(0);
+            m_ConnectionUpdatedText.text = string.Empty;
         }
 
-        /// <summary>
-        /// Set the room name
-        /// </summary>
-        /// <param name="roomName">The name of the room</param>
-        /// <remarks> This function is called from <see cref="XRIKeyboardDisplay"/>
         public void SetRoomName(string roomName)
         {
             if (!string.IsNullOrEmpty(roomName))
-            {
                 m_RoomNameText.text = roomName;
-            }
         }
 
-        /// <summary>
-        /// Join a room by code
-        /// </summary>
-        /// <param name="roomCode">The room code to join</param>
-        /// <remarks> This function is called from <see cref="XRIKeyboardDisplay"/>
         public void EnterRoomCode(string roomCode)
         {
             ToggleConnectionSubPanel(2);
@@ -260,9 +313,7 @@ namespace XRMultiplayer
         public void SetVoiceChatAudidibleDistance(int audibleDistance)
         {
             if (audibleDistance <= m_VoiceChatManager.ConversationalDistance)
-            {
                 audibleDistance = m_VoiceChatManager.ConversationalDistance + 1;
-            }
             m_VoiceChatManager.AudibleDistance = audibleDistance;
         }
 
@@ -289,28 +340,235 @@ namespace XRMultiplayer
         public void ToggleConnectionSubPanel(int panelId)
         {
             for (int i = 0; i < m_ConnectionSubPanels.Length; i++)
-            {
                 m_ConnectionSubPanels[i].SetActive(i == panelId);
-            }
 
-
-            if (panelId == 0)
-            {
-                ShowLobbies();
-            }
-            else
-            {
-                HideLobbies();
-            }
+            if (panelId == 0) ShowLobbies();
+            else HideLobbies();
         }
 
-        void OnConnected(bool connected)
+        async void OnConnected(bool connected)
         {
             if (connected)
             {
                 ToggleConnectionSubPanel(3);
                 XRINetworkGameManager.Connected.Unsubscribe(OnConnected);
+
+                while (m_IsCreateGalleryLoadInProgress)
+                    await Task.Yield();
+
+                if (m_DidCreateGalleryLoadSucceed)
+                {
+                    m_DidCreateGalleryLoadSucceed = false;
+                    return;
+                }
+
+                await LoadConnectedLobbyGalleryAsync();
             }
+        }
+
+        async Task<bool> LoadLocalGalleryAfterCreateAsync()
+        {
+            var behaviours = FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None);
+            foreach (var behaviour in behaviours)
+            {
+                if (behaviour == null || behaviour.GetType().Name != "GalleryManager")
+                    continue;
+
+                var method = behaviour.GetType().GetMethod("InitializeAndLoadGalleryAsync");
+                if (method == null)
+                    return false;
+
+                try
+                {
+                    if (method.Invoke(behaviour, null) is Task initTask)
+                    {
+                        await initTask;
+                        await PublishHostGalleryContextAsync(behaviour);
+
+                        // Now initialize GalleryInfoUI with the loaded gallery
+                        int currentGalleryId = 0;
+                        object galleryIdValue = behaviour.GetType().GetProperty("CurrentGalleryId")?.GetValue(behaviour);
+                        if (galleryIdValue != null)
+                            currentGalleryId = System.Convert.ToInt32(galleryIdValue);
+
+                        if (currentGalleryId > 0 && galleryInfo != null)
+                        {
+                            // Fetch gallery data and initialize UI
+                            var galleryRepo = await SupabaseGalleryRepository.CreateAsync();
+                            var galleryData = await galleryRepo.GetGalleryAsync(currentGalleryId);
+                            if (galleryData != null)
+                            {
+                                Debug.Log($"[LobbyUI] Initializing GalleryInfoUI with local gallery {currentGalleryId}");
+                                galleryInfo.InitializeInfo(galleryData);
+                            }
+                        }
+
+                        return true;
+                    }
+                }
+                catch (System.Exception ex)
+                {
+                    Debug.LogError($"Failed to load gallery right after lobby creation: {ex.Message}");
+                    return false;
+                }
+
+                return false;
+            }
+
+            Debug.LogWarning("GalleryManager was not found in the scene. Skipping create-time gallery load.");
+            return false;
+        }
+
+        async Task LoadConnectedLobbyGalleryAsync()
+        {
+            if (m_IsLoadingConnectedLobbyGallery)
+                return;
+
+            m_IsLoadingConnectedLobbyGallery = true;
+
+            try
+            {
+                string hostAuthUserId = null;
+                long hostOwnerId = 0;
+                int hostGalleryId = 0;
+                Lobby connectedLobby = XRINetworkGameManager.Instance?.lobbyManager?.connectedLobby;
+
+                if (connectedLobby != null &&
+                    connectedLobby.Data != null &&
+                    connectedLobby.Data.TryGetValue(LobbyManager.k_HostAuthUserIdKeyIdentifier, out DataObject hostAuthData))
+                {
+                    hostAuthUserId = hostAuthData?.Value;
+                }
+
+                if (connectedLobby != null &&
+                    connectedLobby.Data != null &&
+                    connectedLobby.Data.TryGetValue(LobbyManager.k_HostOwnerIdKeyIdentifier, out DataObject hostOwnerData))
+                {
+                    long.TryParse(hostOwnerData?.Value, out hostOwnerId);
+                }
+
+                if (connectedLobby != null &&
+                    connectedLobby.Data != null &&
+                    connectedLobby.Data.TryGetValue(LobbyManager.k_HostGalleryIdKeyIdentifier, out DataObject hostGalleryData))
+                {
+                    int.TryParse(hostGalleryData?.Value, out hostGalleryId);
+                }
+
+                var behaviours = FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None);
+                foreach (var behaviour in behaviours)
+                {
+                    if (behaviour == null || behaviour.GetType().Name != "GalleryManager")
+                        continue;
+
+                    if (hostGalleryId > 0)
+                    {
+                        var directGalleryMethod = behaviour.GetType().GetMethod("InitializeAndLoadGalleryByGalleryIdAsync");
+                        if (directGalleryMethod != null &&
+                            directGalleryMethod.Invoke(behaviour, new object[] { hostGalleryId }) is Task directGalleryTask)
+                        {
+                            await directGalleryTask;
+                            await InitializeGalleryUIAsync(hostGalleryId);
+                            return;
+                        }
+                    }
+
+                    if (hostOwnerId > 0)
+                    {
+                        var ownerGalleryMethod = behaviour.GetType().GetMethod("InitializeAndLoadGalleryByOwnerIdAsync");
+                        if (ownerGalleryMethod != null &&
+                            ownerGalleryMethod.Invoke(behaviour, new object[] { hostOwnerId }) is Task ownerGalleryTask)
+                        {
+                            await ownerGalleryTask;
+                            // Get the gallery ID from GalleryManager after loading
+                            int galId = 0;
+                            object galIdValue = behaviour.GetType().GetProperty("CurrentGalleryId")?.GetValue(behaviour);
+                            if (galIdValue != null)
+                                galId = System.Convert.ToInt32(galIdValue);
+                            await InitializeGalleryUIAsync(galId);
+                            return;
+                        }
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(hostAuthUserId))
+                    {
+                        var hostGalleryMethod = behaviour.GetType().GetMethod("InitializeAndLoadGalleryByAuthUserIdAsync");
+                        if (hostGalleryMethod != null &&
+                            hostGalleryMethod.Invoke(behaviour, new object[] { hostAuthUserId }) is Task hostGalleryTask)
+                        {
+                            await hostGalleryTask;
+                            // Get the gallery ID from GalleryManager after loading
+                            int galId = 0;
+                            object galIdValue = behaviour.GetType().GetProperty("CurrentGalleryId")?.GetValue(behaviour);
+                            if (galIdValue != null)
+                                galId = System.Convert.ToInt32(galIdValue);
+                            await InitializeGalleryUIAsync(galId);
+                            return;
+                        }
+                    }
+
+                    Debug.LogWarning("Host gallery context missing in lobby data. Falling back to local gallery load.");
+                    var fallbackMethod = behaviour.GetType().GetMethod("InitializeAndLoadGalleryAsync");
+                    if (fallbackMethod != null && fallbackMethod.Invoke(behaviour, null) is Task fallbackTask)
+                    {
+                        await fallbackTask;
+                        // Get the gallery ID from GalleryManager after loading
+                        int galId = 0;
+                        object galIdValue = behaviour.GetType().GetProperty("CurrentGalleryId")?.GetValue(behaviour);
+                        if (galIdValue != null)
+                            galId = System.Convert.ToInt32(galIdValue);
+                        await InitializeGalleryUIAsync(galId);
+                    }
+
+                    return;
+                }
+
+                Debug.LogWarning("GalleryManager was not found in the scene. Skipping gallery load after lobby connect.");
+            }
+            finally
+            {
+                m_IsLoadingConnectedLobbyGallery = false;
+            }
+        }
+
+        private async Task InitializeGalleryUIAsync(int galleryId)
+        {
+            if (galleryId <= 0 || galleryInfo == null)
+                return;
+
+            try
+            {
+                var galleryRepo = await SupabaseGalleryRepository.CreateAsync();
+                var galleryData = await galleryRepo.GetGalleryAsync(galleryId);
+                if (galleryData != null)
+                {
+                    Debug.Log($"[LobbyUI] Initializing GalleryInfoUI with connected lobby gallery {galleryId}");
+                    galleryInfo.InitializeInfo(galleryData);
+                }
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError($"[LobbyUI] Failed to initialize gallery UI for gallery {galleryId}: {ex.Message}");
+            }
+        }
+
+        async Task PublishHostGalleryContextAsync(MonoBehaviour galleryManager)
+        {
+            if (galleryManager == null)
+                return;
+
+            string hostAuthUserId = galleryManager.GetType().GetMethod("GetCurrentAuthUserId")?.Invoke(galleryManager, null) as string;
+
+            long hostOwnerId = 0;
+            object ownerValue = galleryManager.GetType().GetProperty("CurrentOwnerId")?.GetValue(galleryManager);
+            if (ownerValue != null)
+                hostOwnerId = System.Convert.ToInt64(ownerValue);
+
+            int hostGalleryId = 0;
+            object galleryValue = galleryManager.GetType().GetProperty("CurrentGalleryId")?.GetValue(galleryManager);
+            if (galleryValue != null)
+                hostGalleryId = System.Convert.ToInt32(galleryValue);
+
+            await XRINetworkGameManager.Instance.lobbyManager.UpdateHostGalleryContext(hostAuthUserId, hostOwnerId, hostGalleryId);
         }
 
         void ConnectedUpdated(string update)
@@ -333,7 +591,6 @@ namespace XRMultiplayer
         public void ShowLobbies()
         {
             if (m_TestMode) return;
-
             GetAllLobbies();
             if (m_UpdateLobbiesRoutine != null) StopCoroutine(m_UpdateLobbiesRoutine);
             m_UpdateLobbiesRoutine = StartCoroutine(UpdateAvailableLobbies());
@@ -357,7 +614,6 @@ namespace XRMultiplayer
         IEnumerator UpdateButtonCooldown()
         {
             m_RefreshButton.interactable = false;
-
             m_CooldownImage.enabled = true;
             for (float i = 0; i < m_RefreshCooldownTime; i += Time.deltaTime)
             {
@@ -375,17 +631,13 @@ namespace XRMultiplayer
             m_CooldownFillRoutine = StartCoroutine(UpdateButtonCooldown());
 
             QueryResponse lobbies = await LobbyManager.GetLobbiesAsync();
-
             ClearLobbyParents();
 
-            if (lobbies.Results != null || lobbies.Results.Count > 0)
+            if (lobbies.Results != null && lobbies.Results.Count > 0)
             {
                 foreach (var lobby in lobbies.Results)
                 {
-                    if (LobbyManager.CheckForLobbyFilter(lobby))
-                    {
-                        continue;
-                    }
+                    if (LobbyManager.CheckForLobbyFilter(lobby)) continue;
 
                     if (LobbyManager.CheckForIncompatibilityFilter(lobby))
                     {
@@ -394,38 +646,23 @@ namespace XRMultiplayer
                     }
 
                     if (LobbyManager.CanJoinLobby(lobby))
-                    {
                         CreateLobbyUIForAllParents(lobby);
-                    }
                 }
             }
         }
 
         IEnumerable<Transform> GetLobbyParents()
         {
-            if (m_LobbyListParents == null || m_LobbyListParents.Count == 0)
-            {
-                yield break;
-            }
-
+            if (m_LobbyListParents == null || m_LobbyListParents.Count == 0) yield break;
             foreach (var parent in m_LobbyListParents)
-            {
-                if (parent != null)
-                {
-                    yield return parent;
-                }
-            }
+                if (parent != null) yield return parent;
         }
 
         void ClearLobbyParents()
         {
             foreach (var parent in GetLobbyParents())
-            {
                 foreach (Transform t in parent)
-                {
                     Destroy(t.gameObject);
-                }
-            }
         }
 
         void CreateLobbyUIForAllParents(Lobby lobby)

@@ -9,8 +9,8 @@ using Postgrest.Models;
 [Serializable]
 public class ArtistProfile : BaseModel
 {
-    [PrimaryKey("id", false)] // false = not manually set, auto-generated
-    public long id { get; set; }
+    [PrimaryKey("user_id", false)] // false = not manually set, auto-generated
+    public long user_id { get; set; }
 
     [Column("auth_user_id")]
     public string auth_user_id { get; set; }
@@ -24,5 +24,4 @@ public class ArtistProfile : BaseModel
         created_at = DateTime.UtcNow;
     }
 }
-
 

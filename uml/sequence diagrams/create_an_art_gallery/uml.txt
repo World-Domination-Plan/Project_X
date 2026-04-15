@@ -3,24 +3,24 @@
 actor User
 participant "Input Manager" as Input
 participant "HUD Manager" as HUD
-participant "Room Manager" as Room
-participant "Security Manager" as SM
-participant "Event Logger" as Logger
+participant "Gallery Manager" as Room
+participant "Auth Manager" as SM
+/'participant "Event Logger" as Logger'/
 
 title Create an art gallery
 
 == Basic Flow ==
 
 User -> Input: clicks on HUD icon
-Input -> Logger: log user event
+/'Input -> Logger: log user event'/
 Input -> HUD: requests HUD
-User -> Input: clicks on create art gallery
-Input -> Logger: log user event
-Input -> HUD: validates and sends event information to HUD
-Input -> Logger: log user event
+User -> Input: clicks on create new room
+/'Input -> Logger: log user event'/
+Input -> HUD: validates and sends event information to HUD 
+/'Input -> Logger: log user event'/
 HUD -> User: modal with options (gallery name, privacy type) is opened
 User -> Input: Enters gallery's name and privacy type (public or private)
-Input -> Logger: log user event
+/'Input -> Logger: log user event'/
 Input -> HUD: validates and sends event information to HUD
 HUD -> Room: requests a gallery with user information
  

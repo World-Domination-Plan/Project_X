@@ -1,4 +1,5 @@
 using NUnit.Framework;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.TestTools;
@@ -538,6 +539,11 @@ namespace VRGallery.Cloud.Tests
         }
 
         public Task<ArtistProfile> GetArtistProfileAsync(string userId)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<List<ArtistProfile>> GetAllArtistsAsync()
         {
             throw new NotImplementedException();
         }

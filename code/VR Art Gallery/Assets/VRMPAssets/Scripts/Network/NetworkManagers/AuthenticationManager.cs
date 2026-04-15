@@ -33,12 +33,21 @@ namespace XRMultiplayer
         /// </summary>
         [SerializeField] bool m_UseCommandLineArgs = true;
 
+        private Task<bool> _pendingAuthTask;
 
         /// <summary>
         /// Simple Authentication function. This uses bare bones authentication and anonymous sign in.
+        /// Concurrent calls share the same in-flight task to avoid "already signing in" exceptions.
         /// </summary>
         /// <returns></returns>
-        public virtual async Task<bool> Authenticate()
+        public virtual Task<bool> Authenticate()
+        {
+            if (_pendingAuthTask == null || _pendingAuthTask.IsCompleted)
+                _pendingAuthTask = AuthenticateInternal();
+            return _pendingAuthTask;
+        }
+
+        private async Task<bool> AuthenticateInternal()
         {
             // Check if UGS has not been initialized yet, and initialize.
             if (UnityServices.State == ServicesInitializationState.Uninitialized)
@@ -48,21 +57,28 @@ namespace XRMultiplayer
                 // Check for editor clones (MPPM or ParrelSync).
                 // This allows for multiple instances of the editor to connect to UGS.
 #if UNITY_EDITOR
-                playerId = "Editor";
+                // use a sanitized, length‑limited identifier so the profile string meets
+                // the Authentication package’s requirements (alphanumeric/_/- max 30).
+                string editorId = SanitizeProfile(SystemInfo.deviceUniqueIdentifier);
+                playerId = $"Editor_{editorId}";
 
-// #if HAS_MPPM
-//                 //Check for MPPM
-//                 playerId += CheckMPPM();
+#if HAS_MPPM
+                //Check for MPPM
+                playerId += SanitizeProfile(CheckMPPM());
 #elif HAS_PARRELSYNC
                 // Check for ParrelSync
-                playerId += CheckParrelSync();
+                playerId += SanitizeProfile(CheckParrelSync());
 #endif
-                // #endif
+#endif
                 // Check for command line args in builds
                 if (!Application.isEditor && m_UseCommandLineArgs)
                 {
-                    playerId += GetPlayerIDArg();
+                    playerId += SanitizeProfile(GetPlayerIDArg());
                 }
+
+                // final safety: trim to 30 characters
+                if (playerId.Length > 30)
+                    playerId = playerId.Substring(0, 30);
 
                 options.SetProfile(playerId);
                 Utils.Log($"{k_DebugPrepend}Signing in with profile {playerId}");
@@ -113,6 +129,21 @@ namespace XRMultiplayer
                 }
             }
             return playerID;
+        }
+
+        /// <summary>
+        /// Make sure profiles only contain legal characters and are short enough.
+        /// </summary>
+        static string SanitizeProfile(string raw)
+        {
+            if (string.IsNullOrEmpty(raw))
+                return "";
+            // strip everything except alphanumeric, dash and underscore
+            var cleaned = System.Text.RegularExpressions.Regex.Replace(raw, "[^a-zA-Z0-9_-]", "");
+            // enforce a reasonable maximum so we don't exceed 30 once prefixes are added
+            if (cleaned.Length > 20)
+                cleaned = cleaned.Substring(0, 20);
+            return cleaned;
         }
 
 #if UNITY_EDITOR

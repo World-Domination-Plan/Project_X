@@ -49,6 +49,8 @@ namespace XRMultiplayer
         [SerializeField] Vector2 m_MinMaxTurnAmount = new Vector2(15.0f, 180.0f);
         [SerializeField] float m_SnapTurnUpdateAmount = 15.0f;
 
+        private const string LeftPrimaryButtonPathFragment = "{LeftHand}/primaryButton";
+
         VoiceChatManager m_VoiceChatManager;
         DynamicMoveProvider m_MoveProvider;
         SnapTurnProvider m_TurnProvider;
@@ -74,7 +76,7 @@ namespace XRMultiplayer
             ConnectOnline(false);
 
             if (m_ToggleMenuAction != null)
-                m_ToggleMenuAction.action.performed += ctx => ToggleMenu();
+                m_ToggleMenuAction.action.performed += OnToggleMenuPerformed;
             else
                 Utils.Log("No toggle menu action assigned to OptionsPanel", 1);
 
@@ -117,6 +119,19 @@ namespace XRMultiplayer
             m_VoiceChatManager.connectionStatus.Unsubscribe(UpdateVoiceChatStatus);
             m_InputVolumeSlider.onValueChanged.RemoveListener(SetInputVolume);
             m_OutputVolumeSlider.onValueChanged.RemoveListener(SetOutputVolume);
+
+            if (m_ToggleMenuAction != null)
+                m_ToggleMenuAction.action.performed -= OnToggleMenuPerformed;
+        }
+
+        private void OnToggleMenuPerformed(InputAction.CallbackContext ctx)
+        {
+            // Keep the left primary (X) reserved for HUD toggling.
+            string controlPath = ctx.control?.path;
+            if (!string.IsNullOrEmpty(controlPath) && controlPath.Contains(LeftPrimaryButtonPathFragment))
+                return;
+
+            ToggleMenu();
         }
 
         private void Update()

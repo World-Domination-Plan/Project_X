@@ -16,7 +16,7 @@ namespace VRGallery.UI
         [SerializeField] private GameObject registerPanel;
         [SerializeField] private GameObject authenticatedPanel;
         [SerializeField] private GameObject loadingPanel;
-        [SerializeField] private GameObject doorObject;
+        
 
         [Header("Login UI")]
         [SerializeField] private TMP_InputField loginEmailField;
@@ -28,7 +28,7 @@ namespace VRGallery.UI
         [SerializeField] private TMP_InputField registerEmailField;
         [SerializeField] private TMP_InputField registerPasswordField;
         [SerializeField] private TMP_InputField registerUsernameField;
-        [SerializeField] private TMP_InputField confirmPasswordField;
+        //[SerializeField] private TMP_InputField confirmPasswordField;
         [SerializeField] private Button registerButton;
         [SerializeField] private Button showLoginButton;
 
@@ -45,13 +45,14 @@ namespace VRGallery.UI
         [Header("Settings")]
         [SerializeField] private bool hideUIWhenAuthenticated = true;
         [SerializeField] private float errorDisplayDuration = 5f;
+        [SerializeField] private GameObject doorObject;
 
         private AuthenticationManager authManager;
 
         private void Awake()
         {
             SetupButtonListeners();
-            ShowLoadingPanel();
+            //ShowLoadingPanel();
         }
 
         private void Start()
@@ -77,7 +78,6 @@ namespace VRGallery.UI
             else
             {
                 ShowLoginPanel();
-                doorObject.SetActive(true);
             }
         }
 
@@ -117,7 +117,7 @@ namespace VRGallery.UI
         private void HideAllPanels()
         {
             if (loginPanel) loginPanel.SetActive(false);
-            if (doorObject) doorObject.SetActive(false);
+            //if (doorObject) doorObject.SetActive(false);
             if (registerPanel) registerPanel.SetActive(false);
             if (authenticatedPanel) authenticatedPanel.SetActive(false);
             if (loadingPanel) loadingPanel.SetActive(false);
@@ -126,12 +126,25 @@ namespace VRGallery.UI
 
         private void ShowLoginPanel()
         {
+            if (!loginPanel)
+            {
+                Debug.LogError("[AuthUI] Login panel is not assigned.");
+                return;
+            }
+
             ShowPanel(loginPanel);
+            if (doorObject) doorObject.SetActive(true);
             ClearInputFields();
         }
 
         private void ShowRegisterPanel()
         {
+            if (!registerPanel)
+            {
+                Debug.LogError("[AuthUI] Register panel is not assigned.");
+                return;
+            }
+
             ShowPanel(registerPanel);
             ClearInputFields();
         }
@@ -159,7 +172,7 @@ namespace VRGallery.UI
             if (loginPasswordField) loginPasswordField.text = "";
             if (registerEmailField) registerEmailField.text = "";
             if (registerPasswordField) registerPasswordField.text = "";
-            if (confirmPasswordField) confirmPasswordField.text = "";
+            //if (confirmPasswordField) confirmPasswordField.text = "";
             if (registerUsernameField) registerUsernameField.text = "";
         }
 
@@ -251,7 +264,7 @@ namespace VRGallery.UI
         {
             string email = registerEmailField.text.Trim();
             string password = registerPasswordField.text;
-            string confirmPassword = confirmPasswordField.text;
+            //string confirmPassword = confirmPasswordField.text;
 
             if (string.IsNullOrWhiteSpace(email))
             {
@@ -277,11 +290,11 @@ namespace VRGallery.UI
                 return false;
             }
 
-            if (password != confirmPassword)
-            {
-                ShowError("Passwords do not match");
-                return false;
-            }
+            // if (password != confirmPassword)
+            // {
+            //     ShowError("Passwords do not match");
+            //     return false;
+            // }
 
             return true;
         }
@@ -301,11 +314,14 @@ namespace VRGallery.UI
             var role = await authManager.GetCurrentUserRole();
             HandleUserRoleChanged(role);
 
+            if (doorObject) doorObject.SetActive(false);
+
             ShowAuthenticatedPanel();
         }
 
         private void HandleUserLoggedOut()
         {
+            if (doorObject) doorObject.SetActive(false);
             ShowLoginPanel();
         }
 

@@ -2,52 +2,81 @@ using UnityEngine;
 
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
-using UnityEngine.InputSystem.Controls;
 #endif
 
 public class XRPainterRayInput : MonoBehaviour
 {
     [Header("Ray")]
-    public Transform rayOrigin;     // assign Aim Pose if you have one
+    public Transform rayOrigin;
     public float maxDistance = 5f;
-    public LayerMask paintMask = ~0; // default: Everything
+    public LayerMask paintMask = ~0;
+
+    [Header("Grab Check")]
+    public UnityEngine.XR.Interaction.Toolkit.Interactors.XRBaseInteractor rightHandInteractor;
 
 #if ENABLE_INPUT_SYSTEM
     [Header("Input System")]
-    public InputActionProperty drawAction;   // bind to RightHand Activate/Select
-    public bool mouseFallback = true;        // for editor testing
+    public InputActionProperty drawAction;
+    public bool mouseFallback = true;
+    public float pressThreshold = 0.1f;
 #endif
 
     Vector2 _lastUV;
     bool _hasLast;
 
+    CanvasStrokeSyncNgo _activeSync;
+    ulong _activeStrokeId;
+    bool _strokeOpen;
+
     void OnEnable()
     {
 #if ENABLE_INPUT_SYSTEM
-        if (drawAction.action != null) drawAction.action.Enable();
+        if (drawAction.action != null)
+            drawAction.action.Enable();
 #endif
     }
 
     void OnDisable()
     {
 #if ENABLE_INPUT_SYSTEM
-        if (drawAction.action != null) drawAction.action.Disable();
+        if (drawAction.action != null)
+            drawAction.action.Disable();
 #endif
+        EndStroke();
+    }
+
+    BrushToolState GetHeldBrushToolState()
+    {
+        if (rightHandInteractor == null)
+            return null;
+
+        if (rightHandInteractor.interactablesSelected.Count == 0)
+            return null;
+
+        var interactable = rightHandInteractor.interactablesSelected[0];
+        if (interactable == null)
+            return null;
+
+        var brushTag = interactable.transform.GetComponent<PaintbrushTag>();
+        if (brushTag == null)
+            brushTag = interactable.transform.GetComponentInParent<PaintbrushTag>();
+
+        if (brushTag == null)
+            return null;
+
+        var brushToolState = interactable.transform.GetComponent<BrushToolState>();
+        if (brushToolState != null)
+            return brushToolState;
+
+        return interactable.transform.GetComponentInParent<BrushToolState>();
     }
 
     bool IsDrawing()
     {
 #if ENABLE_INPUT_SYSTEM
-        // Primary: XR action
         if (drawAction.action != null)
-        {
-            // Robust for both button + axis
-            var ctrl = drawAction.action.activeControl;
-            if (ctrl is ButtonControl bc) return bc.isPressed;
-            return drawAction.action.ReadValue<float>() > 0.1f;
-        }
+            return drawAction.action.ReadValue<float>() > pressThreshold;
 
-        // Optional editor fallback (Input System mouse, not UnityEngine.Input)
         if (mouseFallback && Mouse.current != null)
             return Mouse.current.leftButton.isPressed;
 
@@ -59,51 +88,101 @@ public class XRPainterRayInput : MonoBehaviour
 
     void Update()
     {
-        if (!rayOrigin) rayOrigin = transform;
+        if (!rayOrigin)
+            rayOrigin = transform;
 
-        // If you forgot to set a mask, don’t silently fail
-        if (paintMask.value == 0) paintMask = ~0;
+        if (paintMask.value == 0)
+            paintMask = ~0;
 
-        if (!IsDrawing())
+        BrushToolState brushToolState = GetHeldBrushToolState();
+
+        if (brushToolState == null || !IsDrawing())
         {
-            _hasLast = false;
+            EndStroke();
             return;
         }
 
-        if (!Physics.Raycast(rayOrigin.position, rayOrigin.forward, out var hit,
-                maxDistance, paintMask, QueryTriggerInteraction.Ignore))
+        if (!Physics.Raycast(
+                rayOrigin.position,
+                rayOrigin.forward,
+                out RaycastHit hit,
+                maxDistance,
+                paintMask,
+                QueryTriggerInteraction.Ignore))
         {
-            _hasLast = false;
+            EndStroke();
             return;
         }
 
-        var surface = hit.collider.GetComponentInParent<PaintableSurfaceRT>();
+        PaintableSurfaceRT surface = hit.collider.GetComponentInParent<PaintableSurfaceRT>();
         if (!surface)
         {
-            _hasLast = false;
+            EndStroke();
             return;
+        }
+
+        BrushState brush = brushToolState.CurrentBrushState;
+
+        var sync = surface.GetComponent<CanvasStrokeSyncNgo>();
+        if (!sync)
+        {
+            surface.PaintAt(hit.textureCoord, brush);
+            _lastUV = hit.textureCoord;
+            _hasLast = true;
+            return;
+        }
+
+        if (!_strokeOpen || _activeSync != sync)
+        {
+            EndStroke();
+            _activeSync = sync;
+            _activeStrokeId = sync.CreateLocalStrokeId();
+            sync.LocalStrokeBegin(_activeStrokeId, brush);
+            _strokeOpen = true;
+            _hasLast = false;
         }
 
         Vector2 uv = hit.textureCoord;
 
-        // Interpolate between last UV and current UV to avoid gaps
         if (_hasLast)
         {
             float dist = Vector2.Distance(_lastUV, uv);
-
-            // surface.radius is UV-space (0..1). Step at half radius.
-            float step = Mathf.Max(0.0005f, surface.radius * 0.5f);
+            float step = Mathf.Max(0.0005f, brush.radius * 0.5f);
             int steps = Mathf.Clamp(Mathf.CeilToInt(dist / step), 1, 64);
 
+            ushort[] points = new ushort[steps * 2];
             for (int s = 1; s <= steps; s++)
-                surface.TryPaintAt(Vector2.Lerp(_lastUV, uv, s / (float)steps));
+            {
+                Vector2 p = Vector2.Lerp(_lastUV, uv, s / (float)steps);
+                points[(s - 1) * 2] = CanvasStrokeSyncNgo.EncodeAxis(p.x);
+                points[(s - 1) * 2 + 1] = CanvasStrokeSyncNgo.EncodeAxis(p.y);
+
+                surface.PaintAt(p, brush);
+            }
+
+            sync.LocalStrokePoints(_activeStrokeId, points);
         }
         else
         {
-            surface.TryPaintAt(uv);
+            surface.PaintAt(uv, brush);
+            sync.LocalStrokePoints(_activeStrokeId, new ushort[]
+            {
+                CanvasStrokeSyncNgo.EncodeAxis(uv.x),
+                CanvasStrokeSyncNgo.EncodeAxis(uv.y)
+            });
         }
 
         _lastUV = uv;
         _hasLast = true;
+    }
+
+    void EndStroke()
+    {
+        if (_strokeOpen && _activeSync != null)
+            _activeSync.LocalStrokeEnd(_activeStrokeId);
+
+        _strokeOpen = false;
+        _activeSync = null;
+        _hasLast = false;
     }
 }
